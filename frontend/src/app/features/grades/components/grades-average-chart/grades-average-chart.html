@@ -1,0 +1,28 @@
+<div class="chart-card" *ngIf="turmaId">
+  <div class="chart-card__header">
+    <h2>Média de Notas da Turma</h2>
+    <p *ngIf="turmaNome">{{ turmaNome }}</p>
+  </div>
+
+  <div class="chart-card__body" *ngIf="!loading && series.length > 0; else loadingState">
+    <apx-chart
+      [series]="series"
+      [chart]="chartConfig"
+      [plotOptions]="plotOptions"
+      [yaxis]="yaxis"
+      [dataLabels]="dataLabels"
+      [fill]="fill"
+      [xaxis]="{ categories: categories }"
+    ></apx-chart>
+  </div>
+
+  <ng-template #loadingState>
+    <div class="chart-card__empty" *ngIf="!loading">
+      <p>Nenhum dado de média disponível para esta turma.</p>
+    </div>
+    <div class="chart-card__loading" *ngIf="loading">
+      <span class="spinner"></span>
+      <p>Carregando médias...</p>
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,32 @@
+<div class="student-card">
+  <div class="student-card__avatar">{{ aluno.nome.charAt(0) }}</div>
+
+  <div class="student-card__body">
+    <h2 class="student-card__name">{{ aluno.nome }}</h2>
+
+    <div class="student-card__info" *ngIf="aluno.telefone">
+      <span class="student-card__label">Telefone</span>
+      <span class="student-card__value">{{ aluno.telefone }}</span>
+    </div>
+
+    <div class="student-card__info" *ngIf="aluno.dataNascimento">
+      <span class="student-card__label">Nascimento</span>
+      <span class="student-card__value">{{ aluno.dataNascimento | date:'dd/MM/yyyy' }}</span>
+    </div>
+
+    <div class="student-card__info">
+      <span class="student-card__label">Endereço</span>
+      <span class="student-card__value">{{ endereco }}</span>
+    </div>
+
+    <div class="student-card__actions">
+      <button type="button" class="student-card__btn student-card__btn--edit" (click)="edit.emit(aluno)">Editar</button>
+      <button
+        type="button"
+        class="student-card__btn student-card__btn--delete"
+        (click)="remove.emit(aluno)"
+        [disabled]="deleting"
+      >{{ deleting ? '...' : 'Excluir' }}</button>
+    </div>
+  </div>
+</div>

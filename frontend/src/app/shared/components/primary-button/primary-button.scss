@@ -1,0 +1,14 @@
+.primary {
+     margin-top: 1rem;
+     width: 100%;
+     background: var(--color-primary);
+     color: #fff;
+     padding: 0.75rem;
+     border-radius: 6px;
+     border: 0;
+     font-weight: 600;
+}
+
+.primary[disabled] {
+     opacity: 0.6;
+}

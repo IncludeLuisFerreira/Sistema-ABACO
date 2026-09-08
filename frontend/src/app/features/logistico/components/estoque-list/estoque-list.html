@@ -1,0 +1,72 @@
+<section class="table-card">
+  <header class="table-card__header">
+    <div>
+      <h1>Lista de Itens</h1>
+      <p>Gerencie os itens disponiveis no estoque.</p>
+    </div>
+    <label class="table-card__search">
+      <span>Pesquisar</span>
+      <input
+        type="search"
+        placeholder="Buscar por nome"
+        (input)="onSearch($event)"
+        [disabled]="loading"
+      />
+    </label>
+  </header>
+
+  <div class="table-wrap" *ngIf="estoque.length > 0; else emptyState">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Quantidade</th>
+          <th>Unidade</th>
+          <th class="actions-col">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of estoque" [class.table-row--alerta]="isAlerta(item)">
+          <td>
+            <span *ngIf="isAlerta(item)" class="alert-icon" aria-label="Estoque baixo">&#9888;</span>
+            {{ item.nomeItem || '-' }}
+          </td>
+          <td>{{ item.quantidadeDisponivel ?? '-' }}</td>
+          <td>{{ item.unidade || '-' }}</td>
+          <td class="actions-col">
+            <button type="button" class="btn btn--ghost" (click)="edit.emit(item)" [disabled]="loading">Editar</button>
+            <button type="button" class="btn btn--warning" (click)="baixa.emit(item)" [disabled]="loading">Dar Baixa</button>
+            <button
+              type="button"
+              class="btn btn--danger"
+              (click)="remove.emit(item)"
+              [disabled]="loading || deletingEstoqueId === item.idItemEstoque"
+            >
+              <span *ngIf="deletingEstoqueId === item.idItemEstoque" class="spinner" aria-hidden="true"></span>
+              {{ deletingEstoqueId === item.idItemEstoque ? 'Excluindo...' : 'Excluir' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <p class="empty">Nenhum item encontrado para o filtro aplicado.</p>
+  </ng-template>
+
+  <footer class="pagination">
+    <button type="button" class="btn btn--ghost" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
+      Anterior
+    </button>
+    <span>Pagina {{ currentPage }} de {{ totalPages }}</span>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages || loading"
+    >
+      Proxima
+    </button>
+  </footer>
+</section>

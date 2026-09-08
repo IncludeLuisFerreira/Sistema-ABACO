@@ -1,0 +1,21 @@
+<div class="confirm-overlay" *ngIf="open" (click)="onCancel()" role="dialog" aria-modal="true" [attr.aria-label]="title">
+  <div class="confirm-card" (click)="$event.stopPropagation()">
+    <h2 class="confirm-card__title">{{ title }}</h2>
+    <p class="confirm-card__message">{{ message }}</p>
+    <div class="confirm-card__actions">
+      <button type="button" class="confirm-card__btn confirm-card__btn--cancel" (click)="onCancel()">
+        {{ cancelLabel }}
+      </button>
+      <button
+        type="button"
+        class="confirm-card__btn"
+        [class.confirm-card__btn--danger]="variant === 'danger'"
+        [class.confirm-card__btn--default]="variant === 'default'"
+        [disabled]="loading"
+        (click)="onConfirm()"
+      >
+        {{ loading ? 'Aguarde...' : confirmLabel }}
+      </button>
+    </div>
+  </div>
+</div>

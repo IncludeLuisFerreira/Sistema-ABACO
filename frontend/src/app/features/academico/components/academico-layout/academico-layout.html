@@ -1,0 +1,78 @@
+<div class="academico-shell">
+  <!-- Top bar (mobile) -->
+  <div class="mobile-topbar">
+    <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
+    <span class="mobile-topbar__title">SGA ABACO</span>
+    <button class="hamburger" (click)="menuOpen = !menuOpen" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <!-- Overlay (mobile) -->
+  <div class="menu-overlay" [class.menu-overlay--open]="menuOpen" (click)="menuOpen = false"></div>
+
+  <!-- Sidebar -->
+  <nav class="academico-nav" [class.academico-nav--open]="menuOpen">
+    <button class="academico-nav__close" (click)="menuOpen = false" aria-label="Fechar menu">&times;</button>
+    <div class="academico-nav__brand">
+      <img src="/Logo_ABACO.png" alt="ABACO" class="academico-nav__logo" />
+      <span class="academico-nav__title">SGA ABACO</span>
+    </div>
+
+    <ul class="academico-nav__links">
+      <li>
+        <a routerLink="/academico" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="menuOpen = false">
+          Inicio
+        </a>
+      </li>
+    </ul>
+
+    <div class="academico-nav__section-label">Academico</div>
+    <ul class="academico-nav__links">
+      <li>
+        <a routerLink="/academico/turmas" routerLinkActive="active" (click)="menuOpen = false">
+          Minhas Turmas
+        </a>
+      </li>
+      <li>
+        <a routerLink="/academico/alunos" routerLinkActive="active" (click)="menuOpen = false">
+          Alunos
+        </a>
+      </li>
+      <li>
+        <a routerLink="/academico/presencas" routerLinkActive="active" (click)="menuOpen = false">
+          Presencas
+        </a>
+      </li>
+      <li>
+        <a routerLink="/academico/notas" routerLinkActive="active" (click)="menuOpen = false">
+          Notas
+        </a>
+      </li>
+    </ul>
+
+    <div class="academico-nav__section-label">Logistico</div>
+    <ul class="academico-nav__links">
+      <li>
+        <a routerLink="/academico/pedidos/novo" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="menuOpen = false">
+          Novo Pedido
+        </a>
+      </li>
+      <li>
+        <a routerLink="/academico/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="menuOpen = false">
+          Meus Pedidos
+        </a>
+      </li>
+    </ul>
+
+    <div class="academico-nav__user">
+      <button type="button" class="academico-nav__logout" (click)="logout()">
+        Sair
+      </button>
+    </div>
+  </nav>
+
+  <main class="academico-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

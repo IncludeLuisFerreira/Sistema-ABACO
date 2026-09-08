@@ -1,0 +1,20 @@
+<div class="error-page">
+  <div class="error-card">
+    <h1 class="error-card__code">403</h1>
+    <h2 class="error-card__title">Acesso Negado</h2>
+    <p class="error-card__message">
+      Você está logado como <strong>{{ roleName }}</strong> e não tem permissão para acessar esta página.
+    </p>
+    <p class="error-card__hint">
+      Se você acredita que deveria ter acesso, entre em contato com a diretoria.
+    </p>
+    <div class="error-card__actions">
+      <button type="button" class="error-card__btn error-card__btn--primary" (click)="goBack()">
+        Voltar ao início
+      </button>
+      <button type="button" class="error-card__btn error-card__btn--secondary" (click)="goToLogin()">
+        Fazer login com outra conta
+      </button>
+    </div>
+  </div>
+</div>

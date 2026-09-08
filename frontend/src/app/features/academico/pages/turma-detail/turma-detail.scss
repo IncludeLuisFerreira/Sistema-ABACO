@@ -1,0 +1,235 @@
+:host {
+  display: block;
+  padding: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.turma-detail-page {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.loading, .error, .empty-chart {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.error { color: #dc2626; }
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #f2a93b;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.back-link:hover { text-decoration: underline; }
+
+/* --- Cabeçalho --- */
+.turma-header {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  margin-bottom: 1.5rem;
+}
+
+.turma-header__badge {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.turma-header__badge--andamento { background: #e0f2fe; color: #0369a1; }
+.turma-header__badge--futura    { background: #fef3c7; color: #92400e; }
+.turma-header__badge--encerrada { background: #f1f5f9; color: #475569; }
+
+.turma-header__curso {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.turma-header__professor {
+  margin: 0 0 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.turma-header__info-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.turma-header__label {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.turma-header__value { font-size: 0.9rem; color: #334155; font-weight: 600; }
+
+/* --- Seção do Gráfico --- */
+.chart-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.chart-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.chart-section__header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+
+.prova-select select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #334155;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* --- Média Card --- */
+.media-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.media-card__label { font-size: 0.8rem; color: #64748b; }
+.media-card__value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+.media-card__value--ruim  { background: #fef2f2; color: #dc2626; }
+.media-card__value--media { background: #fefce8; color: #ca8a04; }
+.media-card__value--boa   { background: #f0fdf4; color: #16a34a; }
+.media-card__alunos { font-size: 0.8rem; color: #94a3b8; margin-left: auto; }
+
+/* --- Gráfico --- */
+.chart {
+  margin-bottom: 1.5rem;
+}
+
+.chart__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chart__bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart__bar-label {
+  width: 55px;
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.chart__bar-track {
+  flex: 1;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.chart__bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.chart__bar-count {
+  width: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+
+/* --- Tabela --- */
+.notas-table-wrapper h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.notas-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.notas-table th,
+.notas-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.88rem;
+}
+
+.notas-table th {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.nota-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.nota-badge--ruim  { background: #fef2f2; color: #dc2626; }
+.nota-badge--media { background: #fefce8; color: #ca8a04; }
+.nota-badge--boa   { background: #f0fdf4; color: #16a34a; }
+
+/* --- Responsivo --- */
+@media (max-width: 600px) {
+  :host { padding: 1rem; }
+  .turma-header__info-grid { flex-direction: column; gap: 0.75rem; }
+  .chart-section__header { flex-direction: column; align-items: flex-start; }
+}

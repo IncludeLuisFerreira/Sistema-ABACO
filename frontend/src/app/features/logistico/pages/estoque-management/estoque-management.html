@@ -1,0 +1,69 @@
+<main class="estoque-management">
+  <header class="estoque-management__topbar">
+    <div>
+      <h1>Estoque</h1>
+      <p>Painel de gerenciamento de itens do estoque.</p>
+    </div>
+    <button type="button" class="new-item-btn" (click)="openCreate()" [disabled]="saving || loadingList">Novo item</button>
+  </header>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <section class="estoque-management__layout">
+    <app-estoque-list
+      [estoque]="pagedEstoque"
+      [loading]="loadingList || saving"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [deletingEstoqueId]="deletingEstoqueId"
+      [alertaEstoqueIds]="alertaEstoqueIds"
+      (search)="onSearch($event)"
+      (edit)="openEdit($event)"
+      (remove)="onDelete($event)"
+      (baixa)="openBaixa($event)"
+      (pageChange)="onPageChange($event)"
+    ></app-estoque-list>
+
+    <app-estoque-form
+      *ngIf="panelOpen"
+      [mode]="formMode"
+      [item]="selectedItem"
+      [loading]="saving"
+      (save)="onSave($event)"
+      (cancel)="closePanel()"
+    ></app-estoque-form>
+  </section>
+
+  <div class="modal-overlay" *ngIf="baixaItem" (click)="closeBaixa()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Dar Baixa no Estoque</h2>
+      <p class="modal-item-name">{{ baixaItem.nomeItem }}</p>
+
+      <form [formGroup]="baixaForm" (ngSubmit)="submitBaixa()" novalidate>
+        <label>
+          <span>Quantidade a deduzir *</span>
+          <input formControlName="quantidade" type="number" min="1" placeholder="Quantidade" />
+          <small class="error" *ngIf="baixaForm.controls.quantidade.invalid && baixaForm.controls.quantidade.touched">
+            Informe uma quantidade valida (minimo 1).
+          </small>
+        </label>
+
+        <label>
+          <span>Justificativa *</span>
+          <textarea formControlName="justificativa" placeholder="Motivo da baixa" rows="3"></textarea>
+          <small class="error" *ngIf="baixaForm.controls.justificativa.invalid && baixaForm.controls.justificativa.touched">
+            A justificativa e obrigatoria.
+          </small>
+        </label>
+
+        <footer class="modal-actions">
+          <button type="button" class="btn btn--ghost" (click)="closeBaixa()" [disabled]="baixaSaving">Cancelar</button>
+          <button type="submit" class="btn btn--danger" [disabled]="baixaSaving">
+            <span *ngIf="baixaSaving" class="spinner" aria-hidden="true"></span>
+            {{ baixaSaving ? 'Processando...' : 'Confirmar Baixa' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</main>

@@ -1,0 +1,72 @@
+.enrollment-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  padding: 1.25rem;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.enrollment-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.enrollment-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.enrollment-card__badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.enrollment-card__badge--ativa { background: #fef2f2; color: #dc2626; }
+.enrollment-card__badge--concluida { background: #f0fdf4; color: #15803d; }
+.enrollment-card__badge--cancelada { background: #f1f5f9; color: #475569; }
+
+.enrollment-card__date { font-size: 0.82rem; color: #64748b; }
+
+.enrollment-card__aluno {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.enrollment-card__turma {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.88rem;
+}
+.enrollment-card__label { color: #64748b; }
+.enrollment-card__value { color: #334155; font-weight: 600; text-align: right; }
+
+.enrollment-card__actions {
+  display: flex;
+  gap: 0.4rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.enrollment-card__btn {
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.enrollment-card__btn--grades { background: #f0f9ff; color: #0369a1; }
+.enrollment-card__btn--grades:hover { background: #e0f2fe; }
+.enrollment-card__btn--edit { background: #f1f5f9; color: #475569; }
+.enrollment-card__btn--edit:hover { background: #e2e8f0; }
+.enrollment-card__btn--transcript { background: #f0fdf4; color: #15803d; }
+.enrollment-card__btn--transcript:hover { background: #dcfce7; }
+.enrollment-card__btn--delete { background: transparent; color: #94a3b8; margin-left: auto; }
+.enrollment-card__btn--delete:hover { background: #fef2f2; color: #dc2626; }
+.enrollment-card__btn:disabled { opacity: 0.5; cursor: not-allowed; }

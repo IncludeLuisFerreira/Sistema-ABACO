@@ -1,0 +1,123 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #e0f2fe, #f8fafc 55%);
+}
+
+.student-grades {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.student-grades__topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.student-grades__topbar h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.student-grades__topbar p {
+  margin: 0.4rem 0 0;
+  color: #475569;
+}
+
+.btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn--ghost {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.local-feedback {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
+}
+
+.table-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.table-card__header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.table-card__header p {
+  margin: 0.4rem 0 0;
+  color: #64748b;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrap th,
+.table-wrap td {
+  text-align: left;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.grade-col {
+  width: 140px;
+}
+
+.grade-value {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #065f46;
+  min-width: 60px;
+  text-align: center;
+}
+
+.empty {
+  margin: 1.25rem 0;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .student-grades { padding: 1rem; }
+  .student-grades__topbar { flex-direction: column; }
+  .student-grades__topbar h1 { font-size: 1.3rem; }
+  .table-card { padding: 1rem; }
+  .table-card__header h1 { font-size: 1.15rem; }
+}

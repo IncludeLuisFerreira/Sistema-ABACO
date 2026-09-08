@@ -1,0 +1,46 @@
+<div class="admin-shell">
+  <nav class="admin-nav">
+    <div class="admin-nav__brand">
+      <img src="/Logo_ABACO.png" alt="ABACO" class="admin-nav__logo" />
+      <span class="admin-nav__title">SGA ABACO</span>
+    </div>
+
+    <ul class="admin-nav__links">
+      <li>
+        <a routerLink="/admin/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          Inicio
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/alunos" routerLinkActive="active">
+          Alunos
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/matriculas" routerLinkActive="active">
+          Matriculas
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/logistico" routerLinkActive="active">
+          Logistico
+        </a>
+      </li>
+      <li *ngIf="auth.authState().role === 'DIRECTOR'">
+        <a routerLink="/admin/usuarios" routerLinkActive="active">
+          Usuarios
+        </a>
+      </li>
+    </ul>
+
+    <div class="admin-nav__user">
+      <button type="button" class="admin-nav__logout" (click)="logout()">
+        Sair
+      </button>
+    </div>
+  </nav>
+
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

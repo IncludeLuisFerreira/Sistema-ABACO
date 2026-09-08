@@ -1,0 +1,69 @@
+<div class="login-shell">
+  <!-- Painel esquerdo: Brand -->
+  <div class="login-brand">
+    <div class="login-brand__content">
+      <img src="/Logo_ABACO.png" alt="ABACO" class="login-brand__logo" />
+      <h1 class="login-brand__title">SGA ABACO</h1>
+      <p class="login-brand__tagline">Transformando vidas através da educação</p>
+      <p class="login-brand__desc">Plataforma de gestão acadêmica da Associação ABACO</p>
+    </div>
+    <div class="login-brand__pattern"></div>
+  </div>
+
+  <!-- Painel direito: Formulário -->
+  <div class="login-form-panel">
+    <div class="login-card" [class.login-card--shake]="shake" role="region" aria-label="Login">
+      <h2 class="login-card__title">Entrar no SGA</h2>
+      <p class="login-card__subtitle">Acesse sua conta para continuar</p>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <div class="input-group">
+          <span class="input-group__icon">✉</span>
+          <input
+            type="email"
+            formControlName="email"
+            placeholder="Seu e-mail"
+            autocomplete="email"
+            [class.input--error]="form.controls.email.invalid && form.controls.email.touched"
+          />
+        </div>
+        <small class="field-error" *ngIf="form.controls.email.invalid && form.controls.email.touched">E-mail válido é obrigatório</small>
+
+        <div class="input-group">
+          <span class="input-group__icon">🔒</span>
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Sua senha"
+            autocomplete="current-password"
+            [class.input--error]="form.controls.password.invalid && form.controls.password.touched"
+          />
+          <button type="button" class="input-group__toggle" (click)="showPassword = !showPassword" tabindex="-1">
+            {{ showPassword ? '🙈' : '👁' }}
+          </button>
+        </div>
+        <small class="field-error" *ngIf="form.controls.password.invalid && form.controls.password.touched">Senha é obrigatória</small>
+
+        <div class="login-card__options">
+          <label class="remember-me">
+            <input type="checkbox" />
+            <span>Lembrar-me</span>
+          </label>
+          <a routerLink="/forgot-password" class="login-card__forgot">Esqueci minha senha?</a>
+        </div>
+
+        <button type="submit" class="login-btn" [disabled]="form.invalid || loading">
+          <span *ngIf="!loading">Entrar</span>
+          <span *ngIf="loading" class="login-btn__spinner"></span>
+          <span *ngIf="loading">Entrando...</span>
+        </button>
+
+        <div class="login-card__error" *ngIf="error">{{ error }}</div>
+      </form>
+
+      <div class="login-card__footer">
+        <a routerLink="/forgot-password" class="login-card__forgot">Esqueci minha senha?</a>
+      </div>
+    </div>
+  </div>
+</div>

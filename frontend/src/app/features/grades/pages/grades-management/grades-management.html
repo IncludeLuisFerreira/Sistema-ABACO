@@ -1,0 +1,48 @@
+<main class="grades-management">
+  <header class="grades-management__topbar">
+    <div>
+      <h1>Notas</h1>
+      <p>Lance as notas dos alunos por turma e prova.</p>
+    </div>
+    <button
+      type="button"
+      class="btn btn--primary"
+      (click)="onSave()"
+      [disabled]="saving || !selectedTurma || students.length === 0"
+    >
+      <span *ngIf="saving" class="spinner" aria-hidden="true"></span>
+      {{ saving ? 'Salvando...' : 'Salvar notas' }}
+    </button>
+  </header>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <section class="grades-management__controls">
+    <label>
+      <span>Turma *</span>
+      <select (change)="onTurmaChange($event)" [disabled]="loadingTurmas || saving">
+        <option [value]="0" selected>Selecione uma turma</option>
+        <option *ngFor="let turma of turmas" [value]="turma.idTurma">
+          #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }} — {{ turma.professor?.nome ?? 'Sem professor' }} {{ turma.dataInicio ? '(' + (turma.dataInicio | slice:0:10) + ')' : '' }}
+        </option>
+      </select>
+    </label>
+  </section>
+
+  <app-grades-list
+    [students]="students"
+    [loading]="loadingNotas"
+    [turmaNome]="selectedTurma?.curso?.nomeCurso ?? ''"
+    [prova]="prova"
+    [saving]="saving"
+    [avaliacoes]="selectedTurma?.avaliacoes ?? null"
+    (notaChange)="onNotaChange($event)"
+    (provaChange)="onProvaChange($event)"
+  ></app-grades-list>
+
+  <app-grades-average-chart
+    *ngIf="selectedTurma"
+    [turmaId]="selectedTurma.idTurma"
+    [turmaNome]="selectedTurma.curso?.nomeCurso ?? ''"
+  ></app-grades-average-chart>
+</main>

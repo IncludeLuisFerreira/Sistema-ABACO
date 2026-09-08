@@ -1,0 +1,154 @@
+.turma-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  padding: 1.25rem;
+  transition: box-shadow 0.2s, transform 0.15s;
+  border-left: 4px solid transparent;
+}
+
+.turma-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.turma-card--andamento { border-left-color: #dc2626; }
+.turma-card--futura { border-left-color: #f59e0b; }
+.turma-card--encerrada { border-left-color: #94a3b8; }
+
+.turma-card__badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.75rem;
+}
+
+.turma-card__badge--andamento { background: #fef2f2; color: #dc2626; }
+.turma-card__badge--futura { background: #fffbeb; color: #b45309; }
+.turma-card__badge--encerrada { background: #f1f5f9; color: #475569; }
+
+.turma-card__curso {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.turma-card__professor,
+.turma-card__datas,
+.turma-card__dias {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.turma-card__label {
+  color: #64748b;
+}
+
+.turma-card__value {
+  color: #334155;
+  font-weight: 600;
+  text-align: right;
+}
+
+.turma-card__progresso,
+.turma-card__vagas {
+  margin-top: 0.5rem;
+}
+
+.turma-card__progresso-bar,
+.turma-card__vagas-bar {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.turma-card__progresso-fill {
+  height: 100%;
+  background: #0f766e;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.turma-card__vagas-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.turma-card__progresso-text,
+.turma-card__vagas-text {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.turma-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.turma-card__btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.turma-card__btn--alunos {
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.turma-card__btn--alunos:hover {
+  background: #e0f2fe;
+}
+
+.turma-card__btn--dup {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.turma-card__btn--dup:hover {
+  background: #dcfce7;
+}
+
+.turma-card__btn--edit {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.turma-card__btn--edit:hover {
+  background: #e2e8f0;
+}
+
+.turma-card__btn--delete {
+  background: transparent;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.turma-card__btn--delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.turma-card__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

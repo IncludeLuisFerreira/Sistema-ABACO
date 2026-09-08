@@ -1,0 +1,46 @@
+<div class="alunos-page">
+  <header class="alunos-header">
+    <h1>Alunos</h1>
+  </header>
+
+  <p *ngIf="loading" class="loading">Carregando seus alunos...</p>
+  <p *ngIf="error" class="error">{{ error }}</p>
+
+  <label class="filter-turma" *ngIf="!loading && turmas.length > 0">
+    <span>Filtrar por turma</span>
+    <select [(ngModel)]="filtroTurma" (ngModelChange)="onFiltroChange($event)">
+      <option [value]="0">Todas as turmas</option>
+      <option *ngFor="let t of turmas" [value]="t.idTurma">
+        #{{ t.idTurma }} {{ t.curso?.nomeCurso }}
+      </option>
+    </select>
+  </label>
+
+  <div *ngIf="!loading && !error && alunos.length === 0 && turmas.length === 0" class="empty-state">
+    <p class="empty-state__title">Você não possui turmas atribuídas</p>
+    <p class="empty-state__desc">Entre em contato com a diretoria para que uma turma seja vinculada ao seu perfil.</p>
+  </div>
+
+  <div *ngIf="!loading && !error && alunos.length === 0 && turmas.length > 0" class="empty-state">
+    <p class="empty-state__title">Nenhum aluno matriculado</p>
+    <p class="empty-state__desc">Suas turmas ainda não possuem alunos matriculados.</p>
+  </div>
+
+  <div class="alunos-grid" *ngIf="!loading && !error && alunos.length > 0">
+    <div class="aluno-card" *ngFor="let a of alunos">
+      <div class="aluno-card__avatar">{{ a.nome.charAt(0) }}</div>
+      <div class="aluno-card__body">
+        <h2 class="aluno-card__name">{{ a.nome }}</h2>
+        <div class="aluno-card__info">
+          <span class="aluno-card__label">Telefone</span>
+          <span class="aluno-card__value">{{ a.telefone }}</span>
+        </div>
+        <div class="aluno-card__info">
+          <span class="aluno-card__label">Turma</span>
+          <span class="aluno-card__value">{{ a.turma }}</span>
+        </div>
+        <span class="aluno-card__status" [class.aluno-card__status--ativa]="a.status === 'Ativa'" [class.aluno-card__status--concluida]="a.status === 'Concluída'">{{ a.status }}</span>
+      </div>
+    </div>
+  </div>
+</div>

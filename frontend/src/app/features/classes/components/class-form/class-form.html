@@ -1,0 +1,88 @@
+<section class="form-card" aria-label="Formulario de turma">
+  <header>
+    <h2>{{ mode === 'create' ? 'Nova turma' : 'Editar turma' }}</h2>
+    <p>{{ mode === 'create' ? 'Cadastre uma nova turma no sistema.' : 'Atualize os dados da turma.' }}</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Curso *</span>
+      <select formControlName="idCurso" (change)="onCursoChange()">
+        <option [value]="0" disabled>Selecione um curso</option>
+        <option *ngFor="let curso of cursos" [value]="curso.idCurso">{{ curso.nomeCurso }}</option>
+      </select>
+      <small class="error" *ngIf="form.controls.idCurso.invalid && form.controls.idCurso.touched">Curso é obrigatório.</small>
+      <small class="hint" *ngIf="cursoContextLabel">{{ cursoContextLabel }}</small>
+    </label>
+
+    <label>
+      <span>Professor</span>
+      <select formControlName="idProfessor" (change)="onProfessorChange()">
+        <option [value]="0">Selecione um professor</option>
+        <option *ngFor="let prof of professores" [value]="prof.idUsuario">{{ prof.nome }}</option>
+      </select>
+      <small class="hint" *ngIf="professorContextLabel">{{ professorContextLabel }}</small>
+    </label>
+
+    <label>
+      <span>Capacidade</span>
+      <input formControlName="capacidade" type="number" min="0" placeholder="Numero de vagas" />
+    </label>
+
+    <label>
+      <span>Data de inicio</span>
+      <input formControlName="dataInicio" type="date" />
+    </label>
+
+    <label>
+      <span>Data de fim</span>
+      <input formControlName="dataFim" type="date" />
+    </label>
+
+    <fieldset class="avaliacoes">
+      <legend>Avaliações</legend>
+      <p class="avaliacoes__hint">Configure as provas e trabalhos desta turma. Deixe vazio para usar o padrão (4 provas).</p>
+
+      <div class="avaliacoes__header" *ngIf="avaliacoesArray.length > 0">
+        <span>Nome</span>
+        <span>Tipo</span>
+        <span>Peso</span>
+        <span></span>
+      </div>
+
+      <div class="avaliacao-row" *ngFor="let av of avaliacoesArray.controls; let i = index" [formGroup]="av">
+        <input type="text" formControlName="nome" placeholder="Ex: Prova 1" />
+        <select formControlName="tipo">
+          <option value="prova">Prova</option>
+          <option value="trabalho">Trabalho</option>
+        </select>
+        <input type="number" formControlName="peso" min="1" max="100" placeholder="10" />
+        <button type="button" class="avaliacao-row__remove" (click)="removeAvaliacao(i)" title="Remover">✕</button>
+      </div>
+
+      <button type="button" class="avaliacoes__add" (click)="addAvaliacao()">+ Adicionar avaliação</button>
+    </fieldset>
+
+    <fieldset class="dias-aula">
+      <legend>Dias de aula</legend>
+      <div class="dias-aula__grid">
+        <label *ngFor="let dia of diasSemana; let i = index" class="dia-checkbox">
+          <input type="checkbox" [formControl]="diasAulaControls[i]" (change)="updateContexto()" />
+          <span>{{ dia.label }}</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="conflito-alert" *ngIf="conflitoLabel">
+      ⚠️ {{ conflitoLabel }}
+    </div>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</section>

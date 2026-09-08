@@ -1,0 +1,49 @@
+.presencas-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
+.presencas-header { margin-bottom: 1.5rem; }
+.presencas-header h1 { margin: 0; font-size: 1.5rem; }
+
+.filters { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.filters label { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 600; color: #475569; font-size: 0.9rem; }
+.filters select, .filters input { padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; max-width: 100%; box-sizing: border-box; }
+
+.loading { color: #64748b; }
+.error { color: #d93025; margin-bottom: 0.75rem; }
+.empty { color: #64748b; font-style: italic; }
+
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.presencas-table { width: 100%; min-width: 400px; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); margin-top: 0.75rem; }
+.presencas-table th, .presencas-table td { padding: 0.6rem 1rem; text-align: left; }
+.presencas-table thead { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+.presencas-table th { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
+.presencas-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+
+.presente-btn--on, .presente-btn--off { border: none; border-radius: 6px; padding: 0.35rem 0.9rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+.presente-btn--on { background: #16a34a; color: #fff; }
+.presente-btn--off { background: #e2e8f0; color: #475569; }
+
+.save-btn { margin-top: 1rem; padding: 0.6rem 1.5rem; background: #0f766e; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.save-btn:hover { background: #0d6b63; }
+.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+  .presencas-page { padding: 1rem; }
+  .presencas-header h1 { font-size: 1.25rem; }
+  .filters {
+    flex-direction: column;
+    gap: 0.75rem;
+    background: #fff;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .filters label { width: 100%; max-width: 100%; font-size: 0.82rem; box-sizing: border-box; }
+  .filters select, .filters input {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .presencas-table th, .presencas-table td { padding: 0.5rem 0.6rem; font-size: 0.8rem; }
+}

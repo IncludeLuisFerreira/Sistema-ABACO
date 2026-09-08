@@ -1,0 +1,90 @@
+﻿:host {
+  display: block;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #e0f2fe, #f8fafc 55%);
+}
+
+.enrollments-management {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.enrollments-management__topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+.enrollments-management__topbar h1 { margin: 0; font-size: 1.8rem; }
+.enrollments-management__topbar p { margin: 0.4rem 0 0; color: #475569; }
+
+.new-enrollment-btn {
+  border: 0;
+  border-radius: 10px;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 700;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+.new-enrollment-btn[disabled] { opacity: 0.7; cursor: not-allowed; }
+
+.enrollments-management__search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+  max-width: 420px;
+}
+.enrollments-management__search span { font-weight: 600; color: #475569; font-size: 0.82rem; }
+.enrollments-management__search input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.local-feedback {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.loading { color: #64748b; padding: 2rem 0; }
+.empty { color: #64748b; font-style: italic; padding: 2rem 0; }
+
+.enrollments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-card {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .enrollments-management { padding: 1rem; }
+  .enrollments-management__topbar { flex-direction: column; }
+  .enrollments-management__topbar h1 { font-size: 1.3rem; }
+  .enrollments-management__topbar p { font-size: 0.85rem; }
+  .enrollments-grid { grid-template-columns: 1fr; }
+}

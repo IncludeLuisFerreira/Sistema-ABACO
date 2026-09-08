@@ -1,0 +1,64 @@
+<section class="courses-table-card">
+  <header class="courses-table-card__header">
+    <div>
+      <h1>Lista de Cursos</h1>
+      <p>Gerencie os cursos cadastrados no SGA.</p>
+    </div>
+    <label class="courses-table-card__search">
+      <span>Pesquisar</span>
+      <input
+        type="search"
+        placeholder="Buscar por nome"
+        (input)="onSearch($event)"
+        [disabled]="loading"
+      />
+    </label>
+  </header>
+
+  <div class="table-wrap" *ngIf="cursos.length > 0; else emptyState">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome do Curso</th>
+          <th class="actions-col">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let curso of cursos">
+          <td>{{ curso.nomeCurso }}</td>
+          <td class="actions-col">
+            <button type="button" class="btn btn--ghost" (click)="edit.emit(curso)" [disabled]="loading">Editar</button>
+            <button
+              type="button"
+              class="btn btn--danger"
+              (click)="remove.emit(curso)"
+              [disabled]="loading || deletingCursoId === curso.idCurso"
+            >
+              <span *ngIf="deletingCursoId === curso.idCurso" class="spinner" aria-hidden="true"></span>
+              {{ deletingCursoId === curso.idCurso ? 'Excluindo...' : 'Excluir' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <p class="empty">Nenhum curso encontrado para o filtro aplicado.</p>
+  </ng-template>
+
+  <footer class="pagination">
+    <button type="button" class="btn btn--ghost" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
+      Anterior
+    </button>
+    <span>Pagina {{ currentPage }} de {{ totalPages }}</span>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages || loading"
+    >
+      Proxima
+    </button>
+  </footer>
+</section>

@@ -1,0 +1,63 @@
+<div class="dashboard">
+  <header class="dashboard__header">
+    <h1>Painel do Professor</h1>
+    <p>Bem-vindo ao sistema de gestão ABACO.</p>
+  </header>
+
+  <p *ngIf="loading" class="loading">Carregando seus dados...</p>
+
+  <!-- KPIs com dados reais -->
+  <div class="kpi-grid" *ngIf="!loading">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--green">📚</div>
+      <div class="kpi-card__info">
+        <span class="kpi-card__value">{{ totalTurmas }}</span>
+        <span class="kpi-card__label">{{ totalTurmas === 1 ? 'Turma' : 'Turmas' }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--blue">👤</div>
+      <div class="kpi-card__info">
+        <span class="kpi-card__value">{{ totalAlunos }}</span>
+        <span class="kpi-card__label">{{ totalAlunos === 1 ? 'Aluno' : 'Alunos' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Se não tem turma -->
+  <div class="empty-state" *ngIf="!loading && totalTurmas === 0">
+    <p class="empty-state__title">Você ainda não possui turmas atribuídas</p>
+    <p class="empty-state__desc">Entre em contato com a diretoria para que uma turma seja vinculada ao seu perfil.</p>
+  </div>
+
+  <!-- Atalhos -->
+  <ng-container *ngIf="!loading && totalTurmas > 0">
+    <section class="dashboard__section">
+      <h2 class="dashboard__section-title">Minhas Turmas</h2>
+      <div class="dashboard__cards">
+        <a class="card" routerLink="/academico/turmas">
+          <h2>Turmas</h2>
+          <p>Visualizar e gerenciar suas turmas</p>
+        </a>
+        <a class="card" routerLink="/academico/alunos">
+          <h2>Alunos</h2>
+          <p>Visualizar alunos matriculados nas suas turmas</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="dashboard__section">
+      <h2 class="dashboard__section-title">Atividades</h2>
+      <div class="dashboard__cards">
+        <a class="card" routerLink="/academico/presencas">
+          <h2>Presenças</h2>
+          <p>Registrar e consultar presenças dos alunos</p>
+        </a>
+        <a class="card" routerLink="/academico/notas">
+          <h2>Notas</h2>
+          <p>Lançar e visualizar notas por turma e prova</p>
+        </a>
+      </div>
+    </section>
+  </ng-container>
+</div>

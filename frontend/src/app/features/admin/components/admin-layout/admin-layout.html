@@ -1,0 +1,113 @@
+﻿<div class="admin-shell">
+  <!-- Top bar (mobile) -->
+  <div class="mobile-topbar">
+    <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
+    <span class="mobile-topbar__title">SGA ABACO</span>
+    <button class="hamburger" (click)="menuOpen = !menuOpen" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <!-- Overlay (mobile) -->
+  <div class="menu-overlay" [class.menu-overlay--open]="menuOpen" (click)="menuOpen = false"></div>
+
+  <!-- Sidebar -->
+  <nav class="admin-nav" [class.admin-nav--open]="menuOpen">
+    <button class="admin-nav__close" (click)="menuOpen = false" aria-label="Fechar menu">&times;</button>
+    <div class="admin-nav__brand">
+      <img src="/Logo_ABACO.png" alt="ABACO" class="admin-nav__logo" />
+      <span class="admin-nav__title">SGA ABACO</span>
+    </div>
+
+    <ul class="admin-nav__links">
+      <li>
+        <a routerLink="/admin/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="menuOpen = false">
+          Inicio
+        </a>
+      </li>
+    </ul>
+
+    <div class="admin-nav__section-label">Academico</div>
+    <ul class="admin-nav__links">
+      <li>
+        <a routerLink="/admin/alunos" routerLinkActive="active" (click)="menuOpen = false">
+          Alunos
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/cursos" routerLinkActive="active" (click)="menuOpen = false">
+          Cursos
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/turmas" routerLinkActive="active" (click)="menuOpen = false">
+          Turmas
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/matriculas" routerLinkActive="active" (click)="menuOpen = false">
+          Matriculas
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/presencas" routerLinkActive="active" (click)="menuOpen = false">
+          Presencas
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/notas" routerLinkActive="active" (click)="menuOpen = false">
+          Notas
+        </a>
+      </li>
+    </ul>
+
+    <div class="admin-nav__section-label">Logistico</div>
+    <ul class="admin-nav__links">
+      <li>
+        <a routerLink="/admin/logistico" routerLinkActive="active" (click)="menuOpen = false">
+          Visão Geral
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/logistico/estoque" routerLinkActive="active" (click)="menuOpen = false">
+          Estoque
+        </a>
+      </li>
+      <li>
+        <a routerLink="/admin/logistico/pedidos" routerLinkActive="active" (click)="menuOpen = false">
+          Pedidos
+        </a>
+      </li>
+    </ul>
+
+    <div class="admin-nav__section-label" *ngIf="auth.authState().role === 'DIRECTOR'">Administracao</div>
+    <ul class="admin-nav__links" *ngIf="auth.authState().role === 'DIRECTOR'">
+      <li>
+        <a routerLink="/admin/usuarios" routerLinkActive="active" (click)="menuOpen = false">
+          Usuarios
+        </a>
+      </li>
+    </ul>
+
+    <div class="admin-nav__user">
+      <button
+        type="button"
+        class="admin-nav__notification"
+        routerLink="/admin/logistico/estoque"
+        title="Alertas de estoque"
+      >
+        <span class="bell-icon">&#128276;</span>
+        <span class="notification-badge" *ngIf="estoqueService.alertasCount() > 0">
+          {{ estoqueService.alertasCount() }}
+        </span>
+      </button>
+      <button type="button" class="admin-nav__logout" (click)="logout()">
+        Sair
+      </button>
+    </div>
+  </nav>
+
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

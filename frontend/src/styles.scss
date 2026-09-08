@@ -1,0 +1,28 @@
+:root {
+	--color-primary: #f2a93b;
+	--color-secondary: #595959;
+	--color-tertiary: #a6a6a6;
+	--color-surface: #ffffff;
+	--color-background: #f9f9f9;
+	--color-danger: #d93025;
+	--font-family-base: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--abaco-primary: var(--color-primary);
+	--abaco-secondary: var(--color-secondary);
+	--abaco-tertiary: var(--color-tertiary);
+	--abaco-surface: var(--color-surface);
+	--abaco-bg: var(--color-background);
+	--abaco-danger: var(--color-danger);
+}
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+	background: var(--color-background);
+	color: var(--color-secondary);
+	font-family: var(--font-family-base);
+}
+
+* {
+	box-sizing: border-box;
+}

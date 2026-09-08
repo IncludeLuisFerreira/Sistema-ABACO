@@ -1,0 +1,18 @@
+<div class="turma-grupo" *ngIf="grupo.turmas.length > 0">
+  <button type="button" class="turma-grupo__header" (click)="toggle.emit(grupo.cursoNome)" [attr.aria-expanded]="grupo.expandido">
+    <span class="turma-grupo__icon">{{ grupo.expandido ? '▼' : '▶' }}</span>
+    <h2 class="turma-grupo__titulo">{{ grupo.cursoNome }}</h2>
+    <span class="turma-grupo__count">{{ grupo.turmas.length }} {{ grupo.turmas.length === 1 ? 'turma' : 'turmas' }}</span>
+  </button>
+
+  <div class="turma-grupo__cards" [class.turma-grupo__cards--expanded]="grupo.expandido">
+    <app-turma-card
+      *ngFor="let turma of grupo.turmas"
+      [turma]="turma"
+      [deleting]="deletingTurmaId === turma.idTurma"
+      (edit)="edit.emit($event)"
+      (remove)="remove.emit($event)"
+      (duplicate)="duplicate.emit($event)"
+    ></app-turma-card>
+  </div>
+</div>

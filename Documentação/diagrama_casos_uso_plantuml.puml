@@ -1,0 +1,222 @@
+@startuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam usecaseFontSize 12
+skinparam actorFontSize 12
+left to right direction
+skinparam packageStyle rectangle
+
+' ============================================================
+' ATORES
+' ============================================================
+
+actor ": Diretor(a)" as Diretor <<cargo=1>>
+actor ": Professor(a)" as Professor <<cargo=2>>
+actor ": Admin" as Admin <<cargo=3>>
+actor ": Visitante" as Visitante <<nao autenticado>>
+
+' ============================================================
+' MODULO DE AUTENTICACAO
+' ============================================================
+
+package "Autenticacao" {
+  usecase (UC01\nRealizar Login) as UC01
+  usecase (UC02\nRecuperar Senha) as UC02
+  usecase (UC03\nRedefinir Senha) as UC03
+}
+
+UC02 ..> UC03 : <<include>>
+Visitante --> UC01
+Visitante --> UC02
+Visitante --> UC03
+
+' ============================================================
+' MODULO ACADEMICO
+' ============================================================
+
+package "Modulo Academico" {
+  usecase (UC04\nCadastrar Aluno) as UC04
+  usecase (UC05\nEditar Aluno) as UC05
+  usecase (UC06\nExcluir Aluno) as UC06
+  usecase (UC07\nVisualizar Aluno) as UC07
+  usecase (UC08\nCadastrar Curso) as UC08
+  usecase (UC09\nEditar Curso) as UC09
+  usecase (UC10\nExcluir Curso) as UC10
+  usecase (UC11\nVisualizar Curso) as UC11
+  usecase (UC12\nCriar Turma) as UC12
+  usecase (UC13\nEditar Turma) as UC13
+  usecase (UC14\nExcluir Turma) as UC14
+  usecase (UC15\nVisualizar Turma) as UC15
+  usecase (UC16\nListar Minhas Turmas) as UC16
+  usecase (UC17\nRealizar Matricula) as UC17
+  usecase (UC18\nEditar Matricula) as UC18
+  usecase (UC19\nExcluir Matricula) as UC19
+  usecase (UC20\nVisualizar Matricula) as UC20
+  usecase (UC21\nListar Minhas Matriculas) as UC21
+  usecase (UC22\nLancar Notas em Lote) as UC22
+  usecase (UC23\nVisualizar Notas) as UC23
+  usecase (UC24\nCalcular Media por Prova) as UC24
+  usecase (UC25\nRegistrar Presencas) as UC25
+  usecase (UC26\nVisualizar Presencas) as UC26
+  usecase (UC27\nGerar Historico Escolar) as UC27
+  usecase (UC28\nExportar Historico PDF) as UC28
+}
+
+UC27 ..> UC23 : <<include>>
+UC27 ..> UC26 : <<include>>
+UC27 ..> UC28 : <<extend>>
+
+' Conexoes Aluno
+Diretor --> UC04
+Admin --> UC04
+Diretor --> UC05
+Admin --> UC05
+Diretor --> UC06
+Admin --> UC06
+Diretor --> UC07
+Admin --> UC07
+Professor --> UC07
+
+' Conexoes Curso
+Diretor --> UC08
+Admin --> UC08
+Diretor --> UC09
+Admin --> UC09
+Diretor --> UC10
+Admin --> UC10
+Diretor --> UC11
+Admin --> UC11
+Professor --> UC11
+
+' Conexoes Turma
+Diretor --> UC12
+Admin --> UC12
+Diretor --> UC13
+Admin --> UC13
+Diretor --> UC14
+Admin --> UC14
+Diretor --> UC15
+Admin --> UC15
+Professor --> UC15
+Professor --> UC16
+
+' Conexoes Matricula
+Diretor --> UC17
+Admin --> UC17
+Diretor --> UC18
+Admin --> UC18
+Diretor --> UC19
+Admin --> UC19
+Diretor --> UC20
+Admin --> UC20
+Professor --> UC20
+Professor --> UC21
+
+' Conexoes Nota
+Diretor --> UC22
+Admin --> UC22
+Professor --> UC22
+Diretor --> UC23
+Admin --> UC23
+Professor --> UC23
+Diretor --> UC24
+Admin --> UC24
+Professor --> UC24
+
+' Conexoes Presenca
+Diretor --> UC25
+Admin --> UC25
+Professor --> UC25
+Diretor --> UC26
+Admin --> UC26
+Professor --> UC26
+
+' Conexoes Historico
+Diretor --> UC27
+Admin --> UC27
+Diretor --> UC28
+Admin --> UC28
+
+' ============================================================
+' MODULO LOGISTICO
+' ============================================================
+
+package "Modulo Logistico" {
+  usecase (UC29\nCadastrar Item Estoque) as UC29
+  usecase (UC30\nEditar Item Estoque) as UC30
+  usecase (UC31\nExcluir Item Estoque) as UC31
+  usecase (UC32\nListar Estoque) as UC32
+  usecase (UC33\nPesquisar Item Estoque) as UC33
+  usecase (UC34\nDar Baixa no Estoque) as UC34
+  usecase (UC35\nVisualizar Alertas Estoque) as UC35
+  usecase (UC36\nCriar Pedido Materiais) as UC36
+  usecase (UC37\nListar Pedidos) as UC37
+  usecase (UC38\nAprovar Pedido) as UC38
+  usecase (UC39\nComprar Pedido) as UC39
+  usecase (UC40\nEntregar Pedido) as UC40
+  usecase (UC41\nExcluir Pedido) as UC41
+}
+
+' Conexoes Estoque
+Diretor --> UC29
+Admin --> UC29
+Diretor --> UC30
+Admin --> UC30
+Diretor --> UC31
+Admin --> UC31
+Diretor --> UC32
+Admin --> UC32
+Professor --> UC32
+Diretor --> UC33
+Admin --> UC33
+Professor --> UC33
+Diretor --> UC34
+Admin --> UC34
+Diretor --> UC35
+Admin --> UC35
+Professor --> UC35
+
+' Conexoes Pedido
+Diretor --> UC36
+Admin --> UC36
+Professor --> UC36
+Diretor --> UC37
+Admin --> UC37
+Professor --> UC37
+Diretor --> UC38
+Diretor --> UC39
+Diretor --> UC40
+Diretor --> UC41
+Admin --> UC41
+
+' ============================================================
+' MODULO ADMINISTRATIVO
+' ============================================================
+
+package "Modulo Administrativo" {
+  usecase (UC42\nCadastrar Usuario) as UC42
+  usecase (UC43\nEditar Usuario) as UC43
+  usecase (UC44\nExcluir Usuario) as UC44
+  usecase (UC45\nListar Usuarios) as UC45
+  usecase (UC46\nVisualizar KPIs) as UC46
+  usecase (UC47\nVisualizar Graficos\nAcademicos) as UC47
+  usecase (UC48\nVisualizar Graficos\nLogisticos) as UC48
+}
+
+Diretor --> UC42
+Diretor --> UC43
+Diretor --> UC44
+Diretor --> UC45
+Diretor --> UC46
+Diretor --> UC47
+Diretor --> UC48
+
+' ============================================================
+' LEGENDA
+' ============================================================
+
+note bottom of Diretor : Acesso total ao sistema
+note bottom of Professor : Acesso restrito as suas turmas
+note bottom of Admin : Acesso operacional (sem dashboard/usuarios)
+
+@enduml

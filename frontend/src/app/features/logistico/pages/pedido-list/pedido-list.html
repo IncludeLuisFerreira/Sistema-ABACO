@@ -1,0 +1,38 @@
+<main class="pedido-list">
+  <header class="pedido-list__topbar">
+    <div>
+      <h1>Pedidos</h1>
+      <p>Visualize e gerencie as solicitacoes de materiais.</p>
+    </div>
+    <button type="button" class="new-pedido-btn" (click)="newPedido()" [disabled]="loadingList">Novo pedido</button>
+  </header>
+
+  <nav class="tabs">
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="activeTab === 'todos'"
+      (click)="setTab('todos')"
+    >
+      Todos os Pedidos
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="activeTab === 'lista-compras'"
+      (click)="setTab('lista-compras')"
+    >
+      Lista de Compras ({{ approvedPedidos.length }})
+    </button>
+  </nav>
+
+  <app-pedido-table
+    [pedidos]="filteredPedidos"
+    [loading]="loadingList"
+    [currentUserCargo]="currentUserCargo"
+    (approve)="onApprove($event)"
+    (confirmPurchase)="onConfirmPurchase($event)"
+    (deliver)="onDeliver($event)"
+    (remove)="onDelete($event)"
+  ></app-pedido-table>
+</main>

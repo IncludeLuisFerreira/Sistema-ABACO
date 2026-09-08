@@ -1,0 +1,47 @@
+﻿<main class="enrollments-management">
+  <header class="enrollments-management__topbar">
+    <div>
+      <h1>Matrículas</h1>
+      <p>Painel administrativo para cadastro e gestão de matrículas.</p>
+    </div>
+    <button type="button" class="new-enrollment-btn" (click)="openCreate()" [disabled]="saving || loadingList">Nova matrícula</button>
+  </header>
+
+  <label class="enrollments-management__search">
+    <span>Pesquisar</span>
+    <input type="search" placeholder="Buscar por aluno ou turma" (input)="onSearchInput($event)" [disabled]="loadingList" />
+  </label>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <p *ngIf="loadingList" class="loading">Carregando matrículas...</p>
+
+  <div *ngIf="!loadingList && filteredMatriculas.length === 0" class="empty">Nenhuma matrícula encontrada.</div>
+
+  <div class="enrollments-grid" *ngIf="!loadingList && filteredMatriculas.length > 0">
+    <app-enrollment-card
+      *ngFor="let m of filteredMatriculas"
+      [matricula]="m"
+      [deleting]="deletingMatriculaId === m.idMatricula"
+      (edit)="openEdit($event)"
+      (remove)="onDelete($event)"
+      (viewGrades)="onViewGrades($event)"
+      (viewTranscript)="onViewTranscript($event)"
+    ></app-enrollment-card>
+  </div>
+
+  <!-- Modal overlay para o formulário -->
+  <div class="modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <app-enrollment-form
+        [mode]="formMode"
+        [matricula]="selectedMatricula"
+        [alunos]="alunos"
+        [turmas]="turmas"
+        [loading]="saving"
+        (save)="onSave($event)"
+        (cancel)="closePanel()"
+      ></app-enrollment-form>
+    </div>
+  </div>
+</main>
