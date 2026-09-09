@@ -644,7 +644,7 @@ O rebuild completo garante que o banco é recriado, as migrações Alembic são 
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/LucaS4nt0s/ABACO_Sistema.git
+git clone https://github.com/IncludeLuisFerreira/Sistema-ABACO.git
 cd ABACO_Sistema
 
 # 2. Configure as variáveis de ambiente

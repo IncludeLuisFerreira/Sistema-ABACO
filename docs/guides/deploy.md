@@ -11,7 +11,7 @@
 ## 1. Deploy rápido (desenvolvimento)
 
 ```bash
-git clone https://github.com/LucaS4nt0s/ABACO_Sistema.git
+git clone https://github.com/IncludeLuisFerreira/Sistema-ABACO.git
 cd ABACO_Sistema
 cp .env.example .env
 docker compose up --build
