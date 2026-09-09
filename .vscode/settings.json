@@ -1,4 +1,12 @@
 {
   "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/Scripts/python.exe",
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "todo-tree.general.tags": ["TODO", "FIXME", "HACK", "REFACTOR"],
+  "todo-tree.highlights.customHighlight": {
+    "TODO": { "foreground": "#fff", "background": "#3498db", "iconColour": "#3498db" },
+    "FIXME": { "foreground": "#fff", "background": "#e74c3c", "iconColour": "#e74c3c" },
+    "HACK": { "foreground": "#fff", "background": "#e67e22", "iconColour": "#e67e22" },
+    "REFACTOR": { "foreground": "#fff", "background": "#9b59b6", "iconColour": "#9b59b6" }
+  },
+  "todo-tree.general.showActivityBarBadge": true
 }
