@@ -9,6 +9,7 @@ AUTH_ERROR_HEADERS = {"WWW-Authenticate": "Bearer"}
 
 def _extract_token(authorization: str | None) -> str:
 	if not authorization:
+		# FIXME: 401 sem header WWW-Authenticate (inconsistente com o restante)
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
 			detail="Token de acesso não fornecido. Faça login para continuar.",
@@ -43,6 +44,7 @@ def decode_access_token(token: str) -> dict:
 
 
 def get_current_user(authorization: str | None = Header(default=None)) -> dict:
+	# TODO: confia só no token; não consulta o banco (usuário excluído segue autenticado)
 	return decode_access_token(_extract_token(authorization))
 
 def verify_cargo(*allowed_cargos: int):

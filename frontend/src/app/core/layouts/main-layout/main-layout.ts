@@ -11,6 +11,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './main-layout.html',
   styleUrls: ['./main-layout.scss'],
 })
+// REFACTOR: MainLayoutComponent não é usado por nenhuma rota
 export class MainLayoutComponent {
   readonly auth = inject(AuthService);
   private router = inject(Router);

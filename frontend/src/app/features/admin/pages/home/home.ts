@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+// REFACTOR: EMPTY e catchError importados sem uso
 import { Subject, EMPTY, catchError, forkJoin, takeUntil, timeout } from 'rxjs';
 import { ChartComponent } from 'ng-apexcharts';
 import type {
@@ -61,6 +62,7 @@ export class AdminHome implements OnInit, OnDestroy {
     this.loading = true;
     this.dashboardError = false;
 
+    // REFACTOR: requests/results tipados como any[] anulam a checagem de tipos
     const requests: any[] = [
       this.dashboardService.getKpis().pipe(takeUntil(this.destroy$), timeout(15000)),
     ];

@@ -61,6 +61,7 @@ export class GradesAverageChartComponent implements OnChanges {
 
   constructor(private readonly notaService: NotaService) {}
 
+  // FIXME: ngOnChanges dispara HTTP sem cancelar a requisição anterior (race)
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['turmaId'] && this.turmaId) {
       this.loadMedia();

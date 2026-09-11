@@ -47,6 +47,7 @@ def create_estoque(db: Session, payload: EstoqueCreateSchema) -> Estoque:
         estoque_minimo=payload.estoqueMinimo,
     )
     db.add(estoque)
+    # FIXME: corrida entre checagem de duplicidade e commit pode estourar 500
     db.commit()
     db.refresh(estoque)
     return estoque
@@ -145,6 +146,7 @@ def get_alertas(db: Session) -> list[Estoque]:
 
 
 def deduzir_por_pedido(db: Session, pedido: Pedido) -> None:
+    # HACK: with_for_update não funciona em SQLite e o rollback fica a cargo do caller
     from app.models.item_pedido import ItemPedido
 
     itens: list[ItemPedido] = pedido.itens or []

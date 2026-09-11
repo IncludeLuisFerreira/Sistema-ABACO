@@ -46,6 +46,7 @@ export class DialogService {
   }
 
   private cleanup(ref: ComponentRef<ConfirmDialog>): void {
+    // HACK: setTimeout(150) para aguardar animação; cleanup frágil
     setTimeout(() => {
       this.appRef.detachView(ref.hostView);
       ref.destroy();

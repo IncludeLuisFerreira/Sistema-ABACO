@@ -13,6 +13,7 @@ from app.models.usuario import Usuario
 
 @pytest.fixture
 def db_session():
+    # TODO: testes só em SQLite; JSONB e with_for_update não são cobertos
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

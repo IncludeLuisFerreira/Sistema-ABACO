@@ -31,6 +31,7 @@ export class TurmasPage implements OnInit {
     });
   }
 
+  // REFACTOR: getStatus/getProgresso reimplementam helpers de turma-card
   getStatus(turma: Turma): string {
     if (!turma.dataInicio) return 'em_andamento';
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);

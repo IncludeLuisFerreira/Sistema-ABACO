@@ -11,6 +11,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      // FIXME: 401 do próprio login dispara logout+redirect global, mascarando o erro
       if (error.status === 401) {
         auth.logoutAndRedirect();
         return throwError(() => error);

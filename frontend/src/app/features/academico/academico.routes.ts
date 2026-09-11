@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
+// REFACTOR: AcademicoLayoutComponent importado eagerly (os filhos são lazy)
 import { AcademicoLayoutComponent } from './components/academico-layout/academico-layout';
 
 export const ACADEMICO_ROUTES: Routes = [

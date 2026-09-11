@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 class NotaItemSchema(BaseModel):
     idMatricula: int
+    # FIXME: nota sem validação de faixa (0–10); prova sem >= 1
     nota: float | None = None
 
 

@@ -7,6 +7,7 @@ import { BaixaPayload, Estoque, EstoqueAlerta, EstoqueCreatePayload, EstoqueUpda
 @Injectable({ providedIn: 'root' })
 export class EstoqueService {
   private readonly baseUrl = '/api/v1/estoque';
+  // REFACTOR: mesmo estado mantido em BehaviorSubject e signal (duas fontes)
   private readonly estoqueSubject = new BehaviorSubject<Estoque[]>([]);
 
   readonly estoque$ = this.estoqueSubject.asObservable();
@@ -15,6 +16,7 @@ export class EstoqueService {
   constructor(private readonly http: HttpClient) {}
 
   loadAll(): void {
+    // FIXME: subscribe interno sem error handler engole falhas de rede
     this.http.get<Estoque[]>(this.baseUrl).subscribe({
       next: (items) => this.estoqueSubject.next(items),
     });

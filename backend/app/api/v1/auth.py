@@ -28,6 +28,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
+# HACK: rate limit hardcoded ignora settings.rate_limit_auth
 @limiter.limit("5/minute")
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     try:
@@ -40,6 +41,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
         )
 
     response = build_login_response(usuario)
+    # REFACTOR: build_login_response já retorna dict pronto; rewrap no router acopla
     response["usuario"] = UsuarioResponse(**response["usuario"])
     return response
 
@@ -66,6 +68,7 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 @router.post("/reset-password", response_model=MessageResponse)
 @limiter.limit("5/minute")
 def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    # REFACTOR: checagem de senhas duplicada (schema + service + router)
     if payload.nova_senha != payload.confirmar_senha:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

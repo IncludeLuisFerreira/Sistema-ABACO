@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthService, decodePayload, getStoredToken } from '../../../../core/services/auth.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+// REFACTOR: getPedidoStatusLabel/getPedidoStatusClass importados sem uso
 import { Pedido, PedidoCompraPayload, getPedidoStatusLabel, getPedidoStatusClass } from '../../../../core/models/pedido.model';
 import { PedidoService } from '../../../../core/services/pedido.service';
 import { PedidoTableComponent } from '../../components/pedido-table/pedido-table';
@@ -33,6 +34,7 @@ export class PedidoListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // REFACTOR: decodifica JWT manualmente; usar AuthService.getRoleFromToken()
     const token = getStoredToken();
     if (token) {
       const payload = decodePayload(token);

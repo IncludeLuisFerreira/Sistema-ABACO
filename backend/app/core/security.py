@@ -9,6 +9,7 @@ from app.core.config import get_settings
 def verify_password(plain_password: str, password_hash: str) -> bool:
     try:
         return bcrypt.checkpw(plain_password.encode("utf-8"), password_hash.encode("utf-8"))
+    # FIXME: except genérico mascara hash bcrypt corrompido como "senha incorreta"
     except Exception:
         return False
 
@@ -20,6 +21,7 @@ def hash_password(password: str) -> str:
 def create_access_token(*, subject: str, cargo: int, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
+    # TODO: JWT sem jti/iat; não há revogação de token nem logout real
     payload = {"sub": subject, "cargo": cargo, "exp": expire}
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 

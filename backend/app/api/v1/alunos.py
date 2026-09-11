@@ -18,6 +18,8 @@ router = APIRouter(prefix="/api/v1/alunos", tags=["alunos"])
 
 
 @router.get("")
+# TODO: listagem sem paginação retorna a tabela inteira
+# REFACTOR: endpoints sem type hint de retorno
 def read_alunos(_current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     return [AlunoResponseSchema.model_validate(aluno) for aluno in list_alunos(db)]
 

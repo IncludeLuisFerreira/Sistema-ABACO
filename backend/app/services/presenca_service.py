@@ -22,9 +22,11 @@ def create_or_update_presencas(db: Session, payload: PresencaBatchSchema) -> lis
     criadas: list[Presenca] = []
 
     for item in payload.presencas:
+        # FIXME: matrícula inválida é ignorada em silêncio (nota_service lança erro)
         if item.idMatricula not in matriculas_por_id:
             continue
 
+        # REFACTOR: N+1 — consulta Presenca por item do batch
         presenca = db.query(Presenca).filter(
             Presenca.id_matricula == item.idMatricula,
             Presenca.data_aula == payload.dataAula,

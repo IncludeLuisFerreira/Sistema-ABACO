@@ -114,6 +114,7 @@ def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> 
 
     qtd_map = {item.idItemPedido: item.quantidade for item in payload.itens}
 
+    # FIXME: itens desconhecidos e quantidades negativas são ignorados sem erro
     for item_pedido in pedido.itens:
         if item_pedido.id_item_pedido in qtd_map:
             item_pedido.quantidade = qtd_map[item_pedido.id_item_pedido]
@@ -177,6 +178,7 @@ def entregar_pedido(db: Session, pedido_id: int) -> Pedido:
         if not item_pedido.quantidade or not item_pedido.nome_item:
             continue
 
+        # FIXME: casa estoque por nome_item (string) em vez de id_item_estoque
         estoque_item = db.query(Estoque).filter(
             Estoque.nome_item == item_pedido.nome_item
         ).first()

@@ -11,6 +11,7 @@ class TurmaCreateSchema(BaseModel):
     idCurso: int
     idProfessor: int | None = None
     diasAula: str | None = None
+    # TODO: avaliacoes sem tipagem/validação (dict[str, Any] livre)
     avaliacoes: list[dict[str, Any]] | None = None
 
 

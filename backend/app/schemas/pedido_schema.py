@@ -29,6 +29,7 @@ class PedidoUpdateSchema(BaseModel):
     status: int
 
 
+# TODO: PedidoEntregaSchema vazio e não utilizado (código morto)
 class PedidoEntregaSchema(BaseModel):
     pass
 
