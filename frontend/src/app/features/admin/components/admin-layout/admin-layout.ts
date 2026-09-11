@@ -23,6 +23,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.estoqueService.loadAlertasCount();
+    // TODO: polling a cada 30s sem error handler; considerar SSE/refresh sob demanda
     this.pollInterval = setInterval(() => {
       this.estoqueService.loadAlertasCount();
     }, 30000);

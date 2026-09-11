@@ -13,6 +13,7 @@ import { AuthService } from '../../../../core/services/auth.service';
   styleUrls: ['./login.scss'],
 })
 export class Login {
+  // REFACTOR: form: any; tipar como FormGroup
   form: any;
 
   loading = false;
@@ -48,6 +49,7 @@ export class Login {
         if (role === 'DIRECTOR') {
           this.router.navigate(['/admin']);
         } else if (role === 'ADMIN') {
+          // REFACTOR: DIRECTOR e ADMIN navegam para o mesmo '/admin'
           this.router.navigate(['/admin']);
         } else if (role === 'TEACHER') {
           this.router.navigate(['/academico']);

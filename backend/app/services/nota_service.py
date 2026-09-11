@@ -41,6 +41,7 @@ def create_or_update_notas(db: Session, payload: NotaBatchSchema) -> list[Nota]:
 
     criadas: list[Nota] = []
 
+    # FIXME: N+1 — consulta Nota dentro do loop; carregar todas de uma vez
     for item in payload.notas:
         nota = db.query(Nota).filter(
             Nota.id_matricula == item.idMatricula,

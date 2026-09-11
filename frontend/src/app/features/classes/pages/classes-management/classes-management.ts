@@ -49,6 +49,7 @@ export class ClassesManagementComponent implements OnInit {
     private readonly usuarioService: UsuarioService,
     private readonly dialog: DialogService,
     private readonly notifications: NotificationService,
+    // REFACTOR: detectChanges() manual repetido ~11x; adotar OnPush/signals
     private readonly changeDetectorRef: ChangeDetectorRef,
   ) {}
 

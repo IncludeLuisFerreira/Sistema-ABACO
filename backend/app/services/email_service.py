@@ -14,6 +14,7 @@ def send_reset_email(to_email: str, reset_token: str) -> None:
     reset_link = f"{settings.frontend_url}/reset-password?token={reset_token}"
 
     if not settings.smtp_user:
+        # FIXME: loga o link de reset em texto puro, vazando token de recuperação
         logger.info("SMTP não configurado. Link de recuperação para %s: %s", to_email, reset_link)
         return
 

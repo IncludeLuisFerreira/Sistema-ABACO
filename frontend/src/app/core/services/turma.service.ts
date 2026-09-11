@@ -22,6 +22,7 @@ export class TurmaService {
     return this.http.get<Turma>(`${this.baseUrl}/${turmaId}`);
   }
 
+  // REFACTOR: refreshMine() só delega para listMine() e não é usado
   refreshMine(): Observable<Turma[]> {
     return this.listMine();
   }

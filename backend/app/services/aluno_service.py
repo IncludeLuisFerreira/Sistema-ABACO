@@ -23,6 +23,7 @@ def create_aluno(db: Session, payload: AlunoCreateSchema) -> Aluno:
         numero=payload.numero,
     )
     db.add(aluno)
+    # FIXME: create_aluno sem try/except IntegrityError nem rollback (difere de update/delete)
     db.commit()
     db.refresh(aluno)
     return aluno

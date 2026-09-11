@@ -77,6 +77,7 @@ export class StudentGradesComponent implements OnInit {
         }
         this.changeDetectorRef.detectChanges();
       },
+      // FIXME: error handler vazio ignora falha ao carregar a matrícula
       error: () => {},
     });
   }

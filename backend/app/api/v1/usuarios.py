@@ -54,6 +54,7 @@ def update_usuarios(usuario_id: int, payload: UsuarioUpdateSchema, _current_user
 
 @router.delete("/{usuario_id}")
 def delete_usuarios(usuario_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+	# REFACTOR: regra "não excluir a si mesmo" pertence ao usuario_service
 	current_user_id = int((_current_user.get("sub") or 0))
 	if current_user_id == usuario_id:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Não é possível excluir o próprio usuário")

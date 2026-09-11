@@ -21,6 +21,7 @@ def read_historico_by_matricula(
     try:
         data = get_historico_by_matricula(db, matricula_id)
     except MatriculaNotFoundError:
+        # HACK: import local de HTTPException/status foge do padrão dos routers
         from fastapi import HTTPException, status
 
         raise HTTPException(

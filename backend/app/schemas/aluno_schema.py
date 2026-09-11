@@ -12,6 +12,7 @@ class AlunoCreateSchema(BaseModel):
     numero: int | None = None
 
 
+# REFACTOR: AlunoUpdateSchema é idêntico a AlunoCreateSchema; usar herança/base
 class AlunoUpdateSchema(BaseModel):
     nome: str = Field(min_length=1)
     telefone: str | None = None

@@ -6,6 +6,7 @@ import { decodePayload, getStoredToken, isTokenExpired, clearStoredToken } from 
 export function roleGuard(allowedCargos: number[]): CanActivateFn {
   return () => {
     const router = inject(Router);
+    // REFACTOR: duplica a verificação de token/expirado já feita no authGuard
     const token = getStoredToken();
 
     if (!token) {

@@ -26,6 +26,7 @@ import type { Kpis, ChartAcademico, ChartLogistica } from '../../models/dashboar
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
+// REFACTOR: app-dashboard-home não é referenciado por rota (dead code)
 export class Home implements OnInit, OnDestroy {
   private readonly dashboardService = inject(DashboardService);
   private readonly notifications = inject(NotificationService);

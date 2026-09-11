@@ -52,6 +52,7 @@ export class PedidoFormComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadTurmas();
     this.loadEstoque();
+    // HACK: setTimeout para registrar os Subjects de busca; depende de timing
     setTimeout(() => this.searchTerms.forEach((_, i) => this.setupSearch(i)));
   }
 
@@ -107,6 +108,7 @@ export class PedidoFormComponent implements OnInit, OnDestroy {
   }
 
   onBlur(index: number): void {
+    // HACK: setTimeout(200) para conciliar blur do input com clique no dropdown
     setTimeout(() => {
       this.showDropdown[index] = false;
     }, 200);
@@ -173,6 +175,7 @@ export class PedidoFormComponent implements OnInit, OnDestroy {
       next: (turmas) => {
         this.turmas = turmas;
       },
+      // FIXME: error handler vazio engole falha ao carregar turmas
       error: () => {},
     });
     this.subscriptions.push(sub);

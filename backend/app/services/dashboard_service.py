@@ -89,6 +89,7 @@ def get_chart_academico(db: Session) -> dict:
 
 def get_chart_logistica(db: Session) -> dict:
     hoje = date.today()
+    # TODO: cálculo manual de virada de mês/ano é frágil; usar dateutil/timedelta
     primeiro_dia_mes = hoje.replace(day=1)
     if hoje.month == 12:
         primeiro_dia_proximo_mes = hoje.replace(year=hoje.year + 1, month=1, day=1)

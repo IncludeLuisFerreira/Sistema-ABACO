@@ -7,6 +7,7 @@ from main import app
 
 
 settings = get_settings()
+# FIXME: TestClient usa o banco real; get_db/Base não são sobrescritos
 client = TestClient(app)
 
 
@@ -67,6 +68,7 @@ class TestProtectedEndpoints:
         response = client.get("/api/v1/usuarios", headers=professor_headers)
         assert response.status_code == 403
 
+    # TODO: assert frouxo (OR) não valida de fato o rate limit (429)
     def test_rate_limit_headers_present(self):
         response = client.post("/api/v1/auth/login", json={"email": "x@x.com", "senha": "x"})
         assert "X-RateLimit-Limit" in response.headers or "Retry-After" in response.headers or response.status_code in (401, 429)

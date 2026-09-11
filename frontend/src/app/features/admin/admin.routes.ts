@@ -15,6 +15,7 @@ export const ADMIN_ROUTES: Routes = [
 				loadComponent: () => import('./pages/home/home').then(m => m.AdminHome)
 			},
 			{
+				// REFACTOR: rota 'dashboard' apenas redireciona para 'home'
 				path: 'dashboard',
 				canActivate: [directorGuard],
 				redirectTo: 'home',

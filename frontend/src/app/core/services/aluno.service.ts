@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+// REFACTOR: import 'map' do rxjs não é utilizado
 import { Observable, map } from 'rxjs';
 
 import { Aluno, AlunoCreatePayload, AlunoUpdatePayload } from '../models/aluno.model';

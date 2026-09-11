@@ -65,6 +65,7 @@ export function mapCargoToRole(cargo: number | null): LoginResponse['role'] {
   if (cargo === 1) return 'DIRECTOR';
   if (cargo === 2) return 'TEACHER';
   if (cargo === 3) return 'ADMIN';
+  // FIXME: cargo desconhecido vira ADMIN (fail-open); deveria negar acesso
   return 'ADMIN';
 }
 
@@ -76,6 +77,7 @@ interface AuthState {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  // REFACTOR: auth usa URL absoluta; os demais serviços usam '/api' relativo
   private readonly loginUrl = `${environment.apiUrl}/api/v1/auth/login`;
   private readonly forgotPasswordUrl = `${environment.apiUrl}/api/v1/auth/forgot-password`;
   private readonly resetPasswordUrl = `${environment.apiUrl}/api/v1/auth/reset-password`;
@@ -97,6 +99,7 @@ export class AuthService {
         role: mapCargoToRole(response.usuario.cargo),
       })),
       tap((res) => {
+        // FIXME: JWT em localStorage é vulnerável a XSS; usar cookie HttpOnly
         localStorage.setItem(this.TOKEN_KEY, res.token);
         const payload = decodePayload(res.token);
         this.authState.set({
@@ -148,6 +151,7 @@ export class AuthService {
     return !isTokenExpired(token);
   }
 
+  // REFACTOR: hasRole/getUserId/setToken sem uso real na aplicação
   hasRole(allowedRoles: AppRole[]): boolean {
     const role = this.getRoleFromToken();
     return allowedRoles.includes(role);

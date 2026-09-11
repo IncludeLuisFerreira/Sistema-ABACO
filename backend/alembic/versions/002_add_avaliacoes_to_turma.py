@@ -17,6 +17,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # REFACTOR: migration usa JSONB e o model usa JSON; autogenerate fica ruidoso
     op.add_column("turma", sa.Column("avaliacoes", postgresql.JSONB, nullable=True))
 
 

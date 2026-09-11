@@ -14,5 +14,6 @@ def get_db():
 	db = SessionLocal()
 	try:
 		yield db
+	# FIXME: fecha a sessão sem rollback; transação pode ficar pendente em exceção
 	finally:
 		db.close()

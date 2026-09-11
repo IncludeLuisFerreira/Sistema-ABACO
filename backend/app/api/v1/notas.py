@@ -21,6 +21,7 @@ def create_notas(
     _current_user: dict = Depends(verify_cargo(1, 2, 3)),
     db: Session = Depends(get_db),
 ):
+    # REFACTOR: validação "prova >= 1" pertence ao schema/service, não ao router
     if payload.prova < 1:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="O numero da prova deve ser maior ou igual a 1.")
     try:

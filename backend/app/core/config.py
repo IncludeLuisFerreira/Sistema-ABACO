@@ -12,9 +12,11 @@ class Settings(BaseSettings):
 	model_config = SettingsConfigDict(env_file=ROOT_ENV_FILE, env_file_encoding="utf-8", extra="ignore")
 
 	app_name: str = "SGA ABACO API"
+	# FIXME: credenciais de banco hardcoded no default (postgres:postgres)
 	database_url: str = Field(default="postgresql+psycopg2://postgres:postgres@database:5432/sga_abacos", alias="DATABASE_URL")
 	admin_seed_email: str | None = Field(default=None, alias="ADMIN_SEED_EMAIL")
 	admin_seed_password: str | None = Field(default=None, alias="ADMIN_SEED_PASSWORD")
+	# FIXME: SECRET_KEY default insegura permite forjar tokens JWT se não definida
 	secret_key: str = Field(
 		default="development_secret_change_me",
 		validation_alias=AliasChoices("SECRET_KEY", "JWT_SECRET"),

@@ -54,6 +54,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+# HACK: usa handler privado (_rate_limit_exceeded_handler) do slowapi, sujeito a quebra
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
@@ -61,6 +62,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
     allow_credentials=True,
+    # FIXME: wildcard em methods/headers combinado com credentials é inválido/inseguro
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -75,6 +77,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+# REFACTOR: @app.on_event("startup") está deprecado; migrar para lifespan
 @app.on_event("startup")
 def seed_admin_user():
     if not settings.admin_seed_email or not settings.admin_seed_password:
@@ -102,6 +105,7 @@ def seed_admin_user():
             return
 
         logger.info("Empty database detected, seeding test data...")
+        # HACK: seed de dados fictícios embutido no main.py; extrair para script/CLI
         _seed_test_data(db, hash_password)
     finally:
         db.close()
@@ -128,6 +132,7 @@ def _seed_test_data(db, hash_password_func):
     db.add_all(cursos)
     db.flush()
 
+    # FIXME: senhas de seed hardcoded no código-fonte (admin123/prof12345)
     admin_user = Usuario(nome="Carlos Admin", email="admin2@abaco.org.br", senha_hash=hash_password_func("admin123"), cargo=3, telefone="11999990000")
     db.add(admin_user)
     db.flush()
@@ -198,6 +203,7 @@ def _seed_test_data(db, hash_password_func):
     db.add_all(pedidos)
     db.flush()
 
+    # FIXME: id_item_estoque hardcoded depende da ordem de inserção do estoque
     itens_pedido = [
         ItemPedido(id_pedido=pedidos[0].id_pedido, nome_item="Caneta esferográfica", quantidade=50, id_item_estoque=1),
         ItemPedido(id_pedido=pedidos[0].id_pedido, nome_item="Caderno universitário", quantidade=30, id_item_estoque=2),
@@ -243,6 +249,7 @@ def health_check():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
             db_ok = True
+    # FIXME: engole Exception e sempre retorna HTTP 200, mesmo com banco fora
     except Exception:
         db_ok = False
     return {"status": "ok", "database": "connected" if db_ok else "disconnected"}

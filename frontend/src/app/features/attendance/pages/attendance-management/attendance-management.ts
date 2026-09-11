@@ -232,6 +232,7 @@ export class AttendanceManagementComponent implements OnInit {
     });
   }
 
+  // REFACTOR: montagem de alunos duplicada em notas/presenças/grades
   private buildStudentList(): void {
     if (!this.selectedTurma) {
       this.students = [];

@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UsuarioCreateSchema(BaseModel):
 	nome: str = Field(min_length=1)
 	email: EmailStr
+	# FIXME: política de senha fraca (min_length=1) difere do reset (8+ com letra/número)
 	senha: str = Field(min_length=1)
 	cargo: int = Field(ge=1, le=3)
 	telefone: str | None = None

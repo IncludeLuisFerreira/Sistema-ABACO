@@ -17,6 +17,7 @@
       <p class="login-card__subtitle">Acesse sua conta para continuar</p>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <!-- FIXME: input sem <label> associado; só placeholder (acessibilidade) -->
         <div class="input-group">
           <span class="input-group__icon">✉</span>
           <input
@@ -38,6 +39,7 @@
             autocomplete="current-password"
             [class.input--error]="form.controls.password.invalid && form.controls.password.touched"
           />
+          <!-- FIXME: toggle de senha com tabindex=-1 e sem aria-label -->
           <button type="button" class="input-group__toggle" (click)="showPassword = !showPassword" tabindex="-1">
             {{ showPassword ? '🙈' : '👁' }}
           </button>
@@ -45,6 +47,7 @@
         <small class="field-error" *ngIf="form.controls.password.invalid && form.controls.password.touched">Senha é obrigatória</small>
 
         <div class="login-card__options">
+          <!-- FIXME: checkbox "Lembrar-me" sem binding nem função (decorativo) -->
           <label class="remember-me">
             <input type="checkbox" />
             <span>Lembrar-me</span>
@@ -61,6 +64,7 @@
         <div class="login-card__error" *ngIf="error">{{ error }}</div>
       </form>
 
+      <!-- REFACTOR: link "Esqueci minha senha?" duplicado (também na linha 52) -->
       <div class="login-card__footer">
         <a routerLink="/forgot-password" class="login-card__forgot">Esqueci minha senha?</a>
       </div>
