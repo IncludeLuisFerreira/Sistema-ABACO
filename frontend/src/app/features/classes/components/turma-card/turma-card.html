@@ -1,0 +1,56 @@
+<div class="turma-card" [class.turma-card--andamento]="status === 'em_andamento'" [class.turma-card--futura]="status === 'futura'" [class.turma-card--encerrada]="status === 'encerrada'">
+  <div class="turma-card__badge" [class.turma-card__badge--andamento]="status === 'em_andamento'" [class.turma-card__badge--futura]="status === 'futura'" [class.turma-card__badge--encerrada]="status === 'encerrada'">
+    {{ statusLabel }}
+  </div>
+
+  <h2 class="turma-card__curso">{{ turma.curso?.nomeCurso ?? 'Turma #' + turma.idTurma }}</h2>
+
+  <div class="turma-card__professor">
+    <span class="turma-card__label">Professor</span>
+    <span class="turma-card__value">{{ turma.professor?.nome ?? 'Não atribuído' }}</span>
+  </div>
+
+  <div class="turma-card__datas" *ngIf="turma.dataInicio || turma.dataFim">
+    <span class="turma-card__label">Período</span>
+    <span class="turma-card__value">{{ inicioFormatado }} → {{ fimFormatado }}</span>
+  </div>
+
+  <div class="turma-card__dias" *ngIf="turma.diasAula">
+    <span class="turma-card__label">Dias</span>
+    <span class="turma-card__value">{{ turma.diasAula }}</span>
+  </div>
+
+  <div class="turma-card__progresso" *ngIf="status === 'em_andamento'">
+    <div class="turma-card__progresso-bar">
+      <div class="turma-card__progresso-fill" [style.width.%]="progresso"></div>
+    </div>
+    <span class="turma-card__progresso-text">{{ progresso }}% do período</span>
+  </div>
+
+  <div class="turma-card__vagas" *ngIf="(turma.capacidade ?? 0) > 0">
+    <div class="turma-card__vagas-bar">
+      <div class="turma-card__vagas-fill" [style.width.%]="vagasPercent"></div>
+    </div>
+    <span class="turma-card__vagas-text">{{ vagasLabel }}</span>
+  </div>
+
+  <div class="turma-card__actions">
+    <a class="turma-card__btn turma-card__btn--alunos" [routerLink]="['/admin/matriculas']" [queryParams]="{ turma: turma.idTurma }">
+      Ver Alunos
+    </a>
+    <button type="button" class="turma-card__btn turma-card__btn--dup" (click)="duplicate.emit(turma)">
+      Duplicar
+    </button>
+    <button type="button" class="turma-card__btn turma-card__btn--edit" (click)="edit.emit(turma)">
+      Editar
+    </button>
+    <button
+      type="button"
+      class="turma-card__btn turma-card__btn--delete"
+      (click)="remove.emit(turma)"
+      [disabled]="deleting"
+    >
+      {{ deleting ? '...' : 'Excluir' }}
+    </button>
+  </div>
+</div>

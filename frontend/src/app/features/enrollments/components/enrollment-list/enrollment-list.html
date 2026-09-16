@@ -1,0 +1,82 @@
+﻿<section class="table-card">
+  <header class="table-card__header">
+    <div>
+      <h1>Lista de Matriculas</h1>
+      <p>Gerencie as matriculas cadastradas no SGA.</p>
+    </div>
+    <label class="table-card__search">
+      <span>Pesquisar</span>
+      <input
+        type="search"
+        placeholder="Buscar por aluno ou turma"
+        (input)="onSearch($event)"
+        [disabled]="loading"
+      />
+    </label>
+  </header>
+
+  <div class="table-wrap" *ngIf="matriculas.length > 0; else emptyState">
+    <table>
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>Turma</th>
+          <th>Data</th>
+          <th>Status</th>
+          <th class="actions-col">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of matriculas">
+          <td>{{ m.aluno?.nome ?? '---' }}</td>
+          <td>{{ m.turma?.curso?.nomeCurso ?? '---' }}</td>
+          <td>{{ m.dataMatricula ? (m.dataMatricula | date:'dd/MM/yyyy') : '---' }}</td>
+          <td>{{ statusLabel(m.status) }}</td>
+            <td class="actions-col">
+              <div class="dropdown">
+                <button type="button" class="btn btn--ghost dropdown__toggle" (click)="toggleDropdown(m.idMatricula)" [disabled]="loading">
+                  Acoes <span class="dropdown__arrow">&#9662;</span>
+                </button>
+                <ul class="dropdown__menu" *ngIf="openDropdownId === m.idMatricula">
+                  <li><button type="button" (click)="viewGrades.emit(m.idMatricula); closeDropdown()">Notas</button></li>
+                  <li><button type="button" (click)="edit.emit(m); closeDropdown()">Editar</button></li>
+                  <li><button type="button" (click)="viewTranscript.emit(m.idMatricula); closeDropdown()">Historico</button></li>
+                  <li class="dropdown__divider"></li>
+                  <li>
+                    <button
+                      type="button"
+                      class="dropdown__danger"
+                      (click)="remove.emit(m); closeDropdown()"
+                      [disabled]="deletingMatriculaId === m.idMatricula"
+                    >
+                      <span *ngIf="deletingMatriculaId === m.idMatricula" class="spinner" aria-hidden="true"></span>
+                      {{ deletingMatriculaId === m.idMatricula ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <p class="empty">Nenhuma matricula encontrada para o filtro aplicado.</p>
+  </ng-template>
+
+  <footer class="pagination">
+    <button type="button" class="btn btn--ghost" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
+      Anterior
+    </button>
+    <span>Pagina {{ currentPage }} de {{ totalPages }}</span>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages || loading"
+    >
+      Proxima
+    </button>
+  </footer>
+</section>

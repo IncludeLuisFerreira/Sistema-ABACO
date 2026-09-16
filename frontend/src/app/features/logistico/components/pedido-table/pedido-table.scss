@@ -1,0 +1,144 @@
+:host {
+  display: block;
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
+}
+
+.table-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.table-card__header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.table-card__header p {
+  margin: 0.4rem 0 0;
+  color: #64748b;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrap th,
+.table-wrap td {
+  text-align: left;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.actions-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.item-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item-list li {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn + .btn {
+  margin-left: 0.5rem;
+}
+
+.btn--approve {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.btn--purchase {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.btn--deliver {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.btn--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.entrega-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.qtd-input {
+  width: 60px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge--approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge--purchased {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge--delivered {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.empty {
+  margin: 1.25rem 0;
+  color: #64748b;
+}

@@ -1,0 +1,73 @@
+<main class="classes-management">
+  <header class="classes-management__topbar">
+    <div>
+      <h1>Turmas</h1>
+      <p>Painel administrativo para cadastro e gestão de turmas.</p>
+    </div>
+    <button type="button" class="new-class-btn" (click)="openCreate()" [disabled]="saving || loadingList">Nova turma</button>
+  </header>
+
+  <div class="classes-management__filters">
+    <label class="classes-management__search">
+      <span>Pesquisar</span>
+      <input
+        type="search"
+        placeholder="Buscar por curso ou professor"
+        (input)="onSearch(onSearchInput($event))"
+        [disabled]="loadingList"
+      />
+    </label>
+
+    <div class="classes-management__semestre" *ngIf="semestres.length > 0">
+      <span class="classes-management__filter-label">Semestre</span>
+      <div class="semestre-pills">
+        <button
+          *ngFor="let sem of semestres"
+          type="button"
+          class="semestre-pill"
+          [class.semestre-pill--active]="semestreSelecionado === sem.value"
+          (click)="onSemestreChange(sem.value)"
+        >
+          {{ sem.label }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <section class="classes-management__layout">
+    <p *ngIf="loadingList" class="loading">Carregando turmas...</p>
+
+    <div *ngIf="!loadingList && filteredTurmas.length === 0" class="empty">
+      Nenhuma turma encontrada para o filtro aplicado.
+    </div>
+
+    <div *ngIf="!loadingList && grupos.length > 0" class="grupos-actions">
+      <button type="button" class="btn btn--ghost" (click)="expandirTodos()">Expandir todos</button>
+      <button type="button" class="btn btn--ghost" (click)="recolherTodos()">Recolher todos</button>
+    </div>
+
+    <app-turma-grupo
+      *ngFor="let grupo of grupos"
+      [grupo]="grupo"
+      [deletingTurmaId]="deletingTurmaId"
+      (toggle)="onToggleGrupo($event)"
+      (edit)="openEdit($event)"
+      (remove)="onDelete($event)"
+      (duplicate)="onDuplicate($event)"
+    ></app-turma-grupo>
+
+    <app-class-form
+      *ngIf="panelOpen"
+      [mode]="formMode"
+      [turma]="selectedTurma"
+      [cursos]="cursos"
+      [professores]="professores"
+      [allTurmas]="turmas"
+      [loading]="saving"
+      (save)="onSave($event)"
+      (cancel)="closePanel()"
+    ></app-class-form>
+  </section>
+</main>

@@ -1,0 +1,131 @@
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-nav {
+  width: 240px;
+  background: #0f172a;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0;
+  flex-shrink: 0;
+}
+
+.admin-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 1.25rem 1.5rem;
+  border-bottom: 1px solid #1e293b;
+  margin-bottom: 1rem;
+}
+
+.admin-nav__logo {
+  width: 32px;
+  height: 32px;
+}
+
+.admin-nav__title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f1f5f9;
+}
+
+.admin-nav__links {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.75rem;
+  flex: 1;
+}
+
+.admin-nav__links li {
+  margin-bottom: 0.25rem;
+}
+
+.admin-nav__links a {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-nav__links a:hover {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.admin-nav__links a.active {
+  background: #0f766e;
+  color: #fff;
+}
+
+.admin-nav__user {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #1e293b;
+}
+
+.admin-nav__logout {
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #94a3b8;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-nav__logout:hover {
+  background: #991b1b;
+  border-color: #991b1b;
+  color: #fff;
+}
+
+.admin-content {
+  flex: 1;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .admin-shell {
+    flex-direction: column;
+  }
+
+  .admin-nav {
+    width: 100%;
+    flex-direction: row;
+    padding: 0.75rem;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .admin-nav__brand {
+    padding: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  .admin-nav__links {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0;
+    flex: 0;
+  }
+
+  .admin-nav__links li {
+    margin-bottom: 0;
+  }
+
+  .admin-nav__user {
+    padding: 0;
+    border-top: none;
+    margin-left: auto;
+  }
+}

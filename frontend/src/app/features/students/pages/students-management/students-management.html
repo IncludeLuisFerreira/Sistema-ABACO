@@ -1,0 +1,43 @@
+<main class="students-management">
+  <header class="students-management__topbar">
+    <div>
+      <h1>Alunos</h1>
+      <p>Painel administrativo para cadastro e gestão de alunos.</p>
+    </div>
+    <button type="button" class="new-student-btn" (click)="openCreate()" [disabled]="saving || loadingList">Novo aluno</button>
+  </header>
+
+  <label class="students-management__search">
+    <span>Pesquisar</span>
+    <input type="search" placeholder="Buscar por nome" (input)="onSearchInput($event)" [disabled]="loadingList" />
+  </label>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <p *ngIf="loadingList" class="loading">Carregando alunos...</p>
+
+  <div *ngIf="!loadingList && filteredAlunos.length === 0" class="empty">Nenhum aluno encontrado.</div>
+
+  <div class="students-grid" *ngIf="!loadingList && filteredAlunos.length > 0">
+    <app-student-card
+      *ngFor="let aluno of filteredAlunos"
+      [aluno]="aluno"
+      [deleting]="deletingAlunoId === aluno.idAluno"
+      (edit)="openEdit($event)"
+      (remove)="onDelete($event)"
+    ></app-student-card>
+  </div>
+
+  <!-- Modal overlay para o formulário -->
+  <div class="modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <app-student-form
+        [mode]="formMode"
+        [aluno]="selectedAluno"
+        [loading]="saving"
+        (save)="onSave($event)"
+        (cancel)="closePanel()"
+      ></app-student-form>
+    </div>
+  </div>
+</main>

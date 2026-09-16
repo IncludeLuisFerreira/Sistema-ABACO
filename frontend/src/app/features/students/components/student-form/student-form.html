@@ -1,0 +1,47 @@
+<section class="form-card" aria-label="Formulario de aluno">
+  <header>
+    <h2>{{ mode === 'create' ? 'Novo aluno' : 'Editar aluno' }}</h2>
+    <p>{{ mode === 'create' ? 'Cadastre um novo aluno no sistema.' : 'Atualize os dados do aluno.' }}</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Nome *</span>
+      <input formControlName="nome" type="text" placeholder="Nome completo" />
+      <small class="error" *ngIf="form.controls.nome.invalid && form.controls.nome.touched">Nome e obrigatorio.</small>
+    </label>
+
+    <label>
+      <span>Telefone</span>
+      <input formControlName="telefone" type="text" placeholder="(00) 00000-0000" />
+    </label>
+
+    <label>
+      <span>Data de nascimento</span>
+      <input formControlName="dataNascimento" type="date" />
+    </label>
+
+    <label>
+      <span>Rua</span>
+      <input formControlName="rua" type="text" placeholder="Rua" />
+    </label>
+
+    <label>
+      <span>Bairro</span>
+      <input formControlName="bairro" type="text" placeholder="Bairro" />
+    </label>
+
+    <label>
+      <span>Numero</span>
+      <input formControlName="numero" type="number" placeholder="Numero da residencia" />
+    </label>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</section>

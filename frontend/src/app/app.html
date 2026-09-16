@@ -1,0 +1,6 @@
+<div class="global-alert" [class.global-alert--error]="notifications.type() === 'error'" [class.global-alert--success]="notifications.type() === 'success'" *ngIf="notifications.message() as message" role="alert">
+    <span>{{ message }}</span>
+    <button type="button" class="global-alert__close" (click)="notifications.clear()" aria-label="Fechar notificação">Fechar</button>
+</div>
+
+<router-outlet></router-outlet>

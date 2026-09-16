@@ -1,0 +1,69 @@
+.turma-grupo {
+  margin-bottom: 1.5rem;
+}
+
+.turma-grupo__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  border: none;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.turma-grupo__header:hover {
+  background: #f8fafc;
+}
+
+.turma-grupo__icon {
+  font-size: 0.75rem;
+  color: #64748b;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.turma-grupo__titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+  flex: 1;
+}
+
+.turma-grupo__count {
+  font-size: 0.82rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.turma-grupo__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, margin-top 0.35s ease;
+  margin-top: 0;
+}
+
+.turma-grupo__cards--expanded {
+  max-height: 4000px;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .turma-grupo__cards,
+  .turma-grupo__cards--expanded {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,51 @@
+<section class="table-card">
+  <header class="table-card__header">
+    <div>
+      <h1>Registro de Notas</h1>
+      <p *ngIf="turmaNome">Turma: {{ turmaNome }}</p>
+      <p *ngIf="!turmaNome">Selecione uma turma para registrar notas.</p>
+    </div>
+    <label class="table-card__search">
+      <span>Prova</span>
+      <select [(ngModel)]="prova" (ngModelChange)="provaChange.emit($event)" [disabled]="loading || saving">
+        <option *ngFor="let opt of provaOptions" [value]="opt.value">{{ opt.label }} {{ opt.peso ? '(peso ' + opt.peso + ')' : '' }}</option>
+      </select>
+    </label>
+  </header>
+
+  <div class="table-wrap" *ngIf="students.length > 0; else emptyState">
+    <table>
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th class="grade-col">Nota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of students">
+          <td>{{ s.nomeAluno }}</td>
+          <td class="grade-col">
+            <input
+              type="number"
+              class="grade-input"
+              [value]="s.nota ?? ''"
+              (input)="onNotaInput(s.idMatricula, $event)"
+              [disabled]="saving"
+              min="0"
+              max="10"
+              step="0.5"
+              placeholder="--"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <p class="empty" *ngIf="!loading && !turmaNome">Selecione uma turma para visualizar os alunos.</p>
+    <p class="empty" *ngIf="!loading && turmaNome && students.length === 0">
+      Nenhum aluno matriculado nesta turma.
+    </p>
+  </ng-template>
+</section>

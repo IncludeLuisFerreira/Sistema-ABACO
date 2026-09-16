@@ -1,0 +1,34 @@
+<main class="courses-management">
+  <header class="courses-management__topbar">
+    <div>
+      <h1>Cursos</h1>
+      <p>Painel administrativo para cadastro e gestao de cursos.</p>
+    </div>
+    <button type="button" class="new-course-btn" (click)="openCreate()" [disabled]="saving || loadingList">Novo curso</button>
+  </header>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <section class="courses-management__layout">
+    <app-course-list
+      [cursos]="pagedCursos"
+      [loading]="loadingList || saving"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [deletingCursoId]="deletingCursoId"
+      (search)="onSearch($event)"
+      (edit)="openEdit($event)"
+      (remove)="onDelete($event)"
+      (pageChange)="onPageChange($event)"
+    ></app-course-list>
+
+    <app-course-form
+      *ngIf="panelOpen"
+      [mode]="formMode"
+      [curso]="selectedCurso"
+      [loading]="saving"
+      (save)="onSave($event)"
+      (cancel)="closePanel()"
+    ></app-course-form>
+  </section>
+</main>

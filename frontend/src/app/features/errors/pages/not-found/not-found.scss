@@ -1,0 +1,63 @@
+.error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.error-card {
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+  padding: 2.5rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+.error-card__code {
+  margin: 0;
+  font-size: 4rem;
+  font-weight: 800;
+  color: #64748b;
+  line-height: 1;
+}
+
+.error-card__title {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.error-card__message {
+  margin: 0 0 1.5rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.error-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.error-card__btn {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.error-card__btn--primary {
+  background: #0f766e;
+  color: #fff;
+}
+
+.error-card__btn--primary:hover {
+  background: #0d6b63;
+}

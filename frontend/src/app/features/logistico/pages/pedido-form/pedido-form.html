@@ -1,0 +1,12 @@
+<main class="pedido-form-page">
+  <header>
+    <h1>Novo Pedido</h1>
+    <p>Preencha os dados para solicitar materiais.</p>
+  </header>
+
+  <app-pedido-form
+    [loading]="saving"
+    (save)="onSave($event)"
+    (cancel)="onCancel()"
+  ></app-pedido-form>
+</main>

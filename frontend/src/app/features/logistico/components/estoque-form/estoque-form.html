@@ -1,0 +1,38 @@
+<section class="form-card" aria-label="Formulario de item de estoque">
+  <header>
+    <h2>{{ mode === 'create' ? 'Novo item' : 'Editar item' }}</h2>
+    <p>{{ mode === 'create' ? 'Cadastre um novo item no estoque.' : 'Atualize os dados do item.' }}</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Nome *</span>
+      <input formControlName="nomeItem" type="text" placeholder="Nome do item" />
+      <small class="error" *ngIf="form.controls.nomeItem.invalid && form.controls.nomeItem.touched">Nome e obrigatorio.</small>
+    </label>
+
+    <label>
+      <span>Quantidade disponivel</span>
+      <input formControlName="quantidadeDisponivel" type="number" placeholder="Quantidade" />
+    </label>
+
+    <label>
+      <span>Unidade</span>
+      <input formControlName="unidade" type="text" placeholder="un, kg, l, cx..." />
+    </label>
+
+    <label>
+      <span>Estoque minimo</span>
+      <input formControlName="estoqueMinimo" type="number" placeholder="Quantidade para alerta" />
+      <small>Quando o saldo atingir este valor, um alerta sera exibido.</small>
+    </label>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</section>

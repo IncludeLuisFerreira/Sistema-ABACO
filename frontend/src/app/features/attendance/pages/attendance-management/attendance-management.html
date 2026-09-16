@@ -1,0 +1,45 @@
+<main class="attendance-management">
+  <header class="attendance-management__topbar">
+    <div>
+      <h1>Presencas</h1>
+      <p>Registre a presenca dos alunos por turma e data.</p>
+    </div>
+    <button
+      type="button"
+      class="save-btn"
+      (click)="onSave()"
+      [disabled]="saving || !selectedTurma || !dataAula || students.length === 0"
+    >
+      <span *ngIf="saving" class="spinner" aria-hidden="true"></span>
+      {{ saving ? 'Salvando...' : 'Salvar presencas' }}
+    </button>
+  </header>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <section class="attendance-management__controls">
+    <label>
+      <span>Turma *</span>
+      <select (change)="onTurmaChange($event)" [disabled]="loadingTurmas || saving">
+        <option [value]="0" selected>Selecione uma turma</option>
+        <option *ngFor="let turma of turmas" [value]="turma.idTurma">
+          #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }} — {{ turma.professor?.nome ?? 'Sem professor' }} {{ turma.dataInicio ? '(' + (turma.dataInicio | slice:0:10) + ')' : '' }}
+        </option>
+      </select>
+    </label>
+    <p class="dias-aula-info" *ngIf="selectedTurma?.diasAula">
+      Periodo: <strong>{{ periodoLabel }}</strong>
+      &nbsp;|&nbsp; Dias: <strong>{{ diasAulaLabel }}</strong>
+    </p>
+  </section>
+
+  <app-attendance-list
+    [students]="students"
+    [loading]="loadingPresencas"
+    [dataAula]="dataAula"
+    [turmaNome]="selectedTurma?.curso?.nomeCurso ?? ''"
+    [saving]="saving"
+    (togglePresenca)="onTogglePresenca($event)"
+    (dataAulaChange)="onDataAulaChange($event)"
+  ></app-attendance-list>
+</main>

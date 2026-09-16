@@ -1,0 +1,33 @@
+:host {
+    display: block;
+}
+
+.global-alert {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    font-weight: 600;
+}
+
+.global-alert--error {
+    background: #dc2626;
+    color: #fff;
+}
+
+.global-alert--success {
+    background: #16a34a;
+    color: #fff;
+}
+
+.global-alert__close {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-weight: 700;
+}

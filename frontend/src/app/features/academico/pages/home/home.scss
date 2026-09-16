@@ -1,0 +1,92 @@
+.dashboard {
+  padding: 2rem;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.dashboard__header {
+  margin-bottom: 2rem;
+}
+
+.dashboard__header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.dashboard__header p {
+  margin: 0.4rem 0 0;
+  color: #475569;
+}
+
+.loading { color: #64748b; padding: 2rem 0; }
+
+/* KPIs */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; max-width: 500px; }
+.kpi-card { display: flex; align-items: center; gap: 1rem; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); padding: 1.25rem; }
+.kpi-card__icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.kpi-card__icon--green { background: #dcfce7; }
+.kpi-card__icon--blue { background: #e0f2fe; }
+.kpi-card__info { flex: 1; }
+.kpi-card__value { font-size: 1.8rem; font-weight: 800; display: block; line-height: 1; color: #0f172a; }
+.kpi-card__label { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 3rem 1rem; }
+.empty-state__title { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem; }
+.empty-state__desc { color: #64748b; margin: 0; max-width: 400px; margin: 0 auto; }
+
+.dashboard__section {
+  margin-bottom: 2.5rem;
+}
+
+.dashboard__section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dashboard__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  display: block;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.card p {
+  margin: 0;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .dashboard { padding: 1rem; }
+  .dashboard__header h1 { font-size: 1.3rem; }
+  .kpi-grid { grid-template-columns: 1fr; max-width: 100%; }
+  .kpi-card__value { font-size: 1.4rem; }
+  .dashboard__cards { grid-template-columns: 1fr; }
+}

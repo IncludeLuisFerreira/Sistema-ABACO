@@ -1,0 +1,55 @@
+<section class="table-card">
+  <header class="table-card__header">
+    <div>
+      <h1>Registro de Presenca</h1>
+      <p *ngIf="turmaNome">Turma: {{ turmaNome }}</p>
+      <p *ngIf="!turmaNome">Selecione uma turma para registrar presenca.</p>
+    </div>
+    <label class="table-card__search">
+      <span>Data da Aula</span>
+      <input
+        type="date"
+        [value]="dataAula"
+        (input)="onDataAulaChange($event)"
+        [disabled]="loading || saving"
+      />
+    </label>
+  </header>
+
+  <div class="table-wrap" *ngIf="students.length > 0; else emptyState">
+    <table>
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th class="presence-col">Presenca</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of students" [class.presente]="s.presente" [class.ausente]="!s.presente">
+          <td>{{ s.nomeAluno }}</td>
+          <td class="presence-col">
+            <button
+              type="button"
+              class="presence-toggle"
+              [class.presence-toggle--presente]="s.presente"
+              [class.presence-toggle--ausente]="!s.presente"
+              (click)="onToggle(s.idMatricula)"
+              [disabled]="saving"
+            >
+              <span *ngIf="s.presente" class="status-badge status-badge--presente">Presente</span>
+              <span *ngIf="!s.presente" class="status-badge status-badge--ausente">Ausente</span>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <p class="empty" *ngIf="!loading && !turmaNome">Selecione uma turma e uma data para visualizar os alunos.</p>
+    <p class="empty" *ngIf="!loading && turmaNome && !dataAula">Selecione uma data para registrar presenca.</p>
+    <p class="empty" *ngIf="!loading && turmaNome && dataAula && students.length === 0">
+      Nenhum aluno matriculado nesta turma.
+    </p>
+  </ng-template>
+</section>

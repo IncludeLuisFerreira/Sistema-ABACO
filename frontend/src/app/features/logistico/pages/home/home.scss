@@ -1,0 +1,74 @@
+.logistico-dashboard {
+  padding: 2rem;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.logistico-dashboard__header {
+  margin-bottom: 2rem;
+}
+
+.logistico-dashboard__header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #0f172a;
+}
+
+.logistico-dashboard__header p {
+  margin: 0.4rem 0 0;
+  color: #475569;
+}
+
+.logistico-dashboard__section {
+  margin-bottom: 2.5rem;
+}
+
+.logistico-dashboard__section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logistico-dashboard__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  display: block;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.card p {
+  margin: 0;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .logistico-dashboard { padding: 1rem; }
+  .logistico-dashboard__header h1 { font-size: 1.3rem; }
+  .logistico-dashboard__cards { grid-template-columns: 1fr; }
+}

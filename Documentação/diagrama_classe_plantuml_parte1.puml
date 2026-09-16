@@ -1,0 +1,133 @@
+@startuml
+package "app" {
+
+  package "models" {
+    class Aluno {
+      - id_aluno : int (PK)
+      - nome : str
+      - telefone : str ?
+      - data_nascimento : date ?
+      - rua : str ?
+      - bairro : str ?
+      - numero : int ?
+      + get_id_aluno() : int
+      + get_nome() : str
+      + set_id_aluno(id) : void
+      + set_nome(nome) : void
+    }
+    class Curso {
+      - id_curso : int (PK)
+      - nome_curso : str
+      + get_id_curso() : int
+      + get_nome_curso() : str
+    }
+    class Turma {
+      - id_turma : int (PK)
+      - capacidade : int ?
+      - data_inicio : date ?
+      - data_fim : date ?
+      - id_curso : int (FK)
+      - id_professor : int ? (FK)
+      - dias_aula : str ?
+      - avaliacoes : list ? (JSONB)
+      + vagas_ocupadas : int
+    }
+    class Matricula {
+      - id_matricula : int (PK)
+      - id_aluno : int (FK)
+      - id_turma : int (FK)
+      - data_matricula : date ?
+      - status : int ?
+    }
+    class Nota {
+      - id_nota : int (PK)
+      - nota : float ?
+      - prova : int ?
+      - id_matricula : int (FK)
+    }
+    class Presenca {
+      - id_presenca : int (PK)
+      - id_matricula : int (FK)
+      - data_aula : date ?
+      - presente : bool ?
+    }
+    class Usuario {
+      - id_usuario : int (PK)
+      - nome : str ?
+      - telefone : str ?
+      - email : str ? (UNIQUE)
+      - senha_hash : str ?
+      - cargo : int ?
+    }
+    class Pedido {
+      - id_pedido : int (PK)
+      - id_usuario : int (FK)
+      - id_turma : int (FK)
+      - data_pedido : date ?
+      - status : int ?
+    }
+    class ItemPedido {
+      - id_item_pedido : int (PK)
+      - id_pedido : int (FK)
+      - id_item_estoque : int ? (FK)
+      - nome_item : str ?
+      - quantidade : int ?
+      - preco_unitario : float ?
+    }
+    class Estoque {
+      - id_item_estoque : int (PK)
+      - nome_item : str ?
+      - quantidade_disponivel : int ?
+      - unidade : str ?
+      - estoque_minimo : int ?
+    }
+    class MovimentacaoEstoque {
+      - id_movimentacao : int (PK)
+      - id_item_estoque : int (FK)
+      - quantidade : int
+      - tipo_movimentacao : str
+      - justificativa : str ?
+      - data_movimentacao : datetime
+    }
+  }
+
+  package "schemas" {
+    class AlunoCreateSchema { + nome : str ; + telefone : str ? ; + dataNascimento : date ? ; + rua : str ? ; + bairro : str ? ; + numero : int ? }
+    class AlunoResponseSchema { + id_aluno : int ; + nome : str ; + data_nascimento : date ? }
+    class CursoCreateSchema { + nomeCurso : str }
+    class CursoResponseSchema { + id_curso : int ; + nome_curso : str }
+    class TurmaCreateSchema { + idCurso : int ; + capacidade : int ? ; + dataInicio : date ? ; + dataFim : date ? ; + idProfessor : int ? }
+    class TurmaResponseSchema { + id_turma : int ; + capacidade : int ? ; + vagas_ocupadas : int ? }
+    class MatriculaCreateSchema { + idAluno : int ; + idTurma : int ; + dataMatricula : date ? }
+    class MatriculaResponseSchema { + id_matricula : int ; + id_aluno : int ? ; + id_turma : int ? ; + status : int ? }
+    class NotaBatchSchema { + idTurma : int ; + prova : int ; + notas : list }
+    class NotaResponseSchema { + id_nota : int ; + id_matricula : int ; + nota : float ? ; + prova : int ? }
+    class PresencaBatchSchema { + idTurma : int ; + dataAula : date ; + presencas : list }
+    class PresencaResponseSchema { + id_presenca : int ; + id_matricula : int ; + presente : bool ? }
+    class UsuarioCreateSchema { + nome : str ; + email : str ; + senha : str ; + cargo : int }
+    class UsuarioResponseSchema { + id_usuario : int ; + nome : str ? ; + email : str ? ; + cargo : int ? }
+    class PedidoCreateSchema { + idTurma : int ; + dataPedido : date ? ; + itens : list }
+    class PedidoUpdateSchema { + status : int }
+    class PedidoResponseSchema { + id_pedido : int ; + id_usuario : int ; + id_turma : int ; + status : int ? }
+    class EstoqueCreateSchema { + nomeItem : str ; + quantidadeDisponivel : int ? ; + unidade : str ? ; + estoqueMinimo : int ? }
+    class EstoqueResponseSchema { + id_item_estoque : int ; + nome_item : str ? ; + quantidade_disponivel : int ? }
+    class LoginRequest { + email : str ; + senha : str }
+    class TokenResponse { + access_token : str ; + token_type : str }
+    class KpisResponse { + total_alunos_ativos : int ; + total_turmas_vigentes : int ; + total_pedidos_pendentes : int }
+    class HistoricoResponse { + id_matricula : int ; + status : int ? ; + percentual_frequencia : float ? }
+  }
+}
+
+Aluno --> Matricula
+Curso --> Turma
+Turma --> Matricula
+Turma --> Usuario
+Turma --> Pedido
+Matricula --> Nota
+Matricula --> Presenca
+Usuario --> Pedido
+Pedido --> ItemPedido
+ItemPedido --> Estoque
+Estoque --> MovimentacaoEstoque
+
+@enduml

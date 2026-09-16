@@ -1,0 +1,70 @@
+<section class="students-table-card">
+  <header class="students-table-card__header">
+    <div>
+      <h1>Lista de Alunos</h1>
+      <p>Gerencie os alunos cadastrados no SGA.</p>
+    </div>
+    <label class="students-table-card__search">
+      <span>Pesquisar</span>
+      <input
+        type="search"
+        placeholder="Buscar por nome"
+        (input)="onSearch($event)"
+        [disabled]="loading"
+      />
+    </label>
+  </header>
+
+  <div class="table-wrap" *ngIf="alunos.length > 0; else emptyState">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Nascimento</th>
+          <th>Endereco</th>
+          <th class="actions-col">Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let aluno of alunos">
+          <td>{{ aluno.nome }}</td>
+          <td>{{ aluno.telefone || '-' }}</td>
+          <td>{{ aluno.dataNascimento ? (aluno.dataNascimento | date:'dd/MM/yyyy') : '-' }}</td>
+          <td>{{ (aluno.rua || '') + (aluno.numero ? ', ' + aluno.numero : '') + (aluno.bairro ? ' - ' + aluno.bairro : '') || '-' }}</td>
+          <td class="actions-col">
+            <button type="button" class="btn btn--ghost" (click)="edit.emit(aluno)" [disabled]="loading">Editar</button>
+            <button
+              type="button"
+              class="btn btn--danger"
+              (click)="remove.emit(aluno)"
+              [disabled]="loading || deletingAlunoId === aluno.idAluno"
+            >
+              <span *ngIf="deletingAlunoId === aluno.idAluno" class="spinner" aria-hidden="true"></span>
+              {{ deletingAlunoId === aluno.idAluno ? 'Excluindo...' : 'Excluir' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <p class="empty">Nenhum aluno encontrado para o filtro aplicado.</p>
+  </ng-template>
+
+  <footer class="pagination">
+    <button type="button" class="btn btn--ghost" (click)="previousPage()" [disabled]="currentPage === 1 || loading">
+      Anterior
+    </button>
+    <span>Pagina {{ currentPage }} de {{ totalPages }}</span>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages || loading"
+    >
+      Proxima
+    </button>
+  </footer>
+</section>

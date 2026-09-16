@@ -1,0 +1,194 @@
+:host {
+  display: block;
+}
+
+.transcript {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.transcript__toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.transcript__toolbar-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.transcript__print-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.transcript__loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.transcript__error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.transcript__content {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 2rem;
+  width: 700px;
+}
+
+@media screen and (max-width: 760px) {
+  .transcript__content {
+    width: 100%;
+  }
+}
+
+.transcript__header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.transcript__logo {
+  height: 60px;
+  margin-bottom: 0.5rem;
+}
+
+.transcript__header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+}
+
+.transcript__subtitle {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.transcript__section {
+  margin-bottom: 1.5rem;
+}
+
+.transcript__section h2 {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.transcript__info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transcript__info-table th,
+.transcript__info-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.transcript__info-table th {
+  width: 200px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.transcript__grades-table,
+.transcript__attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transcript__grades-table th,
+.transcript__grades-table td,
+.transcript__attendance-table th,
+.transcript__attendance-table td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.transcript__grades-table th,
+.transcript__attendance-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.transcript__empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.transcript__frequencia {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn--ghost {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.btn--primary {
+  background: #1e293b;
+  color: #fff;
+}
+
+.spinner {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid rgba(100, 116, 139, 0.25);
+  border-top-color: #64748b;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  :host {
+    background: #fff;
+  }
+
+  .transcript__content {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .transcript__section {
+    page-break-inside: avoid;
+  }
+}

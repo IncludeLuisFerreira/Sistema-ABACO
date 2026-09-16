@@ -1,0 +1,109 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #e0f2fe, #f8fafc 55%);
+}
+
+.attendance-management {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.attendance-management__topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.attendance-management__topbar h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.attendance-management__topbar p {
+  margin: 0.4rem 0 0;
+  color: #475569;
+}
+
+.save-btn {
+  border: 0;
+  border-radius: 10px;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 700;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.save-btn[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.local-feedback {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+}
+
+.attendance-management__controls {
+  margin-bottom: 1rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
+}
+
+.attendance-management__controls label {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 400px;
+}
+
+.attendance-management__controls label span {
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+.attendance-management__controls select {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.dias-aula-info {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.spinner {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .attendance-management { padding: 1rem; }
+  .attendance-management__topbar { flex-direction: column; }
+  .attendance-management__topbar h1 { font-size: 1.3rem; }
+  .attendance-management__controls { padding: 1rem; }
+  .attendance-management__controls label { max-width: 100%; }
+}

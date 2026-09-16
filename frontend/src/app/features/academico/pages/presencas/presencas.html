@@ -1,0 +1,58 @@
+<div class="presencas-page">
+  <header class="presencas-header">
+    <h1>Presenças</h1>
+  </header>
+
+  <div class="filters">
+    <label>
+      Turma:
+      <select [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
+        <option value="" disabled>Selecione uma turma</option>
+        <option *ngFor="let turma of turmas" [value]="turma.idTurma">
+          #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }}
+        </option>
+      </select>
+    </label>
+    <label *ngIf="selectedTurma">
+      Data:
+      <input type="date" [ngModel]="dataAula" (ngModelChange)="onDataChange($event)" />
+    </label>
+  </div>
+
+  <p *ngIf="loadingTurmas" class="loading">Carregando turmas...</p>
+  <p *ngIf="!loadingTurmas && turmas.length === 0" class="empty">Nenhuma turma atribuída a você.</p>
+
+  <div *ngIf="selectedTurma && dataAula">
+    <p *ngIf="loadingPresencas" class="loading">Carregando presenças...</p>
+    <p *ngIf="feedback" class="error">{{ feedback }}</p>
+
+    <div *ngIf="!loadingPresencas && students.length === 0" class="empty">
+      Nenhum aluno matriculado nesta turma.
+    </div>
+
+    <div class="table-wrap" *ngIf="!loadingPresencas && students.length > 0">
+    <table class="presencas-table">
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>Presente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of students">
+          <td>{{ s.nomeAluno }}</td>
+          <td>
+            <button type="button" [class.presente-btn--on]="s.presente" [class.presente-btn--off]="!s.presente" (click)="togglePresente(s.idMatricula)">
+              {{ s.presente ? 'Sim' : 'Não' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <button *ngIf="students.length > 0" type="button" class="save-btn" [disabled]="saving" (click)="save()">
+      {{ saving ? 'Salvando...' : 'Salvar Presenças' }}
+    </button>
+  </div>
+</div>

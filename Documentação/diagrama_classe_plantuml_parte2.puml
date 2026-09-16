@@ -1,0 +1,169 @@
+@startuml
+package "app" {
+
+  package "api/v1" {
+    class AuthRouter {
+      + login(payload, request, db) : TokenResponse
+      + forgot_password(payload, request, db) : MessageResponse
+      + reset_password(payload, request, db) : MessageResponse
+    }
+    class AlunoRouter {
+      + read_alunos(current_user, db) : list
+      + read_aluno(aluno_id, current_user, db) : AlunoResponseSchema
+      + create_alunos(payload, current_user, db) : AlunoResponseSchema
+      + update_alunos(aluno_id, payload, current_user, db) : AlunoResponseSchema
+      + delete_alunos(aluno_id, current_user, db) : dict
+    }
+    class CursoRouter {
+      + read_cursos(current_user, db) : list
+      + read_curso(curso_id, current_user, db) : CursoResponseSchema
+      + create_cursos(payload, current_user, db) : CursoResponseSchema
+      + update_cursos(curso_id, payload, current_user, db) : CursoResponseSchema
+      + delete_cursos(curso_id, current_user, db) : dict
+    }
+    class TurmaRouter {
+      + read_turmas(current_user, db) : list
+      + read_minhas_turmas(current_user, db) : list
+      + read_turma(turma_id, current_user, db) : TurmaResponseSchema
+      + create_turmas(payload, current_user, db) : TurmaResponseSchema
+      + update_turmas(turma_id, payload, current_user, db) : TurmaResponseSchema
+      + delete_turmas(turma_id, current_user, db) : dict
+    }
+    class MatriculaRouter {
+      + read_matriculas(current_user, db) : list
+      + read_matriculas_by_professor(current_user, db) : list
+      + read_matricula(matricula_id, current_user, db) : MatriculaResponseSchema
+      + create_matriculas(payload, current_user, db) : MatriculaResponseSchema
+      + update_matriculas(matricula_id, payload, current_user, db) : MatriculaResponseSchema
+      + delete_matriculas(matricula_id, current_user, db) : dict
+    }
+    class NotaRouter {
+      + create_notas(payload, current_user, db) : list
+      + read_notas_by_matricula(matricula_id, current_user, db) : list
+      + read_notas_by_turma(turma_id, prova?, current_user, db) : list
+      + read_media_turma(turma_id, current_user, db) : MediaTurmaSchema
+    }
+    class PresencaRouter {
+      + create_presencas(payload, current_user, db) : list
+      + read_presencas_by_turma(turma_id, dataAula?, current_user, db) : list
+    }
+    class UsuarioRouter {
+      + read_usuarios(current_user, db) : list
+      + read_usuario(usuario_id, current_user, db) : UsuarioResponseSchema
+      + create_usuarios(payload, current_user, db) : UsuarioResponseSchema
+      + update_usuarios(usuario_id, payload, current_user, db) : UsuarioResponseSchema
+      + delete_usuarios(usuario_id, current_user, db) : dict
+    }
+    class PedidoRouter {
+      + read_pedidos(current_user, db) : list
+      + read_pedido(pedido_id, current_user, db) : PedidoResponseSchema
+      + create_pedidos(payload, current_user, db) : PedidoResponseSchema
+      + aprovar_pedido_endpoint(pedido_id, current_user, db) : PedidoResponseSchema
+      + comprar_pedido_endpoint(pedido_id, payload, current_user, db) : PedidoResponseSchema
+      + update_pedidos(pedido_id, payload, current_user, db) : PedidoResponseSchema
+      + entregar_pedido_endpoint(pedido_id, current_user, db) : PedidoResponseSchema
+      + delete_pedidos(pedido_id, current_user, db) : dict
+    }
+    class EstoqueRouter {
+      + read_estoque(current_user, db) : list
+      + search_estoque(q, current_user, db) : list
+      + read_alertas_estoque(current_user, db) : list
+      + read_estoque_item(estoque_id, current_user, db) : EstoqueResponseSchema
+      + create_estoque_item(payload, current_user, db) : EstoqueResponseSchema
+      + update_estoque_item(estoque_id, payload, current_user, db) : EstoqueResponseSchema
+      + delete_estoque_item(estoque_id, current_user, db) : dict
+      + baixa_estoque_item(estoque_id, payload, current_user, db) : EstoqueResponseSchema
+    }
+    class DashboardRouter {
+      + read_kpis(current_user, db) : KpisResponse
+      + read_charts_academico(current_user, db) : ChartAcademicoResponse
+      + read_charts_logistica(current_user, db) : ChartLogisticaResponse
+    }
+    class HistoricoRouter {
+      + read_historico_by_matricula(matricula_id, current_user, db) : HistoricoResponse
+    }
+  }
+
+  package "core" {
+    class Settings { + app_name : str ; + database_url : str ; + secret_key : str ; + jwt_algorithm : str ; + access_token_expire_minutes : int ; + reset_token_expire_minutes : int ; + smtp_host : str ; + smtp_port : int ; + frontend_url : str }
+    class SecurityUtils { + verify_password(plain, hash) : bool ; + hash_password(password) : str ; + create_access_token(subject, cargo) : str ; + create_reset_token(email) : str }
+    class AuthDependencies { + get_current_user(authorization) : dict ; + verify_cargo(cargos) : callable ; + verify_director_role() : dict }
+    class RateLimiter
+  }
+
+  package "db" {
+    class Database { + engine : Engine ; + SessionLocal : sessionmaker ; + Base : declarative_base ; + get_db() : Session }
+  }
+
+  package "services" {
+    class AuthService { + authenticate_user(db, email, senha) : Usuario ; + build_login_response(usuario) : dict ; + process_forgot_password(db, email) : str ; + process_reset_password(db, token, nova_senha, confirmar_senha) : void }
+    class AlunoService { + create_aluno(db, payload) : Aluno ; + list_alunos(db) : list ; + get_aluno_by_id(db, id) : Aluno ; + update_aluno(db, id, payload) : Aluno ; + delete_aluno(db, id) : void }
+    class CursoService { + create_curso(db, payload) : Curso ; + list_cursos(db) : list ; + get_curso_by_id(db, id) : Curso ; + update_curso(db, id, payload) : Curso ; + delete_curso(db, id) : void }
+    class TurmaService { + create_turma(db, payload) : Turma ; + list_turmas(db) : list ; + list_turmas_by_professor(db, id) : list ; + get_turma_by_id(db, id) : Turma ; + update_turma(db, id, payload) : Turma ; + delete_turma(db, id) : void }
+    class MatriculaService { + create_matricula(db, payload) : Matricula ; + list_matriculas(db) : list ; + list_matriculas_by_professor(db, id) : list ; + get_matricula_by_id(db, id) : Matricula ; + update_matricula(db, id, payload) : Matricula ; + delete_matricula(db, id) : void }
+    class NotaService { + create_or_update_notas(db, payload) : list ; + list_notas_by_matricula(db, id) : list ; + list_notas_by_turma(db, id, prova) : list ; + calcular_media_por_prova(db, id) : list }
+    class PresencaService { + create_or_update_presencas(db, payload) : list ; + list_presencas_by_turma(db, id, data) : list }
+    class UsuarioService { + create_usuario(db, payload) : Usuario ; + list_usuarios(db) : list ; + get_usuario_by_id(db, id) : Usuario ; + update_usuario(db, id, payload) : Usuario ; + delete_usuario(db, id) : void }
+    class PedidoService { + create_pedido(db, payload, idUsuario) : Pedido ; + list_pedidos(db) : list ; + get_pedido_by_id(db, id) : Pedido ; + aprovar_pedido(db, id) : Pedido ; + comprar_pedido(db, id, payload) : Pedido ; + update_pedido_status(db, id, payload) : Pedido ; + entregar_pedido(db, id) : Pedido ; + delete_pedido(db, id) : void }
+    class EstoqueService { + create_estoque(db, payload) : Estoque ; + list_estoque(db) : list ; + search_estoque_by_name(db, termo) : list ; + get_estoque_by_id(db, id) : Estoque ; + update_estoque(db, id, payload) : Estoque ; + delete_estoque(db, id) : void ; + dar_baixa(db, id, qtd, just) : Estoque ; + get_alertas(db) : list ; + deduzir_por_pedido(db, pedido) : void }
+    class DashboardService { + get_kpis(db) : dict ; + get_chart_academico(db) : dict ; + get_chart_logistica(db) : dict }
+    class HistoricoService { + get_historico_by_matricula(db, id) : dict }
+    class EmailService { + send_reset_email(email, token) : void }
+  }
+}
+
+AuthRouter --> AuthService
+AuthRouter --> EmailService
+AlunoRouter --> AlunoService
+CursoRouter --> CursoService
+TurmaRouter --> TurmaService
+MatriculaRouter --> MatriculaService
+NotaRouter --> NotaService
+PresencaRouter --> PresencaService
+UsuarioRouter --> UsuarioService
+PedidoRouter --> PedidoService
+EstoqueRouter --> EstoqueService
+DashboardRouter --> DashboardService
+HistoricoRouter --> HistoricoService
+
+AuthService --> Usuario
+AuthService --> Database
+AuthService --> SecurityUtils
+AlunoService --> Aluno
+AlunoService --> Database
+CursoService --> Curso
+CursoService --> Database
+TurmaService --> Turma
+TurmaService --> Curso
+TurmaService --> Usuario
+TurmaService --> Database
+MatriculaService --> Aluno
+MatriculaService --> Turma
+MatriculaService --> Database
+NotaService --> Nota
+NotaService --> Matricula
+NotaService --> Database
+PresencaService --> Presenca
+PresencaService --> Matricula
+PresencaService --> Database
+UsuarioService --> Usuario
+UsuarioService --> Database
+PedidoService --> Pedido
+PedidoService --> ItemPedido
+PedidoService --> Database
+EstoqueService --> Estoque
+EstoqueService --> MovimentacaoEstoque
+EstoqueService --> Database
+DashboardService --> Turma
+DashboardService --> Pedido
+DashboardService --> Estoque
+DashboardService --> Matricula
+DashboardService --> Database
+HistoricoService --> Matricula
+HistoricoService --> Aluno
+HistoricoService --> Turma
+HistoricoService --> Nota
+HistoricoService --> Presenca
+HistoricoService --> Database
+EmailService --> Settings
+@enduml

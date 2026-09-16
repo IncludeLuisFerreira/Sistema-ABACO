@@ -1,0 +1,120 @@
+<div class="transcript">
+  <ab-breadcrumb [items]="breadcrumbs"></ab-breadcrumb>
+  <div class="transcript__toolbar no-print">
+    <button type="button" class="btn btn--ghost" (click)="voltar()">Voltar</button>
+    <div class="transcript__toolbar-right">
+      <button type="button" class="btn btn--ghost" (click)="baixarPdf()" [disabled]="gerandoPdf">Baixar PDF</button>
+      <button type="button" class="btn btn--primary" (click)="imprimir()">Imprimir</button>
+    </div>
+  </div>
+  <p class="transcript__print-hint no-print">Use <strong>Ctrl+P</strong> ou <strong>Imprimir</strong> para imprimir. Para salvar em PDF, clique em <strong>Baixar PDF</strong>.</p>
+
+  <div *ngIf="loading" class="transcript__loading">
+    <span class="spinner"></span> Carregando historico...
+  </div>
+
+  <div *ngIf="error" class="transcript__error">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="historico" id="transcriptContent" class="transcript__content">
+    <header class="transcript__header">
+      <img src="/Logo_ABACO.png" alt="ABACO" class="transcript__logo" />
+      <h1>Historico Escolar</h1>
+      <p class="transcript__subtitle">SGA ABACO - Sistema de Gestao Academica</p>
+    </header>
+
+    <section class="transcript__section">
+      <h2>Dados do Aluno</h2>
+      <table class="transcript__info-table">
+        <tr>
+          <th>Nome</th>
+          <td>{{ historico.aluno.nome }}</td>
+        </tr>
+        <tr>
+          <th>Data de Nascimento</th>
+          <td>{{ (historico.aluno.dataNascimento ?? '') | date:'dd/MM/yyyy' }}</td>
+        </tr>
+        <tr>
+          <th>Telefone</th>
+          <td>{{ historico.aluno.telefone ?? '---' }}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="transcript__section">
+      <h2>Dados da Matricula</h2>
+      <table class="transcript__info-table">
+        <tr>
+          <th>Curso</th>
+          <td>{{ historico.turma.nomeCurso }}</td>
+        </tr>
+        <tr>
+          <th>Professor</th>
+          <td>{{ historico.turma.nomeProfessor ?? '---' }}</td>
+        </tr>
+        <tr>
+          <th>Periodo</th>
+          <td>{{ (historico.turma.dataInicio ?? '') | date:'dd/MM/yyyy' }} a {{ (historico.turma.dataFim ?? '') | date:'dd/MM/yyyy' }}</td>
+        </tr>
+        <tr>
+          <th>Dias de Aula</th>
+          <td>{{ historico.turma.diasAula ?? '---' }}</td>
+        </tr>
+        <tr>
+          <th>Data da Matricula</th>
+          <td>{{ (historico.dataMatricula ?? '') | date:'dd/MM/yyyy' }}</td>
+        </tr>
+        <tr>
+          <th>Status</th>
+          <td>{{ statusLabel(historico.status) }}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="transcript__section">
+      <h2>Notas</h2>
+      <table class="transcript__grades-table" *ngIf="historico.notas.length > 0; else semNotas">
+        <thead>
+          <tr>
+            <th>Prova</th>
+            <th>Nota</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let n of historico.notas">
+            <td>{{ n.prova }}</td>
+            <td>{{ n.nota ?? '---' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #semNotas>
+        <p class="transcript__empty">Nenhuma nota registrada.</p>
+      </ng-template>
+    </section>
+
+    <section class="transcript__section">
+      <h2>Frequencia</h2>
+      <table class="transcript__attendance-table" *ngIf="historico.presencas.length > 0; else semPresencas">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Presente</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of historico.presencas">
+            <td>{{ (p.dataAula ?? '') | date:'dd/MM/yyyy' }}</td>
+            <td>{{ p.presente ? 'Sim' : 'Nao' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #semPresencas>
+        <p class="transcript__empty">Nenhuma presenca registrada.</p>
+      </ng-template>
+      <p class="transcript__frequencia" *ngIf="historico.percentualFrequencia !== null">
+        <strong>Frequencia total:</strong> {{ historico.percentualFrequencia }}%
+      </p>
+    </section>
+  </div>
+</div>

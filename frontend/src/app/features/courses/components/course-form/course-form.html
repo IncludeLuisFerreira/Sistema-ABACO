@@ -1,0 +1,22 @@
+<section class="form-card" aria-label="Formulario de curso">
+  <header>
+    <h2>{{ mode === 'create' ? 'Novo curso' : 'Editar curso' }}</h2>
+    <p>{{ mode === 'create' ? 'Cadastre um novo curso no sistema.' : 'Atualize os dados do curso.' }}</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Nome do curso *</span>
+      <input formControlName="nomeCurso" type="text" placeholder="Nome do curso" />
+      <small class="error" *ngIf="form.controls.nomeCurso.invalid && form.controls.nomeCurso.touched">Nome e obrigatorio.</small>
+    </label>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</section>

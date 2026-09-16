@@ -1,0 +1,46 @@
+<section class="form-card" aria-label="Formulario de usuario">
+  <header>
+    <h2>{{ mode === 'create' ? 'Novo colaborador' : 'Editar colaborador' }}</h2>
+    <p>{{ mode === 'create' ? 'Cadastre um novo acesso ao sistema.' : 'Atualize dados e perfil de acesso.' }}</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Nome *</span>
+      <input formControlName="nome" type="text" placeholder="Nome completo" />
+      <small class="error" *ngIf="form.controls.nome.invalid && form.controls.nome.touched">Nome e obrigatorio.</small>
+    </label>
+
+    <label>
+      <span>E-mail *</span>
+      <input formControlName="email" type="email" placeholder="email@abaco.org" />
+      <small class="error" *ngIf="form.controls.email.invalid && form.controls.email.touched">Informe um e-mail valido.</small>
+    </label>
+
+    <label>
+      <span>Telefone</span>
+      <input formControlName="telefone" type="text" placeholder="(00) 00000-0000" />
+    </label>
+
+    <label>
+      <span>Nivel de acesso *</span>
+      <select formControlName="cargo">
+        <option *ngFor="let option of roleOptions" [value]="option.value">{{ option.label }}</option>
+      </select>
+    </label>
+
+    <label *ngIf="mode === 'create'">
+      <span>Senha provisoria *</span>
+      <input formControlName="senha" type="password" placeholder="Defina uma senha inicial" />
+      <small class="error" *ngIf="form.controls.senha.invalid && form.controls.senha.touched">Senha e obrigatoria para cadastro.</small>
+    </label>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</section>

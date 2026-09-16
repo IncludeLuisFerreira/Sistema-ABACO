@@ -1,0 +1,45 @@
+<main class="student-grades">
+  <ab-breadcrumb [items]="breadcrumbs"></ab-breadcrumb>
+  <header class="student-grades__topbar">
+    <div>
+      <h1>Notas do Aluno</h1>
+      <p *ngIf="alunoNome">Aluno: <strong>{{ alunoNome }}</strong></p>
+      <p *ngIf="turmaNome">Turma: <strong>{{ turmaNome }}</strong></p>
+    </div>
+    <a class="btn btn--ghost" routerLink="/admin/matriculas">Voltar</a>
+  </header>
+
+  <p class="local-feedback" *ngIf="error">{{ error }}</p>
+
+  <section class="table-card" *ngIf="!loading && !error">
+    <header class="table-card__header">
+      <div>
+        <h1>Boletim de Notas</h1>
+        <p>Notas registradas para esta matricula.</p>
+      </div>
+    </header>
+
+    <div class="table-wrap" *ngIf="notas.length > 0; else emptyState">
+      <table>
+        <thead>
+          <tr>
+            <th>Prova</th>
+            <th class="grade-col">Nota</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let n of notas">
+            <td>{{ n.prova }}&ordm; Prova</td>
+            <td class="grade-col">
+              <span class="grade-value">{{ n.nota ?? '-' }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyState>
+      <p class="empty">Nenhuma nota registrada para esta matricula.</p>
+    </ng-template>
+  </section>
+</main>

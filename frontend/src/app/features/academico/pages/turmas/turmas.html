@@ -1,0 +1,57 @@
+<div class="turmas-page">
+  <header class="turmas-header">
+    <h1>Minhas Turmas</h1>
+  </header>
+
+  <p *ngIf="loading" class="loading">Carregando suas turmas...</p>
+  <p *ngIf="error" class="error">{{ error }}</p>
+
+  <div *ngIf="!loading && !error && turmas.length === 0" class="empty-state">
+    <p class="empty-state__title">Nenhuma turma atribuída a você</p>
+    <p class="empty-state__desc">Entre em contato com a diretoria para que uma turma seja vinculada ao seu perfil.</p>
+  </div>
+
+  <div class="turmas-grid" *ngIf="!loading && !error && turmas.length > 0">
+    <div class="turma-card" *ngFor="let turma of turmas" [class.turma-card--andamento]="getStatus(turma) === 'em_andamento'" [class.turma-card--futura]="getStatus(turma) === 'futura'" [class.turma-card--encerrada]="getStatus(turma) === 'encerrada'">
+      <div class="turma-card__badge" [class.turma-card__badge--andamento]="getStatus(turma) === 'em_andamento'" [class.turma-card__badge--futura]="getStatus(turma) === 'futura'" [class.turma-card__badge--encerrada]="getStatus(turma) === 'encerrada'">
+        {{ statusLabel(turma) }}
+      </div>
+
+      <h2 class="turma-card__curso">{{ turma.curso?.nomeCurso ?? 'Turma #' + turma.idTurma }}</h2>
+
+      <div class="turma-card__info" *ngIf="turma.dataInicio || turma.dataFim">
+        <span class="turma-card__label">Período</span>
+        <span class="turma-card__value">{{ formatDate(turma.dataInicio) }} → {{ formatDate(turma.dataFim) }}</span>
+      </div>
+
+      <div class="turma-card__info" *ngIf="turma.diasAula">
+        <span class="turma-card__label">Dias</span>
+        <span class="turma-card__value">{{ turma.diasAula }}</span>
+      </div>
+
+      <div class="turma-card__info">
+        <span class="turma-card__label">Vagas</span>
+        <span class="turma-card__value">{{ turma.vagasOcupadas ?? 0 }}/{{ turma.capacidade ?? '—' }}</span>
+      </div>
+
+      <div class="turma-card__progresso" *ngIf="getStatus(turma) === 'em_andamento'">
+        <div class="turma-card__bar">
+          <div class="turma-card__fill" [style.width.%]="getProgresso(turma)"></div>
+        </div>
+        <span class="turma-card__progresso-text">{{ getProgresso(turma) }}% do período</span>
+      </div>
+
+      <div class="turma-card__actions">
+        <a class="turma-card__btn turma-card__btn--detalhes" [routerLink]="['/academico/turmas', turma.idTurma]">
+          Ver Detalhes
+        </a>
+        <a class="turma-card__btn turma-card__btn--presenca" [routerLink]="['/academico/presencas']">
+          Registrar Presença
+        </a>
+        <a class="turma-card__btn turma-card__btn--notas" [routerLink]="['/academico/notas']">
+          Lançar Notas
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<label [attr.for]="'email-' + (control?.id || '' )">{{ label }}</label>
+<input [id]="'email-' + (control?.id || '' )" type="email" [formControl]="control" [placeholder]="placeholder" />
+<div class="field-error" *ngIf="control?.touched && control?.invalid">
+  <small *ngIf="control?.errors?.['required']">E-mail é obrigatório</small>
+  <small *ngIf="control?.errors?.['email']">Formato de e-mail inválido</small>
+</div>

@@ -1,0 +1,48 @@
+﻿<section class="form-card" aria-label="Formulario de matricula">
+  <header>
+    <h2>{{ mode === 'create' ? 'Nova matricula' : 'Editar matricula' }}</h2>
+    <p>{{ mode === 'create' ? 'Cadastre uma nova matricula no sistema.' : 'Atualize os dados da matricula.' }}</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Aluno *</span>
+      <select formControlName="idAluno">
+        <option [value]="0" disabled>Selecione um aluno</option>
+        <option *ngFor="let aluno of alunos" [value]="aluno.idAluno">{{ aluno.nome }}</option>
+      </select>
+      <small class="error" *ngIf="form.controls.idAluno.invalid && form.controls.idAluno.touched">Aluno e obrigatorio.</small>
+    </label>
+
+    <label>
+      <span>Turma *</span>
+      <select formControlName="idTurma">
+        <option [value]="0" disabled>Selecione uma turma</option>
+        <option *ngFor="let turma of turmas" [value]="turma.idTurma">#{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }} — {{ turma.professor?.nome ?? 'Sem professor' }} {{ turma.dataInicio ? '(' + (turma.dataInicio | slice:0:10) + ')' : '' }}</option>
+      </select>
+      <small class="error" *ngIf="form.controls.idTurma.invalid && form.controls.idTurma.touched">Turma e obrigatoria.</small>
+    </label>
+
+    <label>
+      <span>Data da matricula</span>
+      <input formControlName="dataMatricula" type="date" />
+    </label>
+
+    <label>
+      <span>Status</span>
+      <select formControlName="status">
+        <option [value]="0">Ativa</option>
+        <option [value]="1">Concluida</option>
+        <option [value]="2">Cancelada</option>
+      </select>
+    </label>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</section>

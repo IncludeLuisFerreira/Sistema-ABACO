@@ -1,0 +1,81 @@
+<section class="form-card" aria-label="Formulario de pedido">
+  <header>
+    <h2>Novo pedido de materiais</h2>
+    <p>Preencha os dados para solicitar materiais.</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      <span>Turma *</span>
+      <select formControlName="idTurma">
+        <option [ngValue]="null" disabled>Selecione uma turma</option>
+        <option *ngFor="let turma of turmas" [ngValue]="turma.idTurma">
+          Turma #{{ turma.idTurma }} - {{ turma.curso?.nomeCurso ?? '' }}
+        </option>
+      </select>
+      <small class="error" *ngIf="form.controls.idTurma.invalid && form.controls.idTurma.touched">Selecione uma turma.</small>
+    </label>
+
+    <label>
+      <span>Data do pedido</span>
+      <input formControlName="dataPedido" type="date" />
+    </label>
+
+    <fieldset>
+      <legend>Itens do pedido</legend>
+      <small class="hint">Digite o nome do item. O estoque existente aparece como consulta abaixo.</small>
+
+      <div formArrayName="itens">
+        <div *ngFor="let itemForm of itensArray.controls; let i = index" [formGroupName]="i" class="item-row">
+          <div class="item-search-wrap">
+            <label>
+              <span>Item *</span>
+              <input
+                [id]="'item-search-' + i"
+                type="text"
+                class="item-search-input"
+                placeholder="Digite o nome do item..."
+                autocomplete="off"
+                formControlName="nomeItem"
+                (input)="onSearchInput(i, $event)"
+                (focus)="onFocus(i)"
+                (blur)="onBlur(i)"
+              />
+            </label>
+            <div class="dropdown" *ngIf="showDropdown[i] && hasFilteredItems(i)">
+              <button
+                type="button"
+                class="dropdown-item"
+                *ngFor="let item of filteredEstoque[i]"
+                (mousedown)="selectItem(i, item)"
+              >
+                <strong>{{ item.nomeItem }}</strong>
+                <span class="dropdown-qty">{{ item.quantidadeDisponivel ?? '0' }} {{ item.unidade ?? '' }}</span>
+              </button>
+            </div>
+            <small class="error" *ngIf="itemForm.get('nomeItem')?.invalid && itemForm.get('nomeItem')?.touched">Digite o nome do item.</small>
+          </div>
+
+          <label>
+            <span>Quantidade</span>
+            <input formControlName="quantidade" type="number" placeholder="Qtd" />
+          </label>
+
+          <button type="button" class="btn btn--danger btn--sm" (click)="removeItem(i)" [disabled]="itensArray.length <= 1">
+            Remover
+          </button>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn--ghost btn--sm" (click)="addItem()">Adicionar item</button>
+    </fieldset>
+
+    <footer>
+      <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Salvando...' : 'Solicitar' }}
+      </button>
+    </footer>
+  </form>
+</section>

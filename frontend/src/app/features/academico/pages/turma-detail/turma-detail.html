@@ -1,0 +1,95 @@
+<div class="turma-detail-page">
+  <p *ngIf="loading" class="loading">Carregando dados da turma...</p>
+  <p *ngIf="error" class="error">{{ error }}</p>
+
+  <ng-container *ngIf="!loading && !error && turma">
+    <a routerLink="/academico/turmas" class="back-link">← Voltar para Minhas Turmas</a>
+
+    <!-- Cabeçalho da Turma -->
+    <section class="turma-header">
+      <div class="turma-header__badge" [class.turma-header__badge--andamento]="getStatus() === 'em_andamento'" [class.turma-header__badge--futura]="getStatus() === 'futura'" [class.turma-header__badge--encerrada]="getStatus() === 'encerrada'">
+        {{ statusLabel() }}
+      </div>
+      <h1 class="turma-header__curso">{{ turma.curso?.nomeCurso ?? 'Turma #' + turma.idTurma }}</h1>
+      <p class="turma-header__professor" *ngIf="turma.professor?.nome">Professor(a): {{ turma.professor?.nome }}</p>
+
+      <div class="turma-header__info-grid">
+        <div class="turma-header__info">
+          <span class="turma-header__label">Período</span>
+          <span class="turma-header__value">{{ formatDate(turma.dataInicio) }} → {{ formatDate(turma.dataFim) }}</span>
+        </div>
+        <div class="turma-header__info">
+          <span class="turma-header__label">Dias</span>
+          <span class="turma-header__value">{{ turma.diasAula || '—' }}</span>
+        </div>
+        <div class="turma-header__info">
+          <span class="turma-header__label">Vagas</span>
+          <span class="turma-header__value">{{ turma.vagasOcupadas ?? 0 }} / {{ turma.capacidade ?? '—' }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seletor de Prova -->
+    <section class="chart-section" *ngIf="provasDisponiveis.length > 0">
+      <div class="chart-section__header">
+        <h2>Distribuição de Notas</h2>
+        <label class="prova-select">
+          <select [ngModel]="provaSelecionada" (ngModelChange)="onProvaChange($event)">
+            <option *ngFor="let p of provasDisponiveis" [value]="p.value">{{ p.label }}</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Média -->
+      <div class="media-card" *ngIf="notas.length > 0">
+        <span class="media-card__label">Média da turma</span>
+        <span class="media-card__value" [class.media-card__value--ruim]="mediaGeral < 5" [class.media-card__value--media]="mediaGeral >= 5 && mediaGeral < 7" [class.media-card__value--boa]="mediaGeral >= 7">{{ mediaGeral }}</span>
+        <span class="media-card__alunos">{{ notas.length }} aluno(s) avaliado(s)</span>
+      </div>
+
+      <!-- Gráfico de Barras -->
+      <div class="chart" *ngIf="notas.length > 0">
+        <div class="chart__bars">
+          <div class="chart__bar-row" *ngFor="let f of faixas">
+            <span class="chart__bar-label">{{ f.label }}</span>
+            <div class="chart__bar-track">
+              <div
+                class="chart__bar-fill"
+                [style.width.%]="(f.count / maxFaixaCount) * 100"
+                [style.background]="f.color"
+              ></div>
+            </div>
+            <span class="chart__bar-count">{{ f.count }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="empty-chart" *ngIf="notas.length === 0">Nenhuma nota lançada para esta prova.</p>
+
+      <!-- Tabela de alunos -->
+      <div class="notas-table-wrapper" *ngIf="notas.length > 0">
+        <h3>Notas por Aluno</h3>
+        <table class="notas-table">
+          <thead>
+            <tr>
+              <th>Aluno</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let n of notas">
+              <td>{{ n.matricula?.aluno?.nome ?? 'Aluno #' + n.idMatricula }}</td>
+              <td>
+                <span class="nota-badge" [class.nota-badge--ruim]="(n.nota ?? 0) < 5" [class.nota-badge--media]="(n.nota ?? 0) >= 5 && (n.nota ?? 0) < 7" [class.nota-badge--boa]="(n.nota ?? 0) >= 7">
+                  {{ n.nota ?? '—' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="empty-chart" *ngIf="provasDisponiveis.length === 0">Esta turma não possui avaliações configuradas.</p>
+  </ng-container>
+</div>

@@ -1,0 +1,49 @@
+.alunos-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
+.alunos-header { margin-bottom: 1.5rem; }
+.alunos-header h1 { margin: 0; font-size: 1.5rem; }
+.loading { color: #64748b; }
+.error { color: #d93025; }
+
+.filter-turma { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1.5rem; max-width: 300px; }
+.filter-turma span { font-weight: 600; color: #475569; font-size: 0.82rem; }
+.filter-turma select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+
+.empty-state { text-align: center; padding: 3rem 1rem; }
+.empty-state__title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 0.4rem; }
+.empty-state__desc { color: #64748b; margin: 0; }
+
+.alunos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+
+.aluno-card {
+  display: flex; gap: 1rem;
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  padding: 1.25rem; transition: box-shadow 0.2s, transform 0.15s;
+}
+.aluno-card:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1); transform: translateY(-2px); }
+
+.aluno-card__avatar {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: #e0f2fe; color: #0369a1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 800; flex-shrink: 0;
+}
+
+.aluno-card__body { flex: 1; min-width: 0; }
+.aluno-card__name { margin: 0 0 0.5rem; font-size: 1.05rem; color: #0f172a; }
+.aluno-card__info { display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem; }
+.aluno-card__label { color: #64748b; }
+.aluno-card__value { color: #334155; font-weight: 600; text-align: right; }
+
+.aluno-card__status {
+  display: inline-block; margin-top: 0.4rem; padding: 0.15rem 0.5rem;
+  border-radius: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+}
+.aluno-card__status--ativa { background: #fef2f2; color: #dc2626; }
+.aluno-card__status--concluida { background: #f0fdf4; color: #15803d; }
+
+@media (max-width: 768px) {
+  .alunos-page { padding: 1rem; }
+  .alunos-header h1 { font-size: 1.25rem; }
+  .alunos-grid { grid-template-columns: 1fr; }
+}

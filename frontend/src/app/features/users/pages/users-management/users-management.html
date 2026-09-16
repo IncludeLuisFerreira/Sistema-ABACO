@@ -1,0 +1,34 @@
+<main class="users-management">
+  <header class="users-management__topbar">
+    <div>
+      <h1>Equipe ABACO</h1>
+      <p>Painel administrativo para cadastro e gestao de permissao de usuarios.</p>
+    </div>
+    <button type="button" class="new-user-btn" (click)="openCreate()" [disabled]="saving || loadingList">Novo usuario</button>
+  </header>
+
+  <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <section class="users-management__layout">
+    <app-usuarios-list
+      [usuarios]="pagedUsuarios"
+      [loading]="loadingList || saving"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [deletingUserId]="deletingUserId"
+      (search)="onSearch($event)"
+      (edit)="openEdit($event)"
+      (remove)="onDelete($event)"
+      (pageChange)="onPageChange($event)"
+    ></app-usuarios-list>
+
+    <app-usuario-form
+      *ngIf="panelOpen"
+      [mode]="formMode"
+      [usuario]="selectedUsuario"
+      [loading]="saving"
+      (save)="onSave($event)"
+      (cancel)="closePanel()"
+    ></app-usuario-form>
+  </section>
+</main>

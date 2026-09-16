@@ -1,0 +1,106 @@
+:host {
+  display: block;
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
+}
+
+.table-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.table-card__header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.table-card__header p {
+  margin: 0.4rem 0 0;
+  color: #64748b;
+}
+
+.table-card__search {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+
+.table-card__search input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrap th,
+.table-wrap td {
+  text-align: left;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.presence-col {
+  text-align: center;
+  width: 140px;
+}
+
+.presence-toggle {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.presence-toggle[disabled] {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge--presente {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge--ausente {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+tr.presente {
+  background: #f0fdf4;
+}
+
+tr.ausente {
+  background: #fef2f2;
+}
+
+.empty {
+  margin: 1.25rem 0;
+  color: #64748b;
+  text-align: center;
+}

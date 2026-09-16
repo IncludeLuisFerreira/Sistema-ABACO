@@ -1,0 +1,25 @@
+<div class="enrollment-card">
+  <div class="enrollment-card__header">
+    <span class="enrollment-card__badge" [class]="'enrollment-card__badge--' + statusClass">{{ statusLabel }}</span>
+    <span class="enrollment-card__date">{{ matricula.dataMatricula ? (matricula.dataMatricula | date:'dd/MM/yyyy') : '—' }}</span>
+  </div>
+
+  <h2 class="enrollment-card__aluno">{{ matricula.aluno?.nome ?? 'Aluno #' + matricula.idAluno }}</h2>
+
+  <div class="enrollment-card__turma">
+    <span class="enrollment-card__label">Turma</span>
+    <span class="enrollment-card__value">#{{ matricula.idTurma }} {{ matricula.turma?.curso?.nomeCurso ?? '—' }}</span>
+  </div>
+
+  <div class="enrollment-card__actions">
+    <button type="button" class="enrollment-card__btn enrollment-card__btn--grades" (click)="viewGrades.emit(matricula.idMatricula)">Notas</button>
+    <button type="button" class="enrollment-card__btn enrollment-card__btn--edit" (click)="edit.emit(matricula)">Editar</button>
+    <button type="button" class="enrollment-card__btn enrollment-card__btn--transcript" (click)="viewTranscript.emit(matricula.idMatricula)">Histórico</button>
+    <button
+      type="button"
+      class="enrollment-card__btn enrollment-card__btn--delete"
+      (click)="remove.emit(matricula)"
+      [disabled]="deleting"
+    >{{ deleting ? '...' : 'Excluir' }}</button>
+  </div>
+</div>
