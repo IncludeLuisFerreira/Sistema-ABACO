@@ -72,3 +72,68 @@ class TestProtectedEndpoints:
     def test_rate_limit_headers_present(self):
         response = client.post("/api/v1/auth/login", json={"email": "x@x.com", "senha": "x"})
         assert "X-RateLimit-Limit" in response.headers or "Retry-After" in response.headers or response.status_code in (401, 429)
+
+
+class TestUsuariosEndpoints:
+    def test_create_usuario_without_token_returns_401(self):
+        response = client.post("/api/v1/usuarios", json={
+            "nome": "Fulano",
+            "email": "fulano@abaco.org.br",
+            "senha": "123",
+            "cargo": 3,
+            "telefone": "11999990000",
+            "endereco": "Rua 1, 100",
+        })
+        assert response.status_code == 401
+
+    def test_create_usuario_with_professor_token_returns_403(self, professor_headers):
+        response = client.post("/api/v1/usuarios", headers=professor_headers, json={
+            "nome": "Fulano",
+            "email": "fulano@abaco.org.br",
+            "senha": "123",
+            "cargo": 3,
+            "telefone": "11999990000",
+            "endereco": "Rua 1, 100",
+        })
+        assert response.status_code == 403
+
+    def test_create_usuario_missing_required_fields_returns_422(self, auth_headers):
+        # Ausência de endereço
+        response = client.post("/api/v1/usuarios", headers=auth_headers, json={
+            "nome": "Sem Endereco",
+            "email": "sem.end@abaco.org.br",
+            "senha": "123",
+            "cargo": 3,
+            "telefone": "11999990000",
+        })
+        assert response.status_code == 422
+
+        # Ausência de telefone
+        response = client.post("/api/v1/usuarios", headers=auth_headers, json={
+            "nome": "Sem Telefone",
+            "email": "sem.tel@abaco.org.br",
+            "senha": "123",
+            "cargo": 3,
+            "endereco": "Rua 1, 100",
+        })
+        assert response.status_code == 422
+
+        # Email inválido
+        response = client.post("/api/v1/usuarios", headers=auth_headers, json={
+            "nome": "Email Invalido",
+            "email": "email_invalido_sem_arroba",
+            "senha": "123",
+            "cargo": 3,
+            "telefone": "11999990000",
+            "endereco": "Rua 1, 100",
+        })
+        assert response.status_code == 422
+
+    def test_update_usuario_not_found_returns_404(self, auth_headers):
+        response = client.put("/api/v1/usuarios/99999", headers=auth_headers, json={
+            "nome": "Inexistente",
+            "telefone": "11999990000",
+            "endereco": "Rua 1, 100",
+            "cargo": 3,
+        })
+        assert response.status_code == 404

@@ -18,8 +18,15 @@
     </label>
 
     <label>
-      <span>Telefone</span>
+      <span>Telefone *</span>
       <input formControlName="telefone" type="text" placeholder="(00) 00000-0000" />
+      <small class="error" *ngIf="form.controls.telefone.invalid && form.controls.telefone.touched">Telefone é obrigatório.</small>
+    </label>
+
+    <label>
+      <span>Endereço *</span>
+      <input formControlName="endereco" type="text" placeholder="Rua, número, bairro..." />
+      <small class="error" *ngIf="form.controls.endereco.invalid && form.controls.endereco.touched">Endereço é obrigatório.</small>
     </label>
 
     <label>

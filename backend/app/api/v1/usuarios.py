@@ -53,17 +53,40 @@ def update_usuarios(usuario_id: int, payload: UsuarioUpdateSchema, _current_user
 
 
 @router.delete("/{usuario_id}")
-def delete_usuarios(usuario_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
-	# REFACTOR: regra "não excluir a si mesmo" pertence ao usuario_service
-	current_user_id = int((_current_user.get("sub") or 0))
-	if current_user_id == usuario_id:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Não é possível excluir o próprio usuário")
+def delete_usuarios(
+    usuario_id: int, 
+    confirmacao: bool = False,  # Novo parâmetro de confirmação
+    _current_user: dict = Depends(verify_cargo(1)), 
+    db: Session = Depends(get_db)
+):
+    # 1. Verifica se a confirmação foi enviada na requisição
+    if not confirmacao:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Atenção: Tem certeza que deseja excluir este usuário? Envie '?confirmacao=true' na URL para confirmar a exclusão."
+        )
 
-	try:
-		delete_usuario(db, usuario_id)
-	except UsuarioNotFoundError as exc:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado") from exc
-	except UsuarioHasDependenciesError as exc:
-		raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Não é possível excluir um usuário que possui turmas ou pedidos vinculados") from exc
+    # REFACTOR: regra "não excluir a si mesmo" pertence ao usuario_service
+    # 2. Verifica se o usuário não está tentando excluir a si mesmo
+    current_user_id = int((_current_user.get("sub") or 0))
+    if current_user_id == usuario_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Não é possível excluir o próprio usuário"
+        )
 
-	return {"detail": "Usuário excluído com sucesso"}
+    # 3. Tenta realizar a exclusão
+    try:
+        delete_usuario(db, usuario_id)
+    except UsuarioNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Usuário não encontrado"
+        ) from exc
+    except UsuarioHasDependenciesError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="Não é possível excluir um usuário que possui turmas ou pedidos vinculados"
+        ) from exc
+
+    return {"detail": "Usuário excluído com sucesso"}

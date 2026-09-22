@@ -38,6 +38,7 @@ export class UsuarioService {
       nome: usuario.nome ?? '',
       telefone: usuario.telefone ?? '',
       cargo: usuario.cargo ?? 3,
+      endereco: usuario.endereco ?? '',
     };
   }
 }

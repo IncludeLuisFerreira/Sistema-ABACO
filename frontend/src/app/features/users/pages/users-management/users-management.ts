@@ -91,6 +91,7 @@ export class UsersManagementComponent implements OnInit {
         email: payload.email,
         senha: payload.senha ?? '',
         cargo: payload.cargo,
+        endereco: payload.endereco,
       };
 
       this.usuarioService.create(createPayload).subscribe({
@@ -121,6 +122,7 @@ export class UsersManagementComponent implements OnInit {
       nome: payload.nome,
       telefone: payload.telefone,
       cargo: this.normalizeCargo(payload.cargo),
+      endereco: payload.endereco,
     };
 
     this.usuarioService.update(this.selectedUsuario.idUsuario, updatePayload).subscribe({

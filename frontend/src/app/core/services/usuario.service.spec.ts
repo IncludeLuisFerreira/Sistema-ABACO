@@ -36,6 +36,7 @@ describe('UsuarioService', () => {
         telefone: null,
         email: 'diretoria@abaco.org',
         cargo: null,
+        endereco: null,
       },
     ]);
 
@@ -46,6 +47,7 @@ describe('UsuarioService', () => {
         telefone: '',
         email: 'diretoria@abaco.org',
         cargo: 3,
+        endereco: '',
       },
     ]);
   });
