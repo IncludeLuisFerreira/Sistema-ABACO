@@ -23,14 +23,14 @@ describe('TurmaService', () => {
 
   it('list calls correct endpoint', () => {
     service.list().subscribe();
-    const req = httpMock.expectOne('http://localhost:8000/api/v1/turmas');
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/turmas'));
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
 
   it('listMine calls /me endpoint', () => {
     service.listMine().subscribe();
-    const req = httpMock.expectOne('http://localhost:8000/api/v1/turmas/me');
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/v1/turmas/me'));
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });

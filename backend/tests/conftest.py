@@ -1,20 +1,29 @@
+from datetime import timedelta
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+from fastapi.testclient import TestClient
 
-from app.db.database import Base
+from app.db.database import Base, get_db
 from app.models.aluno import Aluno
 from app.models.curso import Curso
 from app.models.estoque import Estoque
 from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.usuario import Usuario
+from app.core.security import create_access_token
+from main import app
 
 
 @pytest.fixture
 def db_session():
-    # TODO: testes só em SQLite; JSONB e with_for_update não são cobertos
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
@@ -23,6 +32,20 @@ def db_session():
     finally:
         session.close()
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def client(db_session: Session):
+    def _override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -106,3 +129,38 @@ def estoque_item(db_session: Session) -> Estoque:
     db_session.commit()
     db_session.refresh(item)
     return item
+
+
+@pytest.fixture
+def admin_token(usuario: Usuario) -> str:
+    return create_access_token(subject=str(usuario.id_usuario), cargo=usuario.cargo or 1)
+
+
+@pytest.fixture
+def admin_headers(admin_token: str) -> dict:
+    return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture
+def common_user_token(usuario_professor: Usuario) -> str:
+    return create_access_token(subject=str(usuario_professor.id_usuario), cargo=usuario_professor.cargo or 2)
+
+
+@pytest.fixture
+def common_user_headers(common_user_token: str) -> dict:
+    return {"Authorization": f"Bearer {common_user_token}"}
+
+
+@pytest.fixture
+def expired_token() -> str:
+    return create_access_token(subject="1", cargo=1, expires_delta=timedelta(seconds=-10))
+
+
+@pytest.fixture
+def expired_headers(expired_token: str) -> dict:
+    return {"Authorization": f"Bearer {expired_token}"}
+
+
+@pytest.fixture
+def invalid_token_headers() -> dict:
+    return {"Authorization": "Bearer token.invalido.123"}
