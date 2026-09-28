@@ -29,6 +29,7 @@ def create_usuario(db: Session, payload: UsuarioCreateSchema) -> Usuario:
 		email=payload.email,
 		senha_hash=hash_password(payload.senha),
 		cargo=payload.cargo,
+		primeiro_acesso=True,
 	)
 	db.add(usuario)
 	db.commit()

@@ -13,6 +13,7 @@ interface LoginApiResponse {
     nome: string | null;
     email: string;
     cargo: number | null;
+    primeiro_acesso: boolean;
   };
 }
 
@@ -21,11 +22,13 @@ export type AppRole = 'DIRECTOR' | 'ADMIN' | 'TEACHER';
 export interface LoginResponse {
   token: string;
   role: AppRole;
+  primeiroAcesso: boolean;
 }
 
 export interface JwtPayload {
   sub?: string;
   cargo?: number;
+  primeiro_acesso?: boolean;
   exp?: number;
 }
 
@@ -51,6 +54,11 @@ export function isTokenExpired(token: string): boolean {
 
   const now = Math.floor(Date.now() / 1000);
   return payload.exp < now;
+}
+
+export function isFirstAccessPending(token: string | null): boolean {
+  if (!token) return false;
+  return decodePayload(token).primeiro_acesso === true;
 }
 
 export function getStoredToken(): string | null {
@@ -81,6 +89,8 @@ export class AuthService {
   private readonly loginUrl = `${environment.apiUrl}/api/v1/auth/login`;
   private readonly forgotPasswordUrl = `${environment.apiUrl}/api/v1/auth/forgot-password`;
   private readonly resetPasswordUrl = `${environment.apiUrl}/api/v1/auth/reset-password`;
+  private readonly firstAccessUrl = `${environment.apiUrl}/api/v1/auth/first-access`;
+  private readonly changePasswordUrl = `${environment.apiUrl}/api/v1/auth/change-password`;
   private readonly TOKEN_KEY = 'abaco_token';
 
   readonly authState = signal<AuthState>({ token: null, userId: null, role: null });
@@ -97,6 +107,7 @@ export class AuthService {
       map((response) => ({
         token: response.access_token,
         role: mapCargoToRole(response.usuario.cargo),
+        primeiroAcesso: response.usuario.primeiro_acesso === true,
       })),
       tap((res) => {
         // FIXME: JWT em localStorage é vulnerável a XSS; usar cookie HttpOnly
@@ -132,6 +143,28 @@ export class AuthService {
         return throwError(() => ({ status: error?.status, message }));
       })
     );
+  }
+
+  firstAccess(token: string, nova_senha: string, confirmar_senha: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(this.firstAccessUrl, { token, nova_senha, confirmar_senha }).pipe(
+      catchError((error) => {
+        const message = error?.error?.detail || error?.message || 'Erro ao definir senha';
+        return throwError(() => ({ status: error?.status, message }));
+      })
+    );
+  }
+
+  changePassword(senha_atual: string, nova_senha: string, confirmar_senha: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(this.changePasswordUrl, { senha_atual, nova_senha, confirmar_senha }).pipe(
+      catchError((error) => {
+        const message = error?.error?.detail || error?.message || 'Erro ao alterar senha';
+        return throwError(() => ({ status: error?.status, message }));
+      })
+    );
+  }
+
+  isFirstAccessPending(): boolean {
+    return isFirstAccessPending(this.getToken());
   }
 
   logout(): void {

@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import verify_cargo
+from app.core.security import create_first_access_token
 from app.db.database import get_db
 from app.schemas.usuario_schema import UsuarioCreateSchema, UsuarioResponseSchema, UsuarioUpdateSchema
+from app.services.email_service import send_first_access_email
 from app.services.usuario_service import (
 	UsuarioEmailAlreadyExistsError,
 	UsuarioHasDependenciesError,
@@ -14,6 +18,8 @@ from app.services.usuario_service import (
 	list_usuarios,
 	update_usuario,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/usuarios", tags=["usuarios"])
 
@@ -38,6 +44,14 @@ def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(
 		usuario = create_usuario(db, payload)
 	except UsuarioEmailAlreadyExistsError as exc:
 		raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado") from exc
+
+	# O envio do e-mail de primeiro acesso não deve impedir a criação do usuário.
+	try:
+		token = create_first_access_token(email=usuario.email)
+		send_first_access_email(usuario.email, token)
+	except Exception:
+		logger.warning("Falha ao enviar e-mail de primeiro acesso para %s", usuario.email, exc_info=True)
+
 	return UsuarioResponseSchema.model_validate(usuario)
 
 

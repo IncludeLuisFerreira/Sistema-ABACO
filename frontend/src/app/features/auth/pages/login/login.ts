@@ -45,6 +45,11 @@ export class Login {
       })
     ).subscribe({
       next: (res) => {
+        if (res.primeiroAcesso) {
+          this.router.navigate(['/alterar-senha']);
+          return;
+        }
+
         const role = res.role;
         if (role === 'DIRECTOR') {
           this.router.navigate(['/admin']);
