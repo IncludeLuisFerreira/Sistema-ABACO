@@ -29,7 +29,9 @@ export class UsuarioService {
   }
 
   delete(usuarioId: number): Observable<{ detail: string }> {
-    return this.http.delete<{ detail: string }>(`${this.baseUrl}/${usuarioId}`);
+    return this.http.delete<{ detail: string }>(`${this.baseUrl}/${usuarioId}`, {
+      params: { confirmacao: true },
+    });
   }
 
   private normalize(usuario: Usuario): Usuario {
