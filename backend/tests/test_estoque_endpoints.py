@@ -1,3 +1,6 @@
+from sqlalchemy.exc import IntegrityError
+
+
 class TestEstoqueEndpoints:
     def test_listar(self, seeded, admin_headers):
         response = seeded["client"].get("/api/v1/estoque", headers=admin_headers)
@@ -41,6 +44,29 @@ class TestEstoqueEndpoints:
         response = seeded["client"].post(
             "/api/v1/estoque",
             json={"nomeItem": "papel a4", "quantidadeDisponivel": 1},
+            headers=director_headers,
+        )
+        assert response.status_code == 409
+
+    def test_create_duplicado_concorrente_retorna_409(self, api_client, db_session, director_headers, monkeypatch):
+        original_commit = db_session.commit
+        state = {"falhou": False}
+
+        def commit_concorrente():
+            if not state["falhou"]:
+                state["falhou"] = True
+                raise IntegrityError(
+                    "INSERT INTO estoque",
+                    {},
+                    Exception("UNIQUE constraint failed: estoque.nomeitem"),
+                )
+            return original_commit()
+
+        monkeypatch.setattr(db_session, "commit", commit_concorrente)
+
+        response = api_client.post(
+            "/api/v1/estoque",
+            json={"nomeItem": "Corrida", "quantidadeDisponivel": 5, "unidade": "un", "estoqueMinimo": 1},
             headers=director_headers,
         )
         assert response.status_code == 409

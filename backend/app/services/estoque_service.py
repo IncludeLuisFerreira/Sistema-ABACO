@@ -47,8 +47,13 @@ def create_estoque(db: Session, payload: EstoqueCreateSchema) -> Estoque:
         estoque_minimo=payload.estoqueMinimo,
     )
     db.add(estoque)
-    # FIXME: corrida entre checagem de duplicidade e commit pode estourar 500
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise EstoqueAlreadyExistsError(
+            f"Item '{payload.nomeItem}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
+        ) from exc
     db.refresh(estoque)
     return estoque
 
