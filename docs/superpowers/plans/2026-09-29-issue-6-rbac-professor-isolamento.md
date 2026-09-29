@@ -320,7 +320,7 @@ Run (a partir de `backend/`):
 DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_authorization.py -q
 ```
 
-Expected: `14 passed`.
+Expected: `15 passed`.
 
 - [ ] **Step 5: Commit**
 
