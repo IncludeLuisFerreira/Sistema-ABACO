@@ -137,3 +137,12 @@ class TestUsuariosEndpoints:
             "cargo": 3,
         })
         assert response.status_code == 404
+
+    def test_delete_usuario_without_confirmacao_returns_400(self, auth_headers):
+        response = client.delete("/api/v1/usuarios/99999", headers=auth_headers)
+        assert response.status_code == 400
+
+    def test_delete_own_usuario_returns_403(self, auth_headers):
+        # auth_headers tem subject "1"; excluir o próprio id deve ser bloqueado
+        response = client.delete("/api/v1/usuarios/1?confirmacao=true", headers=auth_headers)
+        assert response.status_code == 403
