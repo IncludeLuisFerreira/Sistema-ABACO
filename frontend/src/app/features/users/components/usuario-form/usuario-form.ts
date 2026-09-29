@@ -32,7 +32,7 @@ export class UsuarioFormComponent implements OnChanges {
   readonly roleOptions: Array<{ label: string; value: CargoNivel }> = [
     { label: 'Diretoria', value: 1 },
     { label: 'Professor', value: 2 },
-    { label: 'Administrativo', value: 3 },
+    { label: 'Admin', value: 3 },
   ];
 
   readonly form = this.fb.nonNullable.group({

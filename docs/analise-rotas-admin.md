@@ -66,7 +66,7 @@ A análise foi realizada através de inspeção estática de código, auditoria 
 | `PUT` | `/api/v1/estoque/{estoque_id}/baixa` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/estoque.py:84` |
 | `GET` | `/api/v1/historico/matricula/{matricula_id}` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/historico.py:16` |
 | `GET` | `/api/v1/matriculas` | `Depends(verify_cargo(1, 2, 3))` | Diretoria (1), Prof (2), Admin (3) | Sim (403) | `backend/app/api/v1/matriculas.py:26` |
-| `GET` | `/api/v1/matriculas/me` | `Depends(get_current_user)` | Qualquer Usuário Autenticado | Não | `backend/app/api/v1/matriculas.py:31` |
+| `GET` | `/api/v1/matriculas/me` | `Depends(verify_cargo(1, 2, 3))` *(atual; baseline `Depends(get_current_user)`)* | Diretoria (1), Prof (2), Admin (3) | Sim (403) | `backend/app/api/v1/matriculas.py:31` |
 | `GET` | `/api/v1/matriculas/{matricula_id}` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/matriculas.py:41` |
 | `POST` | `/api/v1/matriculas` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/matriculas.py:50` |
 | `PUT` | `/api/v1/matriculas/{matricula_id}` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/matriculas.py:65` |
