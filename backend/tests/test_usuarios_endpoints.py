@@ -78,3 +78,99 @@ class TestUsuariosEndpoints:
         ).json()
         response = api_client.delete(f"/api/v1/usuarios/{created['idUsuario']}", headers=admin_headers)
         assert response.status_code == 200
+
+    # --- Guarda anti-escalação: Admin (cargo 3) vs Diretoria (cargo 1) ---
+
+    def test_admin_nao_pode_criar_usuario_cargo_1(self, api_client, admin_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Quase Diretor", "email": "quase.diretor@abaco.org.br", "senha": "senha123", "cargo": 1},
+            headers=admin_headers,
+        )
+        assert response.status_code == 403
+
+    def test_admin_nao_pode_editar_usuario_cargo_1(self, seeded, admin_headers):
+        usuario_id = seeded["director"]["idUsuario"]
+        response = seeded["client"].put(
+            f"/api/v1/usuarios/{usuario_id}",
+            json={"nome": "Diretora Alterada", "telefone": None, "cargo": 2},
+            headers=admin_headers,
+        )
+        assert response.status_code == 403
+
+    def test_admin_nao_pode_definir_cargo_1_via_put(self, seeded, admin_headers):
+        usuario_id = seeded["professor"]["idUsuario"]
+        response = seeded["client"].put(
+            f"/api/v1/usuarios/{usuario_id}",
+            json={"nome": "Professor Promovido", "telefone": None, "cargo": 1},
+            headers=admin_headers,
+        )
+        assert response.status_code == 403
+
+    def test_admin_nao_pode_excluir_usuario_cargo_1(self, seeded, admin_headers):
+        usuario_id = seeded["director"]["idUsuario"]
+        response = seeded["client"].delete(f"/api/v1/usuarios/{usuario_id}", headers=admin_headers)
+        assert response.status_code == 403
+
+    def test_admin_nao_pode_alterar_proprio_cargo(self, api_client, director_headers):
+        admin = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Admin", "email": "admin@abaco.org.br", "senha": "senha123", "cargo": 3},
+            headers=director_headers,
+        ).json()
+        token = create_access_token(subject=str(admin["idUsuario"]), cargo=3)
+        headers = {"Authorization": f"Bearer {token}"}
+        response = api_client.put(
+            f"/api/v1/usuarios/{admin['idUsuario']}",
+            json={"nome": "Admin", "telefone": None, "cargo": 2},
+            headers=headers,
+        )
+        assert response.status_code == 403
+
+    def test_admin_pode_criar_e_editar_cargos_2_e_3(self, api_client, admin_headers):
+        created = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Gestor", "email": "gestor@abaco.org.br", "senha": "senha123", "cargo": 3},
+            headers=admin_headers,
+        )
+        assert created.status_code == 200
+        usuario_id = created.json()["idUsuario"]
+        response = api_client.put(
+            f"/api/v1/usuarios/{usuario_id}",
+            json={"nome": "Gestor Renomeado", "telefone": None, "cargo": 2},
+            headers=admin_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["cargo"] == 2
+
+    def test_diretoria_pode_criar_usuario_cargo_1(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo Diretor", "email": "novo.diretor@abaco.org.br", "senha": "senha123", "cargo": 1},
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["cargo"] == 1
+
+    def test_diretoria_pode_editar_usuario_cargo_1(self, api_client, director_headers):
+        created = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Diretor Editavel", "email": "diretor.editavel@abaco.org.br", "senha": "senha123", "cargo": 1},
+            headers=director_headers,
+        ).json()
+        response = api_client.put(
+            f"/api/v1/usuarios/{created['idUsuario']}",
+            json={"nome": "Diretor Renomeado", "telefone": None, "cargo": 1},
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["nome"] == "Diretor Renomeado"
+
+    def test_diretoria_pode_excluir_usuario_cargo_1(self, api_client, director_headers, diretor_headers):
+        created = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Diretor Descartavel", "email": "diretor.descartavel@abaco.org.br", "senha": "senha123", "cargo": 1},
+            headers=director_headers,
+        ).json()
+        response = api_client.delete(f"/api/v1/usuarios/{created['idUsuario']}", headers=diretor_headers)
+        assert response.status_code == 200
