@@ -51,8 +51,11 @@ Substituir todo o conteúdo de `backend/pytest.ini` por:
 [pytest]
 testpaths = tests
 pythonpath = .
-addopts = --cov=app --cov-report=term-missing --cov-fail-under=70
+addopts = --cov=app --cov-report=term-missing
 ```
+
+Nota: o gate `--cov-fail-under=70` é aplicado apenas na verificação final (Task 5),
+porque o baseline atual é 69,62% e só deve passar após os novos testes das Tasks 1–4.
 
 - [ ] **Step 3: Ignorar artefatos de ambiente e cobertura**
 
@@ -65,26 +68,29 @@ Acrescentar ao final de `.gitignore`:
 htmlcov/
 ```
 
-- [ ] **Step 4: Criar o ambiente virtual e instalar dependências**
+- [ ] **Step 4: Ambiente virtual**
+
+Há um venv já preparado em `/tmp/opencode/venv-abaco` com todas as dependências e
+`pytest-cov`, usado nos comandos abaixo. (Alternativamente, criar `backend/.venv` com
+`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` e ajustar os comandos.)
 
 Run (a partir de `backend/`):
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+/tmp/opencode/venv-abaco/bin/python -m pytest --version
 ```
 
-Expected: instalação concluída sem erro; `.venv/bin/python -m pytest --version` funciona.
+Expected: versão do pytest exibida sem erro.
 
 - [ ] **Step 5: Rodar a suíte para medir o baseline**
 
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest -q
 ```
 
-Expected: `102 passed` e `TOTAL ... 70%` (o gate `--cov-fail-under=70` passa no limite).
+Expected: `102 passed` e `TOTAL ... 70%` (69,62% real; sem gate nesta etapa).
 
 - [ ] **Step 6: Commit**
 
@@ -217,7 +223,7 @@ class TestEnforceMatriculaAccess:
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_authorization.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_authorization.py -q
 ```
 
 Expected: FAIL com `ModuleNotFoundError: No module named 'app.core.authorization'`.
@@ -311,7 +317,7 @@ def require_matricula_access(
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_authorization.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_authorization.py -q
 ```
 
 Expected: `15 passed`.
@@ -457,7 +463,7 @@ class TestMatriculasListagemRbac:
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_rbac_turmas.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_rbac_turmas.py -q
 ```
 
 Expected: FAIL nos casos `test_professor_nao_acessa_turma_de_outro`,
@@ -521,7 +527,7 @@ def read_matriculas(_current_user: dict = Depends(verify_cargo(1, 3)), db: Sessi
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_rbac_turmas.py tests/test_api_endpoints.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_rbac_turmas.py tests/test_api_endpoints.py -q
 ```
 
 Expected: todos passam.
@@ -603,7 +609,7 @@ class TestNotasRbac:
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_rbac_notas.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_rbac_notas.py -q
 ```
 
 Expected: FAIL nos casos de terceiro (retornam 200 ou 422 em vez de 403).
@@ -700,7 +706,7 @@ def read_media_turma(
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_rbac_notas.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_rbac_notas.py -q
 ```
 
 Expected: `6 passed`.
@@ -757,7 +763,7 @@ class TestPresencasRbac:
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_rbac_presencas.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_rbac_presencas.py -q
 ```
 
 Expected: FAIL nos casos de terceiro.
@@ -809,7 +815,7 @@ def read_presencas_by_turma(
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest tests/test_rbac_presencas.py -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest tests/test_rbac_presencas.py -q
 ```
 
 Expected: `3 passed`.
@@ -833,7 +839,7 @@ git commit -m "feat: isolar leitura e lançamento de presenças por turma"
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest -q
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest -q --cov=app --cov-report=term-missing --cov-fail-under=70
 ```
 
 Expected: todos os testes passam e o relatório termina com `TOTAL ... >= 70%`
@@ -844,7 +850,7 @@ sem erro `FAIL Required test coverage of 70% not reached`.
 Run (a partir de `backend/`):
 
 ```bash
-DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test .venv/bin/python -m pytest -q --cov-report=term-missing 2>&1 | grep "app/core/authorization.py"
+DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/sga_abacos" SECRET_KEY=test /tmp/opencode/venv-abaco/bin/python -m pytest -q --cov-report=term-missing 2>&1 | grep "app/core/authorization.py"
 ```
 
 Expected: linha `app/core/authorization.py` com cobertura de 100% (nenhuma coluna "Missing").
