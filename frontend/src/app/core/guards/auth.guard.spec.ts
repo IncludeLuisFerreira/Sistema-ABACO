@@ -1,51 +1,36 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { getStoredToken } from '../services/auth.service';
+import { fakeExpiredJwt, fakeJwt } from '../testing/fake-jwt';
 import { authGuard } from './auth.guard';
-import { AuthService } from '../services/auth.service';
 
-class FakeAuthService {
-  private _authenticated = false;
+const TOKEN_KEY = 'abaco_token';
 
-  isAuthenticated() {
-    return this._authenticated;
-  }
-
-  setAuthenticated(value: boolean) {
-    this._authenticated = value;
-  }
-}
-
-describe('authGuard', () => {
-  it('allows access for authenticated users', () => {
-    const authService = new FakeAuthService();
-    authService.setAuthenticated(true);
-
+describe('authGuard (autenticação, não autorização)', () => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
+      providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
-
-    const result = TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
-
-    expect(result).toBe(true);
+    localStorage.clear();
   });
 
-  it('redirects unauthenticated users to login', () => {
-    const authService = new FakeAuthService();
-    authService.setAuthenticated(false);
+  afterEach(() => localStorage.clear());
 
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
-    });
+  const run = () => TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
 
-    const result = TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
+  it('permite usuário autenticado (mesmo GUEST — autenticação ≠ autorização)', () => {
+    localStorage.setItem(TOKEN_KEY, fakeJwt({ cargo: null }));
+    expect(run()).toBe(true);
+  });
 
-    expect(result).toBe('/login');
+  it('redireciona para /login sem token', () => {
+    expect(run()).toBe('/login');
+  });
+
+  it('redireciona para /login com token expirado e limpa o storage', () => {
+    localStorage.setItem(TOKEN_KEY, fakeExpiredJwt({ cargo: 1 }));
+    expect(run()).toBe('/login');
+    expect(getStoredToken()).toBeNull();
   });
 });

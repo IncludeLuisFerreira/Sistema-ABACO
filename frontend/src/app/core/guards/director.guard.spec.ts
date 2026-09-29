@@ -1,35 +1,45 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { fakeJwt } from '../testing/fake-jwt';
 import { directorGuard } from './role.guard';
-import { AuthService } from '../services/auth.service';
 
-describe('directorGuard', () => {
-  it('allows access for director (cargo 1)', () => {
-    const authService = { isAuthenticated: () => true, getToken: () => 'valid.token.with.cargo1' };
+const TOKEN_KEY = 'abaco_token';
 
+describe('directorGuard (somente cargo 1)', () => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
+      providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
-
-    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, {} as never));
-    expect(result).toBe('/login');
+    localStorage.clear();
   });
 
-  it('redirects when no token', () => {
-    const authService = { isAuthenticated: () => false, getToken: () => null };
+  afterEach(() => localStorage.clear());
 
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
-    });
+  const run = () => TestBed.runInInjectionContext(() => directorGuard({} as never, {} as never));
+  const withToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
 
-    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, {} as never));
-    expect(result).toBe('/login');
+  it('permite DIRECTOR (cargo 1)', () => {
+    withToken(fakeJwt({ cargo: 1 }));
+    expect(run()).toBe(true);
+  });
+
+  it('nega ADMIN (cargo 3)', () => {
+    withToken(fakeJwt({ cargo: 3 }));
+    expect(run()).toBe('/acesso-negado');
+  });
+
+  it('nega TEACHER (cargo 2)', () => {
+    withToken(fakeJwt({ cargo: 2 }));
+    expect(run()).toBe('/acesso-negado');
+  });
+
+  it('nega GUEST (cargo null)', () => {
+    withToken(fakeJwt({ cargo: null }));
+    expect(run()).toBe('/acesso-negado');
+  });
+
+  it('redireciona para /login sem token', () => {
+    expect(run()).toBe('/login');
   });
 });

@@ -2,7 +2,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 
-import { AuthService } from './auth.service';
+import { AuthService, mapCargoToRole } from './auth.service';
+import { fakeJwt } from '../testing/fake-jwt';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -68,5 +69,45 @@ describe('AuthService', () => {
 
   it('isAuthenticated returns false with no token', () => {
     expect(service.isAuthenticated()).toBe(false);
+  });
+
+  describe('fail-closed no mapeamento de cargo', () => {
+    const casos: Array<[number | null | undefined, string]> = [
+      [1, 'DIRECTOR'],
+      [2, 'TEACHER'],
+      [3, 'ADMIN'],
+      [null, 'GUEST'],
+      [undefined, 'GUEST'],
+      [0, 'GUEST'],
+      [4, 'GUEST'],
+      [-1, 'GUEST'],
+      [99, 'GUEST'],
+    ];
+
+    casos.forEach(([cargo, esperado]) => {
+      it(`mapCargoToRole(${JSON.stringify(cargo)}) -> ${esperado}`, () => {
+        expect(mapCargoToRole(cargo)).toBe(esperado);
+      });
+
+      it(`getRoleFromToken com cargo ${JSON.stringify(cargo)} -> ${esperado}`, () => {
+        localStorage.setItem('abaco_token', fakeJwt({ cargo }));
+        expect(service.getRoleFromToken()).toBe(esperado);
+      });
+    });
+
+    it('getRoleFromToken sem token -> GUEST', () => {
+      localStorage.removeItem('abaco_token');
+      expect(service.getRoleFromToken()).toBe('GUEST');
+    });
+
+    it('getRoleFromToken com token malformado -> GUEST (não lança)', () => {
+      localStorage.setItem('abaco_token', 'nao-e-um-jwt');
+      expect(service.getRoleFromToken()).toBe('GUEST');
+    });
+
+    it('getRoleFromToken com payload sem cargo -> GUEST', () => {
+      localStorage.setItem('abaco_token', fakeJwt({ sub: 'u1' }));
+      expect(service.getRoleFromToken()).toBe('GUEST');
+    });
   });
 });
