@@ -1,11 +1,11 @@
 ﻿import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
-import { adminGuard, directorGuard } from '../../core/guards/role.guard';
+import { adminGuard } from '../../core/guards/role.guard';
 
 export const ADMIN_ROUTES: Routes = [
 	{
 		path: '',
-		canActivate: [authGuard],
+		canActivate: [authGuard, adminGuard],
 		loadComponent: () => import('./components/admin-layout/admin-layout').then(m => m.AdminLayoutComponent),
 		children: [
 			{ path: '', pathMatch: 'full', redirectTo: 'home' },
@@ -17,12 +17,12 @@ export const ADMIN_ROUTES: Routes = [
 			{
 				// REFACTOR: rota 'dashboard' apenas redireciona para 'home'
 				path: 'dashboard',
-				canActivate: [directorGuard],
+				canActivate: [adminGuard],
 				redirectTo: 'home',
 			},
 			{
 				path: 'usuarios',
-				canActivate: [directorGuard],
+				canActivate: [adminGuard],
 				loadComponent: () =>
 					import('../users/pages/users-management/users-management').then(m => m.UsersManagementComponent)
 			},

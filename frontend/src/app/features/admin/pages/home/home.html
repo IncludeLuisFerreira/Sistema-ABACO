@@ -120,8 +120,8 @@
       </div>
     </section>
 
-    <!-- Gráficos - só Diretora -->
-    <ng-container *ngIf="isDirector && donutSeries.length > 0">
+    <!-- Gráficos - Diretoria e Administrador -->
+    <ng-container *ngIf="canSeeCharts && donutSeries.length > 0">
       <section class="home-section">
         <h2 class="home-section__title">Visão Acadêmica</h2>
         <div class="charts-grid">
