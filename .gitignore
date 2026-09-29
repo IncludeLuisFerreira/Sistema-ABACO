@@ -27,4 +27,5 @@ dist/
 
 frontend/.next/
 
-# .worktrees/
+# Worktrees locais
+.worktrees/
