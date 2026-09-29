@@ -22,4 +22,9 @@ dist/
 
 frontend/.next/
 
+# Ambientes virtuais e cobertura
+.venv/
+.coverage
+htmlcov/
+
 # .worktrees/
