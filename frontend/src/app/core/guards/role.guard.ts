@@ -29,5 +29,4 @@ export function roleGuard(allowedCargos: number[]): CanActivateFn {
   };
 }
 
-export const directorGuard = roleGuard([1]);
 export const adminGuard = roleGuard([1, 3]);

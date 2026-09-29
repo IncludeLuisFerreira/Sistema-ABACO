@@ -1,76 +1,76 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
-import { AppRole, AuthService } from '../services/auth.service';
+import { getStoredToken } from '../services/auth.service';
+import { fakeExpiredJwt, fakeJwt } from '../testing/fake-jwt';
 import { roleGuard } from './role.guard';
 
-class FakeAuthService {
-  private _authenticated = false;
-  private _role: AppRole | null = null;
+const TOKEN_KEY = 'abaco_token';
 
-  isAuthenticated() {
-    return this._authenticated;
-  }
-
-  hasRole(allowedRoles: AppRole[]) {
-    return this._role !== null && allowedRoles.includes(this._role);
-  }
-
-  setSession(authenticated: boolean, role: AppRole | null = null) {
-    this._authenticated = authenticated;
-    this._role = role;
-  }
-}
-
-describe('roleGuard', () => {
-  it('allows access when user has an allowed role', () => {
-    const authService = new FakeAuthService();
-    authService.setSession(true, 'DIRECTOR');
-
+describe('roleGuard (fail-closed por cargo)', () => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } },
-      ],
+      providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
-
-    const guard = roleGuard(['DIRECTOR', 'ADMIN']);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, {} as never));
-
-    expect(result).toBe(true);
+    localStorage.clear();
   });
 
-  it('redirects to login when user does not have an allowed role', () => {
-    const authService = new FakeAuthService();
-    authService.setSession(true, 'TEACHER');
-
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } },
-      ],
-    });
-
-    const guard = roleGuard(['DIRECTOR', 'ADMIN']);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, {} as never));
-
-    expect(result).toBe('/login');
+  afterEach(() => {
+    localStorage.clear();
   });
 
-  it('redirects unauthenticated users to login', () => {
-    const authService = new FakeAuthService();
-    authService.setSession(false);
+  const run = (allowedCargos: number[]) =>
+    TestBed.runInInjectionContext(() => roleGuard(allowedCargos)({} as never, {} as never));
 
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } },
-      ],
-    });
+  const withToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
 
-    const guard = roleGuard(['DIRECTOR', 'ADMIN']);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, {} as never));
+  it('permite DIRECTOR (cargo 1) na allowlist [1, 3]', () => {
+    withToken(fakeJwt({ cargo: 1 }));
+    expect(run([1, 3])).toBe(true);
+  });
 
-    expect(result).toBe('/login');
+  it('permite ADMIN (cargo 3) na allowlist [1, 3]', () => {
+    withToken(fakeJwt({ cargo: 3 }));
+    expect(run([1, 3])).toBe(true);
+  });
+
+  it('nega TEACHER (cargo 2) na allowlist [1, 3]', () => {
+    withToken(fakeJwt({ cargo: 2 }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega GUEST (cargo null) — o bug de fail-open corrigido', () => {
+    withToken(fakeJwt({ cargo: null }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega GUEST (cargo 0, falsy) — pega truthy-check acidental', () => {
+    withToken(fakeJwt({ cargo: 0 }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega cargo fora do enum (99)', () => {
+    withToken(fakeJwt({ cargo: 99 }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega payload sem campo cargo', () => {
+    withToken(fakeJwt({ sub: 'u1' }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega token malformado sem lançar exceção', () => {
+    withToken('nao-e-um-jwt');
+    expect(run([1, 3])).toBe('/login');
+  });
+
+  it('nega token expirado e limpa o storage', () => {
+    withToken(fakeExpiredJwt({ cargo: 1 }));
+    expect(run([1, 3])).toBe('/login');
+    expect(getStoredToken()).toBeNull();
+  });
+
+  it('redireciona para /login quando não há token', () => {
+    expect(run([1, 3])).toBe('/login');
   });
 });

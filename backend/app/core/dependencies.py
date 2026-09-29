@@ -60,6 +60,3 @@ def verify_cargo(*allowed_cargos: int):
 		return payload
 
 	return dependency
-
-
-verify_director_role = verify_cargo(1)

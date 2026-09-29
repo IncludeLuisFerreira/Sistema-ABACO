@@ -310,7 +310,7 @@ git push origin feature/nome-da-feature
 - Todos os componentes devem ser `standalone: true`
 - Use `Signals` para estado reativo quando possível
 - Rotas novas devem usar `loadComponent` ou `loadChildren` (lazy loading)
-- Proteja rotas com os guards existentes: `authGuard`, `roleGuard([cargos])`, `directorGuard`, `adminGuard`
+- Proteja rotas com os guards existentes: `authGuard`, `roleGuard([cargos])`, `adminGuard`
 - Chamadas HTTP ficam nos services em `core/services/` — nunca no componente diretamente
 - Siga o `.prettierrc` existente para formatação
 

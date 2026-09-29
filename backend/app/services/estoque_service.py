@@ -30,6 +30,15 @@ class EstoqueAlreadyExistsError(Exception):
     pass
 
 
+def _is_unique_violation(exc: IntegrityError) -> bool:
+    orig = getattr(exc, "orig", None)
+    pgcode = getattr(orig, "pgcode", None)
+    if pgcode == "23505":
+        return True
+    message = str(orig or exc).lower()
+    return "unique" in message or "uq_estoque_nomeitem_lower" in message
+
+
 def create_estoque(db: Session, payload: EstoqueCreateSchema) -> Estoque:
     existing = db.query(Estoque).filter(
         func.lower(Estoque.nome_item) == func.lower(payload.nomeItem.strip())
@@ -47,8 +56,13 @@ def create_estoque(db: Session, payload: EstoqueCreateSchema) -> Estoque:
         estoque_minimo=payload.estoqueMinimo,
     )
     db.add(estoque)
-    # FIXME: corrida entre checagem de duplicidade e commit pode estourar 500
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise EstoqueAlreadyExistsError(
+            f"Item '{payload.nomeItem}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
+        ) from exc
     db.refresh(estoque)
     return estoque
 
@@ -86,6 +100,10 @@ def update_estoque(db: Session, estoque_id: int, payload: EstoqueUpdateSchema) -
         db.commit()
     except IntegrityError as exc:
         db.rollback()
+        if _is_unique_violation(exc):
+            raise EstoqueAlreadyExistsError(
+                f"Item '{estoque.nome_item}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
+            ) from exc
         raise EstoqueHasDependenciesError from exc
 
     db.refresh(estoque)

@@ -549,7 +549,6 @@ Key Response schemas:
 ### AuthDependencies (`core/dependencies.py`)
 + `get_current_user(authorization?) -> dict`
 + `verify_cargo(*allowed_cargos) -> callable`
-+ `verify_director_role()` (cargo=1)
 
 ### Database (`db/database.py`)
 + `engine: Engine`

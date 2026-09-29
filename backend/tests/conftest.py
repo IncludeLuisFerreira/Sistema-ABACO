@@ -1,8 +1,10 @@
 import pytest
-from sqlalchemy import create_engine
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.db.database import Base
+from app.core.security import create_access_token
+from app.db.database import Base, get_db
 from app.models.aluno import Aluno
 from app.models.curso import Curso
 from app.models.estoque import Estoque
@@ -106,3 +108,128 @@ def estoque_item(db_session: Session) -> Estoque:
     db_session.commit()
     db_session.refresh(item)
     return item
+
+
+def _enable_sqlite_foreign_keys(dbapi_connection, _record) -> None:
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
+def _make_isolated_sqlite_engine(db_path) -> object:
+    engine = create_engine(
+        f"sqlite:///{db_path}",
+        connect_args={"check_same_thread": False},
+    )
+    event.listen(engine, "connect", _enable_sqlite_foreign_keys)
+    return engine
+
+
+@pytest.fixture
+def api_client(tmp_path):
+    """TestClient com banco SQLite isolado (get_db sobrescrito) e limiter desativado."""
+    from main import app
+
+    engine = _make_isolated_sqlite_engine(tmp_path / "test_api.db")
+    Base.metadata.create_all(bind=engine)
+    TestingSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+    def override_get_db():
+        db = TestingSession()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    from app.core.limiter import limiter
+
+    previous_enabled = limiter.enabled
+    limiter.enabled = False
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    try:
+        yield client
+    finally:
+        client.close()
+        app.dependency_overrides.pop(get_db, None)
+        limiter.enabled = previous_enabled
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+
+def _headers_for_cargo(cargo: int, subject: str = "1") -> dict:
+    token = create_access_token(subject=subject, cargo=cargo)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def director_headers() -> dict:
+    return _headers_for_cargo(1)
+
+
+@pytest.fixture
+def professor_headers() -> dict:
+    return _headers_for_cargo(2, subject="2")
+
+
+@pytest.fixture
+def admin_headers() -> dict:
+    return _headers_for_cargo(3, subject="3")
+
+
+@pytest.fixture
+def guest_headers() -> dict:
+    """Token válido, porém sem cargo reconhecido — deve ser tratado como sem privilégios."""
+    return _headers_for_cargo(0, subject="9")
+
+
+def _create_usuario(client, headers, nome: str, email: str, cargo: int) -> dict:
+    return client.post(
+        "/api/v1/usuarios",
+        json={"nome": nome, "email": email, "senha": "senha123", "cargo": cargo},
+        headers=headers,
+    ).json()
+
+
+@pytest.fixture
+def seeded(api_client, director_headers):
+    """Cria um grafo acadêmico mínimo via API e devolve ids e tokens derivados dos ids."""
+    client = api_client
+    headers = director_headers
+    professor = _create_usuario(client, headers, "Professor Teste", "prof@abaco.org.br", 2)
+    director = _create_usuario(client, headers, "Diretora Teste", "diretora@abaco.org.br", 1)
+    aluno = client.post("/api/v1/alunos", json={"nome": "Aluno Teste"}, headers=headers).json()
+    curso = client.post("/api/v1/cursos", json={"nomeCurso": "Curso Teste"}, headers=headers).json()
+    turma = client.post(
+        "/api/v1/turmas",
+        json={
+            "capacidade": 2,
+            "idCurso": curso["idCurso"],
+            "idProfessor": professor["idUsuario"],
+            "diasAula": "Seg",
+        },
+        headers=headers,
+    ).json()
+    matricula = client.post(
+        "/api/v1/matriculas",
+        json={"idAluno": aluno["idAluno"], "idTurma": turma["idTurma"]},
+        headers=headers,
+    ).json()
+    estoque = client.post(
+        "/api/v1/estoque",
+        json={"nomeItem": "Papel A4", "quantidadeDisponivel": 10, "unidade": "cx", "estoqueMinimo": 2},
+        headers=headers,
+    ).json()
+    return {
+        "client": client,
+        "headers": headers,
+        "professor": professor,
+        "director": director,
+        "aluno": aluno,
+        "curso": curso,
+        "turma": turma,
+        "matricula": matricula,
+        "estoque": estoque,
+        "professor_headers": _headers_for_cargo(2, str(professor["idUsuario"])),
+        "director_headers": _headers_for_cargo(1, str(director["idUsuario"])),
+    }

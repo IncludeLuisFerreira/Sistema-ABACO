@@ -10,16 +10,19 @@ logs/
 *.log
 __pycache__/
 *.pyc
+.pytest_cache/
 
 
 # Testes e cobertura de código
 Test/
 coverage/
+.coverage
+htmlcov/
+.venv/
+venv/
 
 node_modules/
 dist/
 *.tsbuildinfo
 
 frontend/.next/
-
-# .worktrees/

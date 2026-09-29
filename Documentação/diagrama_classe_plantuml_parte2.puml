@@ -87,7 +87,7 @@ package "app" {
   package "core" {
     class Settings { + app_name : str ; + database_url : str ; + secret_key : str ; + jwt_algorithm : str ; + access_token_expire_minutes : int ; + reset_token_expire_minutes : int ; + smtp_host : str ; + smtp_port : int ; + frontend_url : str }
     class SecurityUtils { + verify_password(plain, hash) : bool ; + hash_password(password) : str ; + create_access_token(subject, cargo) : str ; + create_reset_token(email) : str }
-    class AuthDependencies { + get_current_user(authorization) : dict ; + verify_cargo(cargos) : callable ; + verify_director_role() : dict }
+    class AuthDependencies { + get_current_user(authorization) : dict ; + verify_cargo(cargos) : callable }
     class RateLimiter
   }
 

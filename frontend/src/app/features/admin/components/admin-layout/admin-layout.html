@@ -80,8 +80,8 @@
       </li>
     </ul>
 
-    <div class="admin-nav__section-label" *ngIf="auth.authState().role === 'DIRECTOR'">Administracao</div>
-    <ul class="admin-nav__links" *ngIf="auth.authState().role === 'DIRECTOR'">
+    <div class="admin-nav__section-label" *ngIf="auth.authState().role === 'DIRECTOR' || auth.authState().role === 'ADMIN'">Administracao</div>
+    <ul class="admin-nav__links" *ngIf="auth.authState().role === 'DIRECTOR' || auth.authState().role === 'ADMIN'">
       <li>
         <a routerLink="/admin/usuarios" routerLinkActive="active" (click)="menuOpen = false">
           Usuarios
