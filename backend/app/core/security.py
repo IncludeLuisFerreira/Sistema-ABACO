@@ -18,11 +18,13 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def create_access_token(*, subject: str, cargo: int, expires_delta: timedelta | None = None) -> str:
+def create_access_token(
+    *, subject: str, cargo: int, primeiro_acesso: bool = False, expires_delta: timedelta | None = None
+) -> str:
     settings = get_settings()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
     # TODO: JWT sem jti/iat; não há revogação de token nem logout real
-    payload = {"sub": subject, "cargo": cargo, "exp": expire}
+    payload = {"sub": subject, "cargo": cargo, "primeiro_acesso": bool(primeiro_acesso), "exp": expire}
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
@@ -37,5 +39,22 @@ def decode_reset_token(token: str) -> dict:
     settings = get_settings()
     payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
     if payload.get("type") != "password_reset":
+        raise jwt.PyJWTError("Invalid token type")
+    return payload
+
+
+def create_first_access_token(*, email: str, expires_delta: timedelta | None = None) -> str:
+    settings = get_settings()
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=settings.first_access_token_expire_minutes)
+    )
+    payload = {"sub": email, "type": "first_access", "exp": expire}
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
+
+
+def decode_first_access_token(token: str) -> dict:
+    settings = get_settings()
+    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
+    if payload.get("type") != "first_access":
         raise jwt.PyJWTError("Invalid token type")
     return payload

@@ -2,6 +2,8 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.auth_schema import (
+    ChangePasswordRequest,
+    FirstAccessPasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     ResetPasswordRequest,
@@ -45,3 +47,35 @@ class TestResetPasswordRequest:
         with pytest.raises(ValidationError) as exc:
             ResetPasswordRequest(token="x", nova_senha="abc12345", confirmar_senha="abc54321")
         assert "conferem" in str(exc.value).lower()
+
+
+class TestFirstAccessPasswordRequest:
+    def test_valid(self):
+        s = FirstAccessPasswordRequest(token="abc", nova_senha="abc12345", confirmar_senha="abc12345")
+        assert s.token == "abc"
+
+    def test_missing_token_rejected(self):
+        with pytest.raises(ValidationError):
+            FirstAccessPasswordRequest(nova_senha="abc12345", confirmar_senha="abc12345")
+
+    def test_weak_password_rejected(self):
+        with pytest.raises(ValidationError):
+            FirstAccessPasswordRequest(token="abc", nova_senha="somenteletras", confirmar_senha="somenteletras")
+
+    def test_passwords_dont_match_rejected(self):
+        with pytest.raises(ValidationError):
+            FirstAccessPasswordRequest(token="abc", nova_senha="abc12345", confirmar_senha="abc54321")
+
+
+class TestChangePasswordRequest:
+    def test_valid(self):
+        s = ChangePasswordRequest(senha_atual="atual123", nova_senha="abc12345", confirmar_senha="abc12345")
+        assert s.senha_atual == "atual123"
+
+    def test_empty_current_password_rejected(self):
+        with pytest.raises(ValidationError):
+            ChangePasswordRequest(senha_atual="", nova_senha="abc12345", confirmar_senha="abc12345")
+
+    def test_passwords_dont_match_rejected(self):
+        with pytest.raises(ValidationError):
+            ChangePasswordRequest(senha_atual="atual123", nova_senha="abc12345", confirmar_senha="abc54321")

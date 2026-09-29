@@ -32,6 +32,22 @@ def usuario(db_session: Session) -> Usuario:
         email="teste@abaco.org.br",
         senha_hash="$2b$12$6rgU3Nzuu7ZMdPqt7O1kZOkLTZGUQEKd9BsN3Oh/wdZdNvXTfAvha",
         cargo=1,
+        primeiro_acesso=False,
+    )
+    db_session.add(u)
+    db_session.commit()
+    db_session.refresh(u)
+    return u
+
+
+@pytest.fixture
+def usuario_primeiro_acesso(db_session: Session) -> Usuario:
+    u = Usuario(
+        nome="Novo Usuario",
+        email="novo@abaco.org.br",
+        senha_hash="$2b$12$6rgU3Nzuu7ZMdPqt7O1kZOkLTZGUQEKd9BsN3Oh/wdZdNvXTfAvha",
+        cargo=2,
+        primeiro_acesso=True,
     )
     db_session.add(u)
     db_session.commit()
@@ -46,6 +62,7 @@ def usuario_professor(db_session: Session) -> Usuario:
         email="prof@abaco.org.br",
         senha_hash="$2b$12$6rgU3Nzuu7ZMdPqt7O1kZOkLTZGUQEKd9BsN3Oh/wdZdNvXTfAvha",
         cargo=2,
+        primeiro_acesso=False,
     )
     db_session.add(u)
     db_session.commit()

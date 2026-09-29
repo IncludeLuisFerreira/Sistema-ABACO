@@ -24,3 +24,4 @@ class UsuarioResponseSchema(BaseModel):
 	telefone: str | None = None
 	email: EmailStr | None = None
 	cargo: int | None = None
+	primeiro_acesso: bool = False

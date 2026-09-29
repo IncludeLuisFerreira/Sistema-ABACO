@@ -15,8 +15,7 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
-class ResetPasswordRequest(BaseModel):
-    token: str = Field(min_length=1)
+class PasswordPairRequest(BaseModel):
     nova_senha: str = Field(min_length=8)
     confirmar_senha: str = Field(min_length=8)
 
@@ -29,11 +28,24 @@ class ResetPasswordRequest(BaseModel):
         return self
 
 
+class ResetPasswordRequest(PasswordPairRequest):
+    token: str = Field(min_length=1)
+
+
+class FirstAccessPasswordRequest(PasswordPairRequest):
+    token: str = Field(min_length=1)
+
+
+class ChangePasswordRequest(PasswordPairRequest):
+    senha_atual: str = Field(min_length=1)
+
+
 class UsuarioResponse(BaseModel):
     idUsuario: int
     nome: str | None
     email: EmailStr
     cargo: int | None
+    primeiro_acesso: bool = False
 
 
 class TokenResponse(BaseModel):

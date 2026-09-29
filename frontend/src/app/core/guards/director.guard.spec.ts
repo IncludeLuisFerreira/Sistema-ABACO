@@ -2,34 +2,41 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { directorGuard } from './role.guard';
-import { AuthService } from '../services/auth.service';
+
+function makeToken(payload: Record<string, unknown>): string {
+  return `header.${btoa(JSON.stringify(payload))}.signature`;
+}
+
+function futureExp(): number {
+  return Math.floor(Date.now() / 1000) + 3600;
+}
 
 describe('directorGuard', () => {
-  it('allows access for director (cargo 1)', () => {
-    const authService = { isAuthenticated: () => true, getToken: () => 'valid.token.with.cargo1' };
-
+  beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
+      providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
+  });
 
-    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, {} as never));
-    expect(result).toBe('/login');
+  afterEach(() => localStorage.clear());
+
+  it('allows access for director (cargo 1)', () => {
+    localStorage.setItem('abaco_token', makeToken({ sub: '1', cargo: 1, exp: futureExp() }));
+
+    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, { url: '/admin/usuarios' } as never));
+    expect(result).toBe(true);
+  });
+
+  it('denies access for admin (cargo 3)', () => {
+    localStorage.setItem('abaco_token', makeToken({ sub: '3', cargo: 3, exp: futureExp() }));
+
+    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, { url: '/admin/usuarios' } as never));
+    expect(result).toBe('/acesso-negado');
   });
 
   it('redirects when no token', () => {
-    const authService = { isAuthenticated: () => false, getToken: () => null };
-
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
-    });
-
-    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, {} as never));
+    const result = TestBed.runInInjectionContext(() => directorGuard({} as never, { url: '/admin/usuarios' } as never));
     expect(result).toBe('/login');
   });
 });

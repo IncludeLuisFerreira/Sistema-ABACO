@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 	jwt_algorithm: str = "HS256"
 	access_token_expire_minutes: int = Field(default=120, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
 	reset_token_expire_minutes: int = Field(default=15, alias="RESET_TOKEN_EXPIRE_MINUTES")
+	first_access_token_expire_minutes: int = Field(default=1440, alias="FIRST_ACCESS_TOKEN_EXPIRE_MINUTES")
 	smtp_host: str = Field(default="localhost", alias="SMTP_HOST")
 	smtp_port: int = Field(default=587, alias="SMTP_PORT")
 	smtp_user: str = Field(default="", alias="SMTP_USER")

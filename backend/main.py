@@ -96,6 +96,7 @@ def seed_admin_user():
                 email=settings.admin_seed_email,
                 senha_hash=hash_password(settings.admin_seed_password),
                 cargo=1,
+                primeiro_acesso=False,
             )
             db.add(admin)
             db.commit()
@@ -133,14 +134,14 @@ def _seed_test_data(db, hash_password_func):
     db.flush()
 
     # FIXME: senhas de seed hardcoded no código-fonte (admin123/prof12345)
-    admin_user = Usuario(nome="Carlos Admin", email="admin2@abaco.org.br", senha_hash=hash_password_func("admin123"), cargo=3, telefone="11999990000")
+    admin_user = Usuario(nome="Carlos Admin", email="admin2@abaco.org.br", senha_hash=hash_password_func("admin123"), cargo=3, telefone="11999990000", primeiro_acesso=False)
     db.add(admin_user)
     db.flush()
 
-    prof1 = Usuario(nome="Maria Silva", email="maria@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11988887777")
-    prof2 = Usuario(nome="João Santos", email="joao@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11977776666")
-    prof3 = Usuario(nome="Ana Costa", email="ana@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11966665555")
-    prof4 = Usuario(nome="Paulo Lima", email="paulo@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11955554444")
+    prof1 = Usuario(nome="Maria Silva", email="maria@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11988887777", primeiro_acesso=False)
+    prof2 = Usuario(nome="João Santos", email="joao@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11977776666", primeiro_acesso=False)
+    prof3 = Usuario(nome="Ana Costa", email="ana@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11966665555", primeiro_acesso=False)
+    prof4 = Usuario(nome="Paulo Lima", email="paulo@abaco.org.br", senha_hash=hash_password_func("prof12345"), cargo=2, telefone="11955554444", primeiro_acesso=False)
     db.add_all([prof1, prof2, prof3, prof4])
     db.flush()
 
