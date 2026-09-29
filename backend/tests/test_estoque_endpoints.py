@@ -2,6 +2,8 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.models.estoque import Estoque
+from app.schemas.estoque_schema import EstoqueCreateSchema
+from app.services import estoque_service
 
 
 class TestEstoqueEndpoints:
@@ -51,7 +53,7 @@ class TestEstoqueEndpoints:
         )
         assert response.status_code == 409
 
-    def test_create_duplicado_concorrente_retorna_409(self, api_client, db_session, director_headers, monkeypatch):
+    def test_create_duplicado_concorrente_levanta_already_exists(self, db_session, monkeypatch):
         original_commit = db_session.commit
         state = {"falhou": False}
 
@@ -67,12 +69,16 @@ class TestEstoqueEndpoints:
 
         monkeypatch.setattr(db_session, "commit", commit_concorrente)
 
-        response = api_client.post(
-            "/api/v1/estoque",
-            json={"nomeItem": "Corrida", "quantidadeDisponivel": 5, "unidade": "un", "estoqueMinimo": 1},
-            headers=director_headers,
-        )
-        assert response.status_code == 409
+        with pytest.raises(estoque_service.EstoqueAlreadyExistsError):
+            estoque_service.create_estoque(
+                db_session,
+                EstoqueCreateSchema(
+                    nomeItem="Corrida",
+                    quantidadeDisponivel=5,
+                    unidade="un",
+                    estoqueMinimo=1,
+                ),
+            )
 
     def test_nomeitem_unique_case_insensitive_no_banco(self, db_session):
         db_session.add(Estoque(nome_item="Papel A4", quantidade_disponivel=1))

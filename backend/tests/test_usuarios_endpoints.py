@@ -166,15 +166,16 @@ class TestUsuariosEndpoints:
         assert response.status_code == 200
         assert response.json()["nome"] == "Diretor Renomeado"
 
-    def test_diretoria_pode_excluir_usuario_cargo_1(self, api_client, director_headers, diretor_headers):
-        # diretor_headers carrega subject "999" (distinto do alvo criado com director_headers,
+    def test_diretoria_pode_excluir_usuario_cargo_1(self, api_client, director_headers):
+        # Token separado com subject "999" (distinto do alvo criado com director_headers,
         # subject "1") para evitar que o bloqueio de auto-exclusão (subject == alvo) retorne 403.
+        outro_diretor = {"Authorization": f"Bearer {create_access_token(subject='999', cargo=1)}"}
         created = api_client.post(
             "/api/v1/usuarios",
             json={"nome": "Diretor Descartavel", "email": "diretor.descartavel@abaco.org.br", "senha": "senha123", "cargo": 1},
             headers=director_headers,
         ).json()
-        response = api_client.delete(f"/api/v1/usuarios/{created['idUsuario']}", headers=diretor_headers)
+        response = api_client.delete(f"/api/v1/usuarios/{created['idUsuario']}", headers=outro_diretor)
         assert response.status_code == 200
 
     def test_admin_pode_editar_proprio_nome_telefone_mantendo_cargo_3(self, api_client, director_headers):
