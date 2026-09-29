@@ -28,7 +28,7 @@ describe('UsuarioService', () => {
       result = usuarios;
     });
 
-    const request = httpMock.expectOne('http://localhost:8000/api/v1/usuarios');
+    const request = httpMock.expectOne('/api/v1/usuarios');
     request.flush([
       {
         idUsuario: 1,
@@ -36,6 +36,7 @@ describe('UsuarioService', () => {
         telefone: null,
         email: 'diretoria@abaco.org',
         cargo: null,
+        endereco: null,
       },
     ]);
 
@@ -46,7 +47,19 @@ describe('UsuarioService', () => {
         telefone: '',
         email: 'diretoria@abaco.org',
         cargo: 3,
+        endereco: '',
       },
     ]);
+  });
+
+  it('sends confirmacao=true when deleting a usuario', () => {
+    let result: { detail: string } | undefined;
+    service.delete(7).subscribe((res) => (result = res));
+
+    const request = httpMock.expectOne((req) => req.method === 'DELETE' && req.url === '/api/v1/usuarios/7');
+    expect(request.request.params.get('confirmacao')).toBe('true');
+    request.flush({ detail: 'Usuário excluído com sucesso' });
+
+    expect(result).toEqual({ detail: 'Usuário excluído com sucesso' });
   });
 });

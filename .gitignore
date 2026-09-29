@@ -15,6 +15,7 @@ __pycache__/
 # Testes e cobertura de código
 Test/
 coverage/
+.coverage
 
 node_modules/
 dist/
@@ -23,3 +24,6 @@ dist/
 frontend/.next/
 
 # .worktrees/
+
+venv/
+htmlcov/

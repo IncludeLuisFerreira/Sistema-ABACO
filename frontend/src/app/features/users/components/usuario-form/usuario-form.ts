@@ -6,9 +6,10 @@ import { CargoNivel, Usuario } from '../../../../core/models/usuario.model';
 
 export interface UsuarioFormSubmit {
   nome: string;
-  telefone: string | null;
+  telefone: string;
   email: string;
   cargo: CargoNivel;
+  endereco: string;
   senha?: string;
 }
 
@@ -37,10 +38,11 @@ export class UsuarioFormComponent implements OnChanges {
 
   readonly form = this.fb.nonNullable.group({
     nome: ['', [Validators.required]],
-    telefone: [''],
+    telefone: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     cargo: [3 as CargoNivel, [Validators.required]],
     senha: [''],
+    endereco: ['', [Validators.required]],
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -62,9 +64,10 @@ export class UsuarioFormComponent implements OnChanges {
     const value = this.form.getRawValue();
     const payload: UsuarioFormSubmit = {
       nome: value.nome.trim(),
-      telefone: value.telefone.trim() || null,
+      telefone: value.telefone.trim(),
       email: value.email.trim(),
       cargo: Number(value.cargo) as CargoNivel,
+      endereco: value.endereco.trim(),
     };
 
     if (this.mode === 'create') {
@@ -82,6 +85,7 @@ export class UsuarioFormComponent implements OnChanges {
         email: this.usuario.email,
         cargo: this.normalizeCargo(this.usuario.cargo),
         senha: '',
+        endereco: this.usuario.endereco ?? '',
       });
       this.form.controls.email.disable({ emitEvent: false });
       this.form.controls.senha.clearValidators();
@@ -95,6 +99,7 @@ export class UsuarioFormComponent implements OnChanges {
       email: '',
       cargo: 3,
       senha: '',
+      endereco: '',
     });
     this.form.controls.email.enable({ emitEvent: false });
     this.form.controls.senha.setValidators([Validators.required]);

@@ -19,7 +19,8 @@ CREATE TABLE usuario (
     telefone TEXT,
     email TEXT UNIQUE,
     senhahash TEXT,
-    cargo INTEGER
+    cargo INTEGER,
+    endereco TEXT
 );
 
 CREATE TABLE turma (

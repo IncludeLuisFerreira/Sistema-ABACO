@@ -6,18 +6,21 @@ export interface Usuario {
   telefone: string | null;
   email: string;
   cargo: number | null;
+  endereco: string | null;
 }
 
 export interface UsuarioCreatePayload {
   nome: string;
-  telefone: string | null;
+  telefone: string;
   email: string;
   senha: string;
   cargo: CargoNivel;
+  endereco: string;
 }
 
 export interface UsuarioUpdatePayload {
   nome: string;
-  telefone: string | null;
+  telefone: string;
   cargo: CargoNivel;
+  endereco: string;
 }
