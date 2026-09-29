@@ -7,7 +7,7 @@ Esta auditoria traz uma análise minuciosa de segurança do módulo de autoriza�
 O objetivo primário da análise é avaliar o cumprimento do requisito de **exclusividade do perfil Administrador** em acessar tarefas de gestão do sistema, garantindo a segregação de funções e prevenindo privilege escalation ou bypasses de autorização.
 
 **Principais Descobertas:**
-1. **Confusão e Ambiguidade de Papéis entre Cargo 1 (Diretor/Diretoria) e Cargo 3 (Admin):** O sistema utiliza o enum/inteiro `cargo` (1 = Diretoria/Diretor, 2 = Professor, 3 = Admin). Atualmente, diversos endpoints de gestão administrativa (gestão de usuários `/api/v1/usuarios` e dashboards `/api/v1/dashboard`) exigem exclusivamente `cargo = 1` (`verify_director_role`), bloqueando o Administrador (`cargo = 3`). Por outro lado, rotas administrativas como `/admin/usuarios` no frontend usam `directorGuard`, exigindo Cargo 1. O Administrador (Cargo 3) fica impossibilitado de acessar a gestão de usuários e indicadores no frontend e backend, violando o princípio de que o Admin possui a prerrogativa de gestão.
+1. **Confusão e Ambiguidade de Papéis entre Cargo 1 (Diretor/Diretoria) e Cargo 3 (Admin):** O sistema utiliza o enum/inteiro `cargo` (1 = Diretoria/Diretor, 2 = Professor, 3 = Admin). Atualmente, diversos endpoints de gestão administrativa (gestão de usuários `/api/v1/usuarios` e dashboards `/api/v1/dashboard`) exigem exclusivamente `cargo = 1` (`verify_cargo(1)`), bloqueando o Administrador (`cargo = 3`). Por outro lado, rotas administrativas como `/admin/usuarios` no frontend usam `directorGuard`, exigindo Cargo 1. O Administrador (Cargo 3) fica impossibilitado de acessar a gestão de usuários e indicadores no frontend e backend, violando o princípio de que o Admin possui a prerrogativa de gestão.
 2. **Falha de Mapeamento Fail-Open no Frontend (`auth.service.ts:68`):** A função `mapCargoToRole()` possui um fallback inseguro no qual qualquer cargo não reconhecido (ou `null`) retorna o perfil `'ADMIN'`. Se um usuário sem cargo definido autenticar, o frontend concede permissões de Administrador nas verificações locais.
 3. **Inconsistência de Regra de Negócio nos Pedidos de Material:** No backend, as ações de aprovação, compra e alteração de pedidos de material (`PUT /api/v1/pedidos/{id}/aprovar`, `/comprar`, etc.) exigem unicamente Cargo 1, enquanto a exclusão permite Cargo 1 e Cargo 3.
 4. **Endpoint com Autorização Fraca no Backend (`GET /api/v1/matriculas/me`):** Este endpoint utiliza apenas `Depends(get_current_user)` sem validação de cargo no decorator. Embora haja uma filtragem interna para `cargo == 2`, qualquer usuário autenticado (incluindo Cargo 3) consegue chamá-lo sem passar pela dependência `verify_cargo`.
@@ -21,7 +21,7 @@ A análise foi realizada através de inspeção estática de código, auditoria 
 
 **Arquivos e Padrões Inspecionados:**
 * **Backend (FastAPI):**
-  * Configuração e dependências de segurança: `backend/app/core/dependencies.py` (`verify_cargo`, `verify_director_role`, `get_current_user`, `decode_access_token`) e `backend/app/core/security.py`.
+  * Configuração e dependências de segurança: `backend/app/core/dependencies.py` (`verify_cargo`, `get_current_user`, `decode_access_token`) e `backend/app/core/security.py`.
   * Routers de API (v1): `backend/app/api/v1/` (`alunos.py`, `auth.py`, `cursos.py`, `dashboard.py`, `estoque.py`, `historico.py`, `matriculas.py`, `notas.py`, `pedidos.py`, `presencas.py`, `turmas.py`, `usuarios.py`).
   * Modelos de dados e schemas: `backend/app/models/usuario.py` e `backend/app/schemas/usuario_schema.py`.
 * **Frontend (Angular):**
@@ -51,9 +51,9 @@ A análise foi realizada através de inspeção estática de código, auditoria 
 | `POST` | `/api/v1/cursos` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/cursos.py:35` |
 | `PUT` | `/api/v1/cursos/{curso_id}` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/cursos.py:41` |
 | `DELETE` | `/api/v1/cursos/{curso_id}` | `Depends(verify_cargo(1, 3))` | Diretoria (1), Admin (3) | Sim (403) | `backend/app/api/v1/cursos.py:52` |
-| `GET` | `/api/v1/dashboard/kpis` | `Depends(verify_director_role)` | Diretoria (1) apenas | Sim (403) | `backend/app/api/v1/dashboard.py:21` |
-| `GET` | `/api/v1/dashboard/charts/academico` | `Depends(verify_director_role)` | Diretoria (1) apenas | Sim (403) | `backend/app/api/v1/dashboard.py:29` |
-| `GET` | `/api/v1/dashboard/charts/logistica` | `Depends(verify_director_role)` | Diretoria (1) apenas | Sim (403) | `backend/app/api/v1/dashboard.py:37` |
+| `GET` | `/api/v1/dashboard/kpis` | `Depends(verify_cargo(1))` | Diretoria (1) apenas | Sim (403) | `backend/app/api/v1/dashboard.py:21` |
+| `GET` | `/api/v1/dashboard/charts/academico` | `Depends(verify_cargo(1))` | Diretoria (1) apenas | Sim (403) | `backend/app/api/v1/dashboard.py:29` |
+| `GET` | `/api/v1/dashboard/charts/logistica` | `Depends(verify_cargo(1))` | Diretoria (1) apenas | Sim (403) | `backend/app/api/v1/dashboard.py:37` |
 | `GET` | `/api/v1/estoque` | `Depends(verify_cargo(1, 2, 3))` | Diretoria (1), Prof (2), Admin (3) | Sim (403) | `backend/app/api/v1/estoque.py:31` |
 | `GET` | `/api/v1/estoque/search` | `Depends(verify_cargo(1, 2, 3))` | Diretoria (1), Prof (2), Admin (3) | Sim (403) | `backend/app/api/v1/estoque.py:36` |
 | `GET` | `/api/v1/estoque/alertas` | `Depends(verify_cargo(1, 2, 3))` | Diretoria (1), Prof (2), Admin (3) | Sim (403) | `backend/app/api/v1/estoque.py:41` |
@@ -130,7 +130,7 @@ A análise foi realizada através de inspeção estática de código, auditoria 
 
 | Rota Frontend | Guard Frontend | Endpoints Backend Consumidos | Dependência Auth Backend | Inconsistências / Detalhes |
 | :--- | :--- | :--- | :--- | :--- |
-| `/admin/home` | `adminGuard` (1, 3) | `GET /api/v1/dashboard/kpis`, `GET /api/v1/dashboard/charts/academico`, `GET /api/v1/dashboard/charts/logistica` | `verify_director_role` (Cargo 1) | **Inconsistência Crítica:** O frontend permite acesso a Admin (3), mas os endpoints de dashboard retornam **403 Forbidden** para Cargo 3. |
+| `/admin/home` | `adminGuard` (1, 3) | `GET /api/v1/dashboard/kpis`, `GET /api/v1/dashboard/charts/academico`, `GET /api/v1/dashboard/charts/logistica` | `verify_cargo(1)` (Cargo 1) | **Inconsistência Crítica:** O frontend permite acesso a Admin (3), mas os endpoints de dashboard retornam **403 Forbidden** para Cargo 3. |
 | `/admin/usuarios` | `directorGuard` (Cargo 1) | `GET /api/v1/usuarios`, `POST /api/v1/usuarios`, `PUT /api/v1/usuarios/{id}`, `DELETE /api/v1/usuarios/{id}` | `verify_cargo(1)` | **Inconsistência de Requisito:** Admin (3) não possui permissão para gerenciar usuários, nem no frontend nem no backend. |
 | `/admin/alunos` | `adminGuard` (1, 3) | `GET /api/v1/alunos`, `POST /api/v1/alunos`, `PUT /api/v1/alunos/{id}`, `DELETE /api/v1/alunos/{id}` | `verify_cargo(1, 3)` | Consistente (Cargo 1 e 3 possuem acesso). |
 | `/admin/cursos` | `adminGuard` (1, 3) | `GET /api/v1/cursos`, `POST /api/v1/cursos`, `PUT /api/v1/cursos/{id}`, `DELETE /api/v1/cursos/{id}` | `verify_cargo(1, 3)` | Consistente (Cargo 1 e 3 possuem acesso). |
@@ -150,7 +150,7 @@ A análise foi realizada através de inspeção estática de código, auditoria 
    * *Risco:* Alta. Usuários sem cargo definido ou com valores corrompidos recebem o perfil `'ADMIN'` no client, podendo visualizar menus e layouts administrativos.
 
 2. **Incompatibilidade do Dashboard para Administradores (`backend/app/api/v1/dashboard.py:21,29,37` vs `frontend/src/app/features/admin/admin.routes.ts:12`)**
-   * *Descrição:* A rota `/admin/home` renderiza os gráficos do dashboard consumidos da API `/api/v1/dashboard/*`. No entanto, no backend, esses endpoints exigem `verify_director_role` (Cargo 1 apenas).
+   * *Descrição:* A rota `/admin/home` renderiza os gráficos do dashboard consumidos da API `/api/v1/dashboard/*`. No entanto, no backend, esses endpoints exigem `verify_cargo(1)` (Cargo 1 apenas).
    * *Risco:* Média/Alta. Quando um Admin (Cargo 3) acessa a tela inicial `/admin/home`, o Angular permite o acesso via `adminGuard`, mas todas as chamadas HTTP para os gráficos falham com HTTP 403.
 
 3. **Bloqueio do Administrador na Gestão de Usuários (`backend/app/api/v1/usuarios.py:22,27,36,45,56` & `frontend/src/app/features/admin/admin.routes.ts:24`)**
@@ -237,6 +237,18 @@ Para adequar o sistema aos critérios de aceite e garantir a segregação segura
 3. **Expansão da Suíte de Testes para Cobertura >= 70% nas Regras Administrativas:**
    * Criar fixture `admin_headers` (`cargo = 3`) e `professor_headers` (`cargo = 2`) em `conftest.py`.
    * Implementar suíte parametrizada em `test_api_endpoints.py` testando matriz completa de permissões (Cargo 1, Cargo 2, Cargo 3 e Anônimo) contra todos os verbos e endpoints de `/alunos`, `/cursos`, `/turmas`, `/matriculas`, `/estoque`, `/pedidos`, `/usuarios` e `/dashboard`.
+
+---
+
+---
+
+## Nota sobre Revogação de Cargo e Confiança no JWT
+
+A dependência `verify_cargo` em `backend/app/core/dependencies.py` confia exclusivamente nas claims do JWT. O cargo é lido da claim `cargo` e o identificador do usuário da claim `sub`. Não há consulta ao banco de dados durante a validação.
+
+Consequência: uma mudança de cargo no banco de dados não revoga nem atualiza um token já emitido. O usuário mantém o cargo antigo até o token expirar e um novo token ser emitido no próximo login.
+
+Referência: `backend/app/core/dependencies.py` (`get_current_user`, `verify_cargo`, `decode_access_token`).
 
 ---
 
