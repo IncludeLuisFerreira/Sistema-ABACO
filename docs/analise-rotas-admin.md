@@ -187,12 +187,12 @@ Esta matriz descreve o comportamento esperado e a localização da regra de vali
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Frontend `/admin/home` | Permitido (200) | Permitido (200) | Negado (Redirect `/acesso-negado`) | Negado (Redirect `/login`) | `frontend/src/app/features/admin/admin.routes.ts:12` & `role.guard.ts:27` |
 | Frontend `/admin/usuarios` | **Permitido (200)** *(atual; baseline Negado)* | Permitido (200) | Negado (Redirect `/acesso-negado`) | Negado (Redirect `/login`) | `frontend/src/app/features/admin/admin.routes.ts:24` & `role.guard.ts:32` (`adminGuard`) |
-| Backend `GET /api/v1/dashboard/*` | **Permitido (200)** *(atual; baseline Negado)* | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/dashboard.py:21` & `dependencies.py:50` |
-| Backend `GET/POST /api/v1/usuarios` | **Permitido (200)** *(atual; baseline Negado)* | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/usuarios.py:51` & `dependencies.py:50` |
-| Backend `GET/POST /api/v1/alunos` | Permitido (200) | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/alunos.py:23` & `dependencies.py:50` |
-| Backend `GET/POST /api/v1/cursos` | Permitido (200) | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/cursos.py:21` & `dependencies.py:50` |
-| Backend `GET/POST /api/v1/turmas` | Permitido (200) | Permitido (200) | Negado (403 em POST; GET permitido) | Negado (401 Unauthorized) | `backend/app/api/v1/turmas.py:24,44` & `dependencies.py:50` |
-| Backend `PUT /api/v1/pedidos/{id}/aprovar` | **Negado (403 Forbidden)** | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/pedidos.py:51` & `dependencies.py:50` |
+| Backend `GET /api/v1/dashboard/*` | **Permitido (200)** *(atual; baseline Negado)* | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/dashboard.py:21` & `dependencies.py:66` |
+| Backend `GET/POST /api/v1/usuarios` | **Permitido (200)** *(atual; baseline Negado)* | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/usuarios.py:51` & `dependencies.py:66` |
+| Backend `GET/POST /api/v1/alunos` | Permitido (200) | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/alunos.py:23` & `dependencies.py:66` |
+| Backend `GET/POST /api/v1/cursos` | Permitido (200) | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/cursos.py:21` & `dependencies.py:66` |
+| Backend `GET/POST /api/v1/turmas` | Permitido (200) | Permitido (200) | Negado (403 em POST; GET permitido) | Negado (401 Unauthorized) | `backend/app/api/v1/turmas.py:24,44` & `dependencies.py:66` |
+| Backend `PUT /api/v1/pedidos/{id}/aprovar` | **Permitido (200)** *(atual; baseline Negado)* | Permitido (200) | Negado (403 Forbidden) | Negado (401 Unauthorized) | `backend/app/api/v1/pedidos.py:51` & `dependencies.py:66` |
 
 ---
 
@@ -261,6 +261,8 @@ Referência: `backend/app/core/dependencies.py` (`get_current_user`, `verify_car
 ---
 
 ## Resumo dos 5 Principais Riscos Encontrados
+
+> **Status (pós-PR #10).** Este resumo é o registro do baseline da auditoria. O risco 1 (fail-open no client) foi corrigido; os riscos 2, 3 e 4 foram resolvidos; o risco 5 foi amplamente endereçado pela nova suíte de testes de autorização. Ver nota de contexto no topo.
 
 1. **Bypass por Mapeamento Fail-Open no Client (`auth.service.ts:68`):** Cargos inválidos ou nulos são mapeados por padrão como `'ADMIN'`, concedendo acesso a telas restritas no frontend.
 2. **Administrador Bloqueado em Tarefas de Gestão no Backend (`usuarios.py`, `dashboard.py`, `pedidos.py`):** O perfil Admin (Cargo 3) recebe HTTP 403 ao tentar gerenciar usuários, visualizar dashboards e aprovar pedidos.
