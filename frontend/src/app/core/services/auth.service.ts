@@ -16,7 +16,7 @@ interface LoginApiResponse {
   };
 }
 
-export type AppRole = 'DIRECTOR' | 'ADMIN' | 'TEACHER';
+export type AppRole = 'DIRECTOR' | 'ADMIN' | 'TEACHER' | 'GUEST';
 
 export interface LoginResponse {
   token: string;
@@ -61,12 +61,12 @@ export function clearStoredToken(): void {
   localStorage.removeItem('abaco_token');
 }
 
-export function mapCargoToRole(cargo: number | null): LoginResponse['role'] {
+export function mapCargoToRole(cargo: number | null | undefined): LoginResponse['role'] {
   if (cargo === 1) return 'DIRECTOR';
   if (cargo === 2) return 'TEACHER';
   if (cargo === 3) return 'ADMIN';
-  // FIXME: cargo desconhecido vira ADMIN (fail-open); deveria negar acesso
-  return 'ADMIN';
+  // Cargo desconhecido vira guest sem permissão nenhuma
+  return 'GUEST';
 }
 
 interface AuthState {
@@ -171,10 +171,10 @@ export class AuthService {
 
   getRoleFromToken(): LoginResponse['role'] {
     const token = this.getToken();
-    if (!token) return 'ADMIN';
+    if (!token) return 'GUEST';
 
     const payload = decodePayload(token);
-    return mapCargoToRole(payload.cargo ?? null);
+    return mapCargoToRole(payload.cargo);
   }
 
   private scheduleAutoLogout(token: string): void {

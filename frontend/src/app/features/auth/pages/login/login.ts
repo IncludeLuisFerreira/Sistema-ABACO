@@ -46,15 +46,14 @@ export class Login {
     ).subscribe({
       next: (res) => {
         const role = res.role;
-        if (role === 'DIRECTOR') {
-          this.router.navigate(['/admin']);
-        } else if (role === 'ADMIN') {
-          // REFACTOR: DIRECTOR e ADMIN navegam para o mesmo '/admin'
-          this.router.navigate(['/admin']);
-        } else if (role === 'TEACHER') {
+        if (role === 'TEACHER') {
           this.router.navigate(['/academico']);
-        } else {
+        } else if (role === 'DIRECTOR' || role === 'ADMIN') {
           this.router.navigate(['/admin']);
+        } else {
+          // GUEST (cargo nulo/desconhecido): não mantém sessão nem acessa rota administrativa
+          this.auth.logout();
+          this.router.navigate(['/acesso-negado']);
         }
       },
       error: (err) => {
