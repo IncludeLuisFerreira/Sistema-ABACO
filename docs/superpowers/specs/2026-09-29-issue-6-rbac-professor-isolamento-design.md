@@ -34,6 +34,8 @@ própria turma e alunos`.
 - Enforcement de posse de turma para cargo 2 nos endpoints por turma e por matrícula.
 - Fechamento das listagens globais de turmas e matrículas para cargo 2.
 - Validação de `idTurma` nos corpos de `POST /notas` e `POST /presencas`.
+- Rejeição de tokens de recuperação de senha quando usados como token de acesso
+  (endurecimento necessário para o isolamento da listagem de alunos).
 - Testes unitários e de integração das novas regras, com cobertura >= 70%.
 
 ### Fora do escopo
@@ -41,6 +43,7 @@ própria turma e alunos`.
 - Migração do token de `localStorage` para cookie httpOnly.
 - Introdução de enumerações formais de cargo no banco.
 - Refatorações estruturais amplas (`dependencies.py`, camada de serviços).
+- Enforcement de posse de turma nas rotas de `pedidos` (tratado em issue própria).
 - Alterações de UI além do tratamento de erro já existente.
 
 ## Regras de autorização
