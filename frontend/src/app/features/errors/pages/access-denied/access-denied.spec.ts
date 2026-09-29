@@ -30,7 +30,7 @@ describe('AccessDenied', () => {
   it.each([
     ['DIRECTOR', 'Diretor'],
     ['TEACHER', 'Professor'],
-    ['ADMIN', 'Administrativo'],
+    ['ADMIN', 'Admin'],
     ['GUEST', 'Visitante'],
   ])('mapeia role %s para o rótulo %s', async (role, rotulo) => {
     await setup(role);

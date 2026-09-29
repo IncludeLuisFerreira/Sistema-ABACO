@@ -20,7 +20,7 @@ export class AccessDenied implements OnInit {
     const role = this.auth.getRoleFromToken();
     if (role === 'DIRECTOR') this.roleName = 'Diretor';
     else if (role === 'TEACHER') this.roleName = 'Professor';
-    else if (role === 'ADMIN') this.roleName = 'Administrativo';
+    else if (role === 'ADMIN') this.roleName = 'Admin';
     else this.roleName = 'Visitante';
   }
 
