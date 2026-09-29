@@ -102,3 +102,10 @@ class TestEnforceMatriculaAccess:
         with pytest.raises(HTTPException) as exc:
             enforce_matricula_access(db_session, matricula.id_matricula, {"sub": "1", "cargo": 1})
         assert exc.value.status_code == 404
+
+    def test_terceiro_vira_403(self, db_session, matricula_ativa):
+        outro = _criar_professor(db_session, "terceiro4@abaco.org.br")
+        user = {"sub": str(outro.id_usuario), "cargo": 2}
+        with pytest.raises(HTTPException) as exc:
+            enforce_matricula_access(db_session, matricula_ativa.id_matricula, user)
+        assert exc.value.status_code == 403
