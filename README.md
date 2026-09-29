@@ -214,7 +214,7 @@ ABACO_Sistema/
 - **Lazy Loading**: rotas carregadas sob demanda (`loadComponent` / `loadChildren`)
 - **Signals**: `authState` como signal para estado reativo de autenticação
 - **Serviços com cache**: `TurmaService` e `MatriculaService` utilizam cache em memória com `Observable` para evitar requisições duplicadas
-- **Guards**: `authGuard` (token válido), `roleGuard([cargos])` (permissão por cargo), `directorGuard`, `adminGuard`
+- **Guards**: `authGuard` (token válido), `roleGuard([cargos])` (permissão por cargo), `adminGuard`
 - **Interceptors**: `TokenInterceptor` (injeção de Bearer), `ErrorInterceptor` (tratamento de 401/403/409)
 - **Responsividade**: sidebar com menu hamburger em mobile (≤768px), tabelas com scroll horizontal
 
@@ -269,11 +269,11 @@ ABACO_Sistema/
 |-------|------|-----------|
 | **1** | DIRETOR | Acesso total: dashboard, usuários, acadêmico, logístico, aprovação de pedidos |
 | **2** | PROFESSOR | Acesso restrito às suas turmas: presenças, notas, alunos, pedidos de material |
-| **3** | ADMIN | Acesso acadêmico e logístico completo, exceto dashboard e gestão de usuários |
+| **3** | ADMIN | Acesso acadêmico, logístico, dashboard e gestão de usuários; não pode gerenciar usuários de cargo 1 nem alterar o próprio cargo |
 
 **No backend**: o decorator `@verify_cargo(1, 2, 3)` valida os cargos permitidos por endpoint. Exemplo: `verify_cargo(1)` = apenas diretores.
 
-**No frontend**: os guards `authGuard`, `roleGuard([cargos])`, `directorGuard` e `adminGuard` protegem as rotas. Usuários sem permissão são redirecionados para `/acesso-negado`.
+**No frontend**: os guards `authGuard`, `roleGuard([cargos])` e `adminGuard` protegem as rotas. Usuários sem permissão são redirecionados para `/acesso-negado`.
 
 ### Recuperação de Senha
 
