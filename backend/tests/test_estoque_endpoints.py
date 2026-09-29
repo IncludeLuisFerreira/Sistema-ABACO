@@ -1,4 +1,7 @@
+import pytest
 from sqlalchemy.exc import IntegrityError
+
+from app.models.estoque import Estoque
 
 
 class TestEstoqueEndpoints:
@@ -70,6 +73,15 @@ class TestEstoqueEndpoints:
             headers=director_headers,
         )
         assert response.status_code == 409
+
+    def test_nomeitem_unique_case_insensitive_no_banco(self, db_session):
+        db_session.add(Estoque(nome_item="Papel A4", quantidade_disponivel=1))
+        db_session.commit()
+
+        db_session.add(Estoque(nome_item="papel a4", quantidade_disponivel=1))
+        with pytest.raises(IntegrityError):
+            db_session.commit()
+        db_session.rollback()
 
     def test_update_sucesso(self, seeded, director_headers):
         estoque_id = seeded["estoque"]["idItemEstoque"]
