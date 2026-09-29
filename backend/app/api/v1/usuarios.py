@@ -19,12 +19,12 @@ router = APIRouter(prefix="/api/v1/usuarios", tags=["usuarios"])
 
 
 @router.get("")
-def read_usuarios(_current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def read_usuarios(_current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
 	return [UsuarioResponseSchema.model_validate(usuario) for usuario in list_usuarios(db)]
 
 
 @router.get("/{usuario_id}")
-def read_usuario(usuario_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def read_usuario(usuario_id: int, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
 	try:
 		usuario = get_usuario_by_id(db, usuario_id)
 	except UsuarioNotFoundError as exc:
@@ -33,7 +33,7 @@ def read_usuario(usuario_id: int, _current_user: dict = Depends(verify_cargo(1))
 
 
 @router.post("")
-def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
 	try:
 		usuario = create_usuario(db, payload)
 	except UsuarioEmailAlreadyExistsError as exc:
@@ -42,7 +42,7 @@ def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(
 
 
 @router.put("/{usuario_id}")
-def update_usuarios(usuario_id: int, payload: UsuarioUpdateSchema, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def update_usuarios(usuario_id: int, payload: UsuarioUpdateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
 	try:
 		usuario = update_usuario(db, usuario_id, payload)
 	except UsuarioNotFoundError as exc:
@@ -53,7 +53,7 @@ def update_usuarios(usuario_id: int, payload: UsuarioUpdateSchema, _current_user
 
 
 @router.delete("/{usuario_id}")
-def delete_usuarios(usuario_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def delete_usuarios(usuario_id: int, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
 	# REFACTOR: regra "não excluir a si mesmo" pertence ao usuario_service
 	current_user_id = int((_current_user.get("sub") or 0))
 	if current_user_id == usuario_id:
