@@ -4,12 +4,14 @@ class TestMatriculasEndpoints:
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
-    def test_me_professor(self, seeded, professor_headers):
-        response = seeded["client"].get("/api/v1/matriculas/me", headers=professor_headers)
+    def test_me_professor_retorna_matriculas_da_sua_turma(self, seeded):
+        response = seeded["client"].get("/api/v1/matriculas/me", headers=seeded["professor_headers"])
         assert response.status_code == 200
+        ids = [matricula["idMatricula"] for matricula in response.json()]
+        assert seeded["matricula"]["idMatricula"] in ids
 
-    def test_me_nao_professor_retorna_todas(self, seeded, director_headers):
-        response = seeded["client"].get("/api/v1/matriculas/me", headers=director_headers)
+    def test_me_nao_professor_retorna_todas(self, seeded):
+        response = seeded["client"].get("/api/v1/matriculas/me", headers=seeded["director_headers"])
         assert response.status_code == 200
         assert len(response.json()) >= 1
 

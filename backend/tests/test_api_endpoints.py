@@ -110,9 +110,21 @@ class TestProtectedEndpoints:
         response = api_client.get(path, headers=director_headers)
         assert response.status_code == 200, f"GET {path} deveria retornar 200 para Diretoria"
 
-    def test_rate_limit_headers_present(self, api_client):
-        response = api_client.post("/api/v1/auth/login", json={"email": "x@x.com", "senha": "x"})
-        assert "X-RateLimit-Limit" in response.headers or "Retry-After" in response.headers or response.status_code in (401, 429)
+    def test_login_rate_limit_returns_429(self, api_client):
+        from app.core.limiter import limiter
+
+        limiter.enabled = True
+        limiter._storage.reset()
+        try:
+            statuses = [
+                api_client.post("/api/v1/auth/login", json={"email": "x@x.com", "senha": "x"}).status_code
+                for _ in range(6)
+            ]
+        finally:
+            limiter.enabled = False
+            limiter._storage.reset()
+
+        assert 429 in statuses, f"esperava 429 após exceder 5/minute, obtido: {statuses}"
 
 
 class TestAdminCrudAccess:

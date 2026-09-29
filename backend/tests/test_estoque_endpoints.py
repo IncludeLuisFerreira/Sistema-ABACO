@@ -1,6 +1,3 @@
-import pytest
-
-
 class TestEstoqueEndpoints:
     def test_listar(self, seeded, admin_headers):
         response = seeded["client"].get("/api/v1/estoque", headers=admin_headers)
@@ -40,16 +37,13 @@ class TestEstoqueEndpoints:
         assert response.status_code == 200
         assert response.json()["nomeItem"] == "Caneta"
 
-    def test_create_duplicado_levanta_erro_nao_tratado(self, seeded, director_headers):
-        # O router não trata EstoqueAlreadyExistsError; a exceção escapa ao handler.
-        from app.services.estoque_service import EstoqueAlreadyExistsError
-
-        with pytest.raises(EstoqueAlreadyExistsError):
-            seeded["client"].post(
-                "/api/v1/estoque",
-                json={"nomeItem": "papel a4", "quantidadeDisponivel": 1},
-                headers=director_headers,
-            )
+    def test_create_duplicado_retorna_409(self, seeded, director_headers):
+        response = seeded["client"].post(
+            "/api/v1/estoque",
+            json={"nomeItem": "papel a4", "quantidadeDisponivel": 1},
+            headers=director_headers,
+        )
+        assert response.status_code == 409
 
     def test_update_sucesso(self, seeded, director_headers):
         estoque_id = seeded["estoque"]["idItemEstoque"]
@@ -104,8 +98,9 @@ class TestEstoqueEndpoints:
     def test_delete_inexistente_retorna_404(self, api_client, director_headers):
         assert api_client.delete("/api/v1/estoque/9999", headers=director_headers).status_code == 404
 
-    def test_delete_com_pedido_vinculado_retorna_409(self, seeded, director_headers):
+    def test_delete_com_pedido_vinculado_retorna_409(self, seeded):
         client = seeded["client"]
+        headers = seeded["director_headers"]
         estoque_id = seeded["estoque"]["idItemEstoque"]
         turma_id = seeded["turma"]["idTurma"]
         client.post(
@@ -114,7 +109,7 @@ class TestEstoqueEndpoints:
                 "idTurma": turma_id,
                 "itens": [{"nomeItem": "Papel A4", "quantidade": 1, "idItemEstoque": estoque_id}],
             },
-            headers=director_headers,
+            headers=headers,
         )
-        response = client.delete(f"/api/v1/estoque/{estoque_id}", headers=director_headers)
+        response = client.delete(f"/api/v1/estoque/{estoque_id}", headers=headers)
         assert response.status_code == 409

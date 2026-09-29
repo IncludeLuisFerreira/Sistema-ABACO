@@ -4,15 +4,20 @@ class TestTurmasEndpoints:
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
-    def test_me_professor(self, seeded, director_headers):
-        # director_headers tem subject "1", igual ao id do professor semeado.
-        response = seeded["client"].get("/api/v1/turmas/me", headers=director_headers)
+    def test_me_retorna_turmas_do_professor(self, seeded):
+        response = seeded["client"].get("/api/v1/turmas/me", headers=seeded["professor_headers"])
         assert response.status_code == 200
-        assert len(response.json()) >= 1
+        ids = [turma["idTurma"] for turma in response.json()]
+        assert seeded["turma"]["idTurma"] in ids
 
-    def test_me_professor_sem_turmas(self, seeded, professor_headers):
-        response = seeded["client"].get("/api/v1/turmas/me", headers=professor_headers)
+    def test_me_de_outro_professor_sem_turmas(self, seeded):
+        from app.core.security import create_access_token
+
+        token = create_access_token(subject="9999", cargo=2)
+        headers = {"Authorization": f"Bearer {token}"}
+        response = seeded["client"].get("/api/v1/turmas/me", headers=headers)
         assert response.status_code == 200
+        assert response.json() == []
 
     def test_get_por_id_e_inexistente(self, seeded, admin_headers):
         client = seeded["client"]

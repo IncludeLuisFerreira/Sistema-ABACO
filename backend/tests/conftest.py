@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.security import create_access_token
@@ -110,24 +110,27 @@ def estoque_item(db_session: Session) -> Estoque:
     return item
 
 
+def _enable_sqlite_foreign_keys(dbapi_connection, _record) -> None:
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
+def _make_isolated_sqlite_engine(db_path) -> object:
+    engine = create_engine(
+        f"sqlite:///{db_path}",
+        connect_args={"check_same_thread": False},
+    )
+    event.listen(engine, "connect", _enable_sqlite_foreign_keys)
+    return engine
+
+
 @pytest.fixture
 def api_client(tmp_path):
     """TestClient com banco SQLite isolado (get_db sobrescrito) e limiter desativado."""
     from main import app
 
-    engine = create_engine(
-        f"sqlite:///{tmp_path / 'test_api.db'}",
-        connect_args={"check_same_thread": False},
-    )
-
-    from sqlalchemy import event
-
-    @event.listens_for(engine, "connect")
-    def _enable_sqlite_fk(dbapi_connection, _record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
+    engine = _make_isolated_sqlite_engine(tmp_path / "test_api.db")
     Base.metadata.create_all(bind=engine)
     TestingSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
@@ -143,9 +146,11 @@ def api_client(tmp_path):
     previous_enabled = limiter.enabled
     limiter.enabled = False
     app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
     try:
-        yield TestClient(app)
+        yield client
     finally:
+        client.close()
         app.dependency_overrides.pop(get_db, None)
         limiter.enabled = previous_enabled
         Base.metadata.drop_all(bind=engine)
@@ -178,16 +183,21 @@ def guest_headers() -> dict:
     return _headers_for_cargo(0, subject="9")
 
 
-@pytest.fixture
-def seeded(api_client, director_headers):
-    """Cria um grafo acadêmico mínimo via API e devolve os ids."""
-    client = api_client
-    headers = director_headers
-    professor = client.post(
+def _create_usuario(client, headers, nome: str, email: str, cargo: int) -> dict:
+    return client.post(
         "/api/v1/usuarios",
-        json={"nome": "Professor Teste", "email": "prof@abaco.org.br", "senha": "senha123", "cargo": 2},
+        json={"nome": nome, "email": email, "senha": "senha123", "cargo": cargo},
         headers=headers,
     ).json()
+
+
+@pytest.fixture
+def seeded(api_client, director_headers):
+    """Cria um grafo acadêmico mínimo via API e devolve ids e tokens derivados dos ids."""
+    client = api_client
+    headers = director_headers
+    professor = _create_usuario(client, headers, "Professor Teste", "prof@abaco.org.br", 2)
+    director = _create_usuario(client, headers, "Diretora Teste", "diretora@abaco.org.br", 1)
     aluno = client.post("/api/v1/alunos", json={"nome": "Aluno Teste"}, headers=headers).json()
     curso = client.post("/api/v1/cursos", json={"nomeCurso": "Curso Teste"}, headers=headers).json()
     turma = client.post(
@@ -214,9 +224,12 @@ def seeded(api_client, director_headers):
         "client": client,
         "headers": headers,
         "professor": professor,
+        "director": director,
         "aluno": aluno,
         "curso": curso,
         "turma": turma,
         "matricula": matricula,
         "estoque": estoque,
+        "professor_headers": _headers_for_cargo(2, str(professor["idUsuario"])),
+        "director_headers": _headers_for_cargo(1, str(director["idUsuario"])),
     }
