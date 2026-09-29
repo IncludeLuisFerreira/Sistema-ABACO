@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/v1/matriculas", tags=["matriculas"])
 
 
 @router.get("")
-def read_matriculas(_current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+def read_matriculas(_current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     return [MatriculaResponseSchema.model_validate(m) for m in list_matriculas(db)]
 
 
