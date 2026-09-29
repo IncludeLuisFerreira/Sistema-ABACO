@@ -15,6 +15,13 @@ class TestMatriculasEndpoints:
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
+    def test_me_anonimo_retorna_401(self, api_client):
+        assert api_client.get("/api/v1/matriculas/me").status_code == 401
+
+    def test_me_cargo_invalido_retorna_403(self, seeded, guest_headers):
+        response = seeded["client"].get("/api/v1/matriculas/me", headers=guest_headers)
+        assert response.status_code == 403
+
     def test_get_por_id_e_inexistente(self, seeded, admin_headers):
         client = seeded["client"]
         matricula_id = seeded["matricula"]["idMatricula"]
