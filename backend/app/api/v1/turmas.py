@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.authorization import require_turma_access
 from app.core.dependencies import verify_cargo
 from app.db.database import get_db
+from app.models.turma import Turma
 from app.schemas.turma_schema import TurmaCreateSchema, TurmaResponseSchema, TurmaUpdateSchema
 from app.services.turma_service import (
     CursoNotFoundForTurmaError,
@@ -11,7 +13,6 @@ from app.services.turma_service import (
     TurmaNotFoundError,
     create_turma,
     delete_turma,
-    get_turma_by_id,
     list_turmas,
     list_turmas_by_professor,
     update_turma,
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/api/v1/turmas", tags=["turmas"])
 
 
 @router.get("")
-def read_turmas(_current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+def read_turmas(_current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     return [TurmaResponseSchema.model_validate(turma) for turma in list_turmas(db)]
 
 
@@ -32,11 +33,7 @@ def read_minhas_turmas(current_user: dict = Depends(verify_cargo(1, 2)), db: Ses
 
 
 @router.get("/{turma_id}")
-def read_turma(turma_id: int, _current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
-    try:
-        turma = get_turma_by_id(db, turma_id)
-    except TurmaNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Turma não encontrada") from exc
+def read_turma(turma: Turma = Depends(require_turma_access)):
     return TurmaResponseSchema.model_validate(turma)
 
 

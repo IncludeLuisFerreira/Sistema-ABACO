@@ -48,8 +48,9 @@ class TestNotasEndpoints:
         )
         assert response.status_code == 422
 
-    def test_listar_por_matricula(self, seeded, professor_headers):
+    def test_listar_por_matricula(self, seeded):
         client = seeded["client"]
+        professor_headers = seeded["professor_headers"]
         matricula_id = seeded["matricula"]["idMatricula"]
         client.post(
             "/api/v1/notas",
@@ -105,8 +106,9 @@ class TestPresencasEndpoints:
         assert response.status_code == 200
         assert len(response.json()) == 1
 
-    def test_listar_por_turma_com_e_sem_data(self, seeded, professor_headers):
+    def test_listar_por_turma_com_e_sem_data(self, seeded):
         client = seeded["client"]
+        professor_headers = seeded["professor_headers"]
         turma_id = seeded["turma"]["idTurma"]
         client.post(
             "/api/v1/presencas",

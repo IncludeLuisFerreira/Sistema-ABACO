@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.security import create_access_token
 from app.db.database import Base, get_db
@@ -11,12 +12,25 @@ from app.models.estoque import Estoque
 from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.usuario import Usuario
+from main import app
 
 
 @pytest.fixture
 def db_session():
     # TODO: testes só em SQLite; JSONB e with_for_update não são cobertos
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    def _enable_foreign_keys(dbapi_connection, _record) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    event.listen(engine, "connect", _enable_foreign_keys)
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
@@ -110,42 +124,14 @@ def estoque_item(db_session: Session) -> Estoque:
     return item
 
 
-def _enable_sqlite_foreign_keys(dbapi_connection, _record) -> None:
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
-
-
-def _make_isolated_sqlite_engine(db_path) -> object:
-    engine = create_engine(
-        f"sqlite:///{db_path}",
-        connect_args={"check_same_thread": False},
-    )
-    event.listen(engine, "connect", _enable_sqlite_foreign_keys)
-    return engine
-
-
 @pytest.fixture
-def api_client(tmp_path):
-    """TestClient com banco SQLite isolado (get_db sobrescrito) e limiter desativado."""
-    from main import app
-
-    engine = _make_isolated_sqlite_engine(tmp_path / "test_api.db")
-    Base.metadata.create_all(bind=engine)
-    TestingSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-
-    def override_get_db():
-        db = TestingSession()
-        try:
-            yield db
-        finally:
-            db.close()
-
+def api_client(db_session):
+    """TestClient com o banco SQLite isolado do teste e limiter desativado."""
     from app.core.limiter import limiter
 
     previous_enabled = limiter.enabled
     limiter.enabled = False
-    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_db] = lambda: db_session
     client = TestClient(app)
     try:
         yield client
@@ -153,8 +139,6 @@ def api_client(tmp_path):
         client.close()
         app.dependency_overrides.pop(get_db, None)
         limiter.enabled = previous_enabled
-        Base.metadata.drop_all(bind=engine)
-        engine.dispose()
 
 
 def _headers_for_cargo(cargo: int, subject: str = "1") -> dict:
@@ -233,3 +217,30 @@ def seeded(api_client, director_headers):
         "professor_headers": _headers_for_cargo(2, str(professor["idUsuario"])),
         "director_headers": _headers_for_cargo(1, str(director["idUsuario"])),
     }
+@pytest.fixture
+def outro_professor(db_session) -> Usuario:
+    professor = Usuario(
+        nome="Outro Professor",
+        email="outro.prof@abaco.org.br",
+        senha_hash="$2b$12$6rgU3Nzuu7ZMdPqt7O1kZOkLTZGUQEKd9BsN3Oh/wdZdNvXTfAvha",
+        cargo=2,
+    )
+    db_session.add(professor)
+    db_session.commit()
+    db_session.refresh(professor)
+    return professor
+
+
+@pytest.fixture
+def professor_headers_factory():
+    def _make(usuario: Usuario) -> dict:
+        token = create_access_token(subject=str(usuario.id_usuario), cargo=2)
+        return {"Authorization": f"Bearer {token}"}
+
+    return _make
+
+
+@pytest.fixture
+def diretor_headers() -> dict:
+    token = create_access_token(subject="999", cargo=1)
+    return {"Authorization": f"Bearer {token}"}
