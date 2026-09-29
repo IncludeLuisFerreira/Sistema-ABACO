@@ -28,7 +28,7 @@ describe('UsuarioService', () => {
       result = usuarios;
     });
 
-    const request = httpMock.expectOne('http://localhost:8000/api/v1/usuarios');
+    const request = httpMock.expectOne('/api/v1/usuarios');
     request.flush([
       {
         idUsuario: 1,

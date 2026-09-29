@@ -1,0 +1,24 @@
+// Polyfills necessários para testes com jsdom que renderizam libs de gráfico (apexcharts).
+if (!(globalThis as unknown as { ResizeObserver?: unknown }).ResizeObserver) {
+  class ResizeObserverStub {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+
+  (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverStub;
+}
+
+// jsdom não implementa getBBox/getScreenCTM; apexcharts depende deles ao renderizar SVG.
+if (typeof SVGElement !== 'undefined') {
+  const proto = SVGElement.prototype as unknown as {
+    getBBox?: () => unknown;
+    getScreenCTM?: () => unknown;
+  };
+  if (!proto.getBBox) {
+    proto.getBBox = () => ({ x: 0, y: 0, width: 0, height: 0 });
+  }
+  if (!proto.getScreenCTM) {
+    proto.getScreenCTM = () => null;
+  }
+}
