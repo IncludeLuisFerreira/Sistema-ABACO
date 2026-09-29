@@ -25,6 +25,14 @@ class TestTurmasRbac:
         response = api_client.get(f"/api/v1/turmas/{turma.id_turma}", headers=diretor_headers)
         assert response.status_code == 200
 
+    def test_turma_sem_token_retorna_401(self, api_client):
+        response = api_client.get("/api/v1/turmas/1")
+        assert response.status_code == 401
+
+    def test_diretor_lista_todas_turmas(self, api_client, diretor_headers):
+        response = api_client.get("/api/v1/turmas", headers=diretor_headers)
+        assert response.status_code == 200
+
     def test_professor_nao_lista_todas_turmas(
         self, api_client, usuario_professor, professor_headers_factory
     ):
@@ -48,3 +56,7 @@ class TestMatriculasListagemRbac:
         headers = professor_headers_factory(usuario_professor)
         response = api_client.get("/api/v1/matriculas", headers=headers)
         assert response.status_code == 403
+
+    def test_diretor_lista_todas_matriculas(self, api_client, diretor_headers):
+        response = api_client.get("/api/v1/matriculas", headers=diretor_headers)
+        assert response.status_code == 200

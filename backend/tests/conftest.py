@@ -1,15 +1,18 @@
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db.database import Base
+from app.core.security import create_access_token
+from app.db.database import Base, get_db
 from app.models.aluno import Aluno
 from app.models.curso import Curso
 from app.models.estoque import Estoque
 from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.usuario import Usuario
+from main import app
 
 
 @pytest.fixture
@@ -114,18 +117,11 @@ def estoque_item(db_session: Session) -> Estoque:
     return item
 
 
-from fastapi.testclient import TestClient
-
-from app.core.security import create_access_token
-from app.db.database import get_db
-from main import app
-
-
 @pytest.fixture
 def api_client(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     yield TestClient(app)
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture
@@ -143,20 +139,6 @@ def outro_professor(db_session) -> Usuario:
 
 
 @pytest.fixture
-def turma_outro_professor(db_session, curso, outro_professor) -> Turma:
-    t = Turma(
-        capacidade=10,
-        id_curso=curso.id_curso,
-        id_professor=outro_professor.id_usuario,
-        dias_aula="Ter/Qui",
-    )
-    db_session.add(t)
-    db_session.commit()
-    db_session.refresh(t)
-    return t
-
-
-@pytest.fixture
 def professor_headers_factory():
     def _make(usuario: Usuario) -> dict:
         token = create_access_token(subject=str(usuario.id_usuario), cargo=2)
@@ -167,5 +149,5 @@ def professor_headers_factory():
 
 @pytest.fixture
 def diretor_headers() -> dict:
-    token = create_access_token(subject="1", cargo=1)
+    token = create_access_token(subject="999", cargo=1)
     return {"Authorization": f"Bearer {token}"}
