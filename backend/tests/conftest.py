@@ -1,20 +1,29 @@
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.db.database import Base
+from app.core.security import create_access_token
+from app.db.database import Base, get_db
 from app.models.aluno import Aluno
 from app.models.curso import Curso
 from app.models.estoque import Estoque
 from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.usuario import Usuario
+from main import app
 
 
 @pytest.fixture
 def db_session():
     # TODO: testes só em SQLite; JSONB e with_for_update não são cobertos
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestingSessionLocal()
@@ -106,3 +115,39 @@ def estoque_item(db_session: Session) -> Estoque:
     db_session.commit()
     db_session.refresh(item)
     return item
+
+
+@pytest.fixture
+def api_client(db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
+    yield TestClient(app)
+    app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture
+def outro_professor(db_session) -> Usuario:
+    professor = Usuario(
+        nome="Outro Professor",
+        email="outro.prof@abaco.org.br",
+        senha_hash="$2b$12$6rgU3Nzuu7ZMdPqt7O1kZOkLTZGUQEKd9BsN3Oh/wdZdNvXTfAvha",
+        cargo=2,
+    )
+    db_session.add(professor)
+    db_session.commit()
+    db_session.refresh(professor)
+    return professor
+
+
+@pytest.fixture
+def professor_headers_factory():
+    def _make(usuario: Usuario) -> dict:
+        token = create_access_token(subject=str(usuario.id_usuario), cargo=2)
+        return {"Authorization": f"Bearer {token}"}
+
+    return _make
+
+
+@pytest.fixture
+def diretor_headers() -> dict:
+    token = create_access_token(subject="999", cargo=1)
+    return {"Authorization": f"Bearer {token}"}
