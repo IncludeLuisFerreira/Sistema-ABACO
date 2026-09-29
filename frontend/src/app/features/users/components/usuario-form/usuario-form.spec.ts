@@ -27,17 +27,17 @@ describe('UsuarioFormComponent', () => {
   });
 
   it('should start with invalid form when fields are empty', () => {
-    expect(component.form.valid).toBeFalse();
-    expect(component.form.controls.nome.valid).toBeFalse();
-    expect(component.form.controls.email.valid).toBeFalse();
-    expect(component.form.controls.telefone.valid).toBeFalse();
-    expect(component.form.controls.endereco.valid).toBeFalse();
-    expect(component.form.controls.senha.valid).toBeFalse();
+    expect(component.form.valid).toBe(false);
+    expect(component.form.controls.nome.valid).toBe(false);
+    expect(component.form.controls.email.valid).toBe(false);
+    expect(component.form.controls.telefone.valid).toBe(false);
+    expect(component.form.controls.endereco.valid).toBe(false);
+    expect(component.form.controls.senha.valid).toBe(false);
   });
 
   it('should invalidate email if format is incorrect', () => {
     component.form.controls.email.setValue('email_sem_arroba');
-    expect(component.form.controls.email.hasError('email')).toBeTrue();
+    expect(component.form.controls.email.hasError('email')).toBe(true);
   });
 
   it('should mark fields touched and not emit save when submitting invalid form', () => {
@@ -47,10 +47,10 @@ describe('UsuarioFormComponent', () => {
     component.submit();
 
     expect(emittedPayload).toBeUndefined();
-    expect(component.form.controls.nome.touched).toBeTrue();
-    expect(component.form.controls.telefone.touched).toBeTrue();
-    expect(component.form.controls.endereco.touched).toBeTrue();
-    expect(component.form.controls.email.touched).toBeTrue();
+    expect(component.form.controls.nome.touched).toBe(true);
+    expect(component.form.controls.telefone.touched).toBe(true);
+    expect(component.form.controls.endereco.touched).toBe(true);
+    expect(component.form.controls.email.touched).toBe(true);
   });
 
   it('should emit save with all required fields when form is valid', () => {
@@ -66,7 +66,7 @@ describe('UsuarioFormComponent', () => {
       senha: 'minhasenha',
     });
 
-    expect(component.form.valid).toBeTrue();
+    expect(component.form.valid).toBe(true);
 
     component.submit();
 
@@ -101,8 +101,8 @@ describe('UsuarioFormComponent', () => {
     expect(component.form.controls.nome.value).toBe('Carlos Antunes');
     expect(component.form.controls.telefone.value).toBe('11977776666');
     expect(component.form.controls.endereco.value).toBe('Av. Paulista, 1000');
-    expect(component.form.controls.email.disabled).toBeTrue();
+    expect(component.form.controls.email.disabled).toBe(true);
     expect(component.form.controls.senha.validator).toBeNull();
-    expect(component.form.valid).toBeTrue();
+    expect(component.form.valid).toBe(true);
   });
 });
