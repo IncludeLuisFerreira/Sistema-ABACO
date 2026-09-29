@@ -9,7 +9,9 @@ if (!(globalThis as unknown as { ResizeObserver?: unknown }).ResizeObserver) {
   (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverStub;
 }
 
-// jsdom não implementa getBBox/getScreenCTM; apexcharts depende deles ao renderizar SVG.
+// jsdom não implementa getBBox/getScreenCTM, usados pelo apexcharts ao renderizar SVG.
+// Os stubs abaixo só são aplicados quando a API está ausente, para não mascarar
+// comportamento real de um navegador que já a implemente.
 if (typeof SVGElement !== 'undefined') {
   const proto = SVGElement.prototype as unknown as {
     getBBox?: () => unknown;

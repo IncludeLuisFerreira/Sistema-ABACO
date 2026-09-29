@@ -81,21 +81,25 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "setupFiles": ["src/test-setup.ts"],
-            "coverage": true,
-            "coverageInclude": [
-              "src/app/core/guards/**",
-              "src/app/core/services/auth.service.ts",
-              "src/app/features/auth/pages/login/**",
-              "src/app/features/errors/pages/access-denied/**"
-            ],
-            "coverageExclude": ["**/*.html"],
-            "coverageReporters": ["text", "text-summary", "html"],
-            "coverageThresholds": {
-              "statements": 80,
-              "branches": 80,
-              "functions": 80,
-              "lines": 80
+            "setupFiles": ["src/test-setup.ts"]
+          },
+          "configurations": {
+            "coverage": {
+              "coverage": true,
+              "coverageInclude": [
+                "src/app/core/guards/**",
+                "src/app/core/services/auth.service.ts",
+                "src/app/features/auth/pages/login/**",
+                "src/app/features/errors/pages/access-denied/**"
+              ],
+              "coverageExclude": ["**/*.html", "**/*.scss"],
+              "coverageReporters": ["text", "text-summary", "html"],
+              "coverageThresholds": {
+                "statements": 80,
+                "branches": 80,
+                "functions": 80,
+                "lines": 80
+              }
             }
           }
         }
