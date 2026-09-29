@@ -97,6 +97,21 @@ class TestEstoqueEndpoints:
         response = api_client.put("/api/v1/estoque/9999", json={"nomeItem": "X"}, headers=director_headers)
         assert response.status_code == 404
 
+    def test_update_nome_duplicado_retorna_409_de_duplicidade(self, seeded, director_headers):
+        client = seeded["client"]
+        created = client.post(
+            "/api/v1/estoque",
+            json={"nomeItem": "Cola", "quantidadeDisponivel": 5},
+            headers=director_headers,
+        ).json()
+        response = client.put(
+            f"/api/v1/estoque/{created['idItemEstoque']}",
+            json={"nomeItem": "Papel A4"},
+            headers=director_headers,
+        )
+        assert response.status_code == 409
+        assert "cadastrado" in response.json()["detail"].lower()
+
     def test_baixa_sucesso(self, seeded, admin_headers):
         estoque_id = seeded["estoque"]["idItemEstoque"]
         response = seeded["client"].put(

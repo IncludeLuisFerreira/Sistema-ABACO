@@ -67,6 +67,8 @@ def update_estoque_item(estoque_id: int, payload: EstoqueUpdateSchema, _current_
         item = update_estoque(db, estoque_id, payload)
     except EstoqueNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item de estoque não encontrado") from exc
+    except EstoqueAlreadyExistsError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Item de estoque já cadastrado") from exc
     except EstoqueHasDependenciesError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Não foi possível atualizar o item de estoque") from exc
     return EstoqueResponseSchema.model_validate(item)
