@@ -11,6 +11,7 @@ from app.schemas.estoque_schema import (
     EstoqueUpdateSchema,
 )
 from app.services.estoque_service import (
+    EstoqueAlreadyExistsError,
     EstoqueHasDependenciesError,
     EstoqueNotFoundError,
     EstoqueSaldoInsuficienteError,
@@ -53,7 +54,10 @@ def read_estoque_item(estoque_id: int, _current_user: dict = Depends(verify_carg
 
 @router.post("")
 def create_estoque_item(payload: EstoqueCreateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
-    item = create_estoque(db, payload)
+    try:
+        item = create_estoque(db, payload)
+    except EstoqueAlreadyExistsError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Item de estoque já cadastrado") from exc
     return EstoqueResponseSchema.model_validate(item)
 
 
