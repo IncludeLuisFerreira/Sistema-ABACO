@@ -31,8 +31,8 @@ def _send_via_smtp(to_email: str, subject: str, body: str) -> None:
                 if settings.smtp_user and settings.smtp_password:
                     server.login(settings.smtp_user, settings.smtp_password)
                 server.send_message(msg)
-    except smtplib.SMTPException as e:
-        logger.error("Falha ao enviar email para %s: %s", to_email, e)
+    except Exception as error:
+        logger.error("Falha no envio SMTP (%s)", type(error).__name__)
         raise
 
 
@@ -42,8 +42,7 @@ def send_reset_email(to_email: str, reset_token: str) -> None:
     reset_link = f"{settings.frontend_url}/reset-password?token={reset_token}"
 
     if not settings.smtp_user:
-        # FIXME: loga o link de reset em texto puro, vazando token de recuperação
-        logger.info("SMTP não configurado. Link de recuperação para %s: %s", to_email, reset_link)
+        logger.warning("SMTP não configurado; e-mail de recuperação não enviado")
         return
 
     subject = "SGA ABACO - Recuperação de Senha"

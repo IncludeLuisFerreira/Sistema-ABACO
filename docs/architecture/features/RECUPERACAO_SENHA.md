@@ -320,7 +320,7 @@ Definidas em `backend/app/core/config.py` e passadas ao container por `docker-co
 | Variável | Default | Uso |
 |---|---|---|
 | `JWT_SECRET` | `development_secret_change_me` | Assina e valida todos os tokens |
-| `RESET_TOKEN_EXPIRE_MINUTES` | `15` | Validade do link de recuperação |
+| `RESET_TOKEN_EXPIRE_MINUTES` | `30` | Validade do link de recuperação |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `120` | Validade da sessão |
 | `SMTP_HOST` | `localhost` | Servidor SMTP |
 | `SMTP_PORT` | `587` | Porta SMTP (465 ativa SSL) |
@@ -337,7 +337,7 @@ Leitura do arquivo `.env` na raiz e verificação dentro do container `sga_backe
 | Variável | Valor atual | Avaliação |
 |---|---|---|
 | `JWT_SECRET` | preenchido, 64 caracteres | Correto |
-| `RESET_TOKEN_EXPIRE_MINUTES` | `15` | Aceitável |
+| `RESET_TOKEN_EXPIRE_MINUTES` | `15` no container inspecionado | Defina `30` ao recriar o container para aplicar o prazo atualizado |
 | `SMTP_HOST` | `localhost` | Inválido em container — ver 8.1 |
 | `SMTP_PORT` | `587` | Inválido em container — ver 8.1 |
 | `SMTP_USER` | **vazio** | Desativa o envio |

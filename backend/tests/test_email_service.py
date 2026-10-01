@@ -15,7 +15,7 @@ def _settings(**overrides):
         "smtp_host": "localhost",
         "smtp_port": 587,
         "smtp_from": "noreply@abaco.org.br",
-        "reset_token_expire_minutes": 15,
+        "reset_token_expire_minutes": 30,
         "first_access_token_expire_minutes": 1440,
     }
     base.update(overrides)
@@ -96,8 +96,43 @@ class TestSendFirstAccessEmail:
 
 
 class TestSendResetEmail:
-    def test_logs_link_when_smtp_not_configured(self, monkeypatch, caplog):
+    def test_does_not_log_reset_token_when_smtp_not_configured(self, monkeypatch, caplog):
         monkeypatch.setattr(email_service, "get_settings", lambda: _settings())
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.WARNING):
             email_service.send_reset_email("user@abaco.org.br", "reset123")
-        assert "reset-password?token=reset123" in caplog.text
+        assert "reset123" not in caplog.text
+        assert "não enviado" in caplog.text
+
+    def test_smtp_failure_is_logged_without_sensitive_details(self, monkeypatch, caplog):
+        class FailingSMTP:
+            def __init__(self, host, port):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def ehlo(self):
+                pass
+
+            def starttls(self):
+                pass
+
+            def login(self, user, password):
+                raise smtplib.SMTPException("private credential")
+
+        monkeypatch.setattr(
+            email_service,
+            "get_settings",
+            lambda: _settings(smtp_user="user@abaco.org.br", smtp_password="private credential"),
+        )
+        monkeypatch.setattr(email_service.smtplib, "SMTP", FailingSMTP)
+
+        with caplog.at_level(logging.ERROR), pytest.raises(smtplib.SMTPException):
+            email_service.send_reset_email("user@abaco.org.br", "reset123")
+
+        assert "SMTPException" in caplog.text
+        assert "private credential" not in caplog.text
+        assert "reset123" not in caplog.text

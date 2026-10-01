@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 import pytest
 from sqlalchemy.orm import Session
 
-from app.core.security import create_first_access_token, hash_password
+from app.core.security import create_first_access_token, create_reset_token, hash_password
 from app.services.auth_service import (
     EmailNotFoundError,
     InvalidCredentialsError,
@@ -73,6 +75,30 @@ class TestProcessResetPassword:
     def test_invalid_token_raises(self, db_session: Session):
         with pytest.raises(InvalidResetTokenError):
             process_reset_password(db_session, "token_invalido", "novaSenha1", "novaSenha1")
+
+    def test_expired_token_does_not_change_password(self, db_session: Session, usuario):
+        old_hash = usuario.senha_hash
+        token = create_reset_token(email=usuario.email, expires_delta=timedelta(minutes=-1))
+
+        with pytest.raises(InvalidResetTokenError):
+            process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
+
+        db_session.refresh(usuario)
+        assert usuario.senha_hash == old_hash
+
+    def test_first_access_token_is_not_accepted_for_password_reset(self, db_session: Session, usuario):
+        token = create_first_access_token(email=usuario.email)
+
+        with pytest.raises(InvalidResetTokenError):
+            process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
+
+    def test_reset_token_has_thirty_minute_default_expiration(self, usuario):
+        from app.core.config import Settings
+        from app.core.security import decode_reset_token
+
+        assert Settings.model_fields["reset_token_expire_minutes"].default == 30
+        token = create_reset_token(email=usuario.email)
+        assert decode_reset_token(token)["type"] == "password_reset"
 
 
 class TestProcessFirstAccessPassword:

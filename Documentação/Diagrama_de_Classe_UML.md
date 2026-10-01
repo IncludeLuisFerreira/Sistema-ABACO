@@ -531,7 +531,7 @@ Key Response schemas:
 + `secret_key: str` (env: SECRET_KEY/JWT_SECRET)
 + `jwt_algorithm: str` = "HS256"
 + `access_token_expire_minutes: int` = 120
-+ `reset_token_expire_minutes: int` = 15
++ `reset_token_expire_minutes: int` = 30
 + `smtp_host`, `smtp_port`, `smtp_user`, `smtp_password`, `smtp_from`
 + `frontend_url: str`
 + `cors_origins: str`

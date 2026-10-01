@@ -55,6 +55,25 @@ class TestAuthEndpoints:
         response = api_client.post("/api/v1/auth/login", json={})
         assert response.status_code == 422
 
+    def test_forgot_password_masks_email_delivery_failures(self, api_client, monkeypatch):
+        import app.api.v1.auth as auth_routes
+
+        def fail_to_send_email(email, token):
+            raise RuntimeError("SMTP failure")
+
+        monkeypatch.setattr(auth_routes, "process_forgot_password", lambda db, email: "reset-token")
+        monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)
+
+        response = api_client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "user@abaco.org.br"},
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"
+        }
+
 
 class TestProtectedEndpoints:
     def test_alunos_without_token_returns_401(self, api_client):

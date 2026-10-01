@@ -1,3 +1,5 @@
+import math
+import time
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -37,8 +39,22 @@ def create_reset_token(*, email: str, expires_delta: timedelta | None = None) ->
 
 def decode_reset_token(token: str) -> dict:
     settings = get_settings()
-    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
-    if payload.get("type") != "password_reset":
+    payload = jwt.decode(
+        token,
+        settings.secret_key,
+        algorithms=[settings.jwt_algorithm],
+        options={"require": ["sub", "type", "exp"]},
+    )
+    exp = payload.get("exp")
+    if (
+        payload.get("type") != "password_reset"
+        or not isinstance(payload.get("sub"), str)
+        or not payload["sub"]
+        or isinstance(exp, bool)
+        or not isinstance(exp, (int, float))
+        or (isinstance(exp, float) and not math.isfinite(exp))
+        or exp <= time.time()
+    ):
         raise jwt.PyJWTError("Invalid token type")
     return payload
 
