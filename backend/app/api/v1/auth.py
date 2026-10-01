@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -31,6 +33,7 @@ from app.core.limiter import limiter
 from app.services.email_service import send_reset_email
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -62,11 +65,8 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 
     try:
         send_reset_email(payload.email, token)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao enviar e-mail de recuperação. Tente novamente mais tarde.",
-        )
+    except Exception as error:
+        logger.error("Solicitação de recuperação não concluída por falha de envio (%s)", type(error).__name__)
 
     return {"message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"}
 
