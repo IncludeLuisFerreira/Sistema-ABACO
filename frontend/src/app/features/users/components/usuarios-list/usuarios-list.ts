@@ -36,7 +36,7 @@ export class UsuariosListComponent {
       return 'Professor';
     }
 
-    return 'Administrativo';
+    return 'Admin';
   }
 
   nextPage(): void {

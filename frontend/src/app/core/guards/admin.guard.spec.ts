@@ -1,42 +1,45 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { fakeJwt } from '../testing/fake-jwt';
 import { adminGuard } from './role.guard';
 
-function makeToken(payload: Record<string, unknown>): string {
-  return `header.${btoa(JSON.stringify(payload))}.signature`;
-}
+const TOKEN_KEY = 'abaco_token';
 
-function futureExp(): number {
-  return Math.floor(Date.now() / 1000) + 3600;
-}
-
-describe('adminGuard', () => {
+describe('adminGuard (cargos 1 e 3)', () => {
   beforeEach(() => {
-    localStorage.clear();
     TestBed.configureTestingModule({
       providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
+    localStorage.clear();
   });
 
   afterEach(() => localStorage.clear());
 
-  it('allows access for admin (cargo 3)', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '3', cargo: 3, exp: futureExp() }));
+  const run = () => TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
+  const withToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
 
-    const result = TestBed.runInInjectionContext(() => adminGuard({} as never, { url: '/admin/home' } as never));
-    expect(result).toBe(true);
+  it('permite DIRECTOR (cargo 1)', () => {
+    withToken(fakeJwt({ cargo: 1 }));
+    expect(run()).toBe(true);
   });
 
-  it('redirects when no token', () => {
-    const result = TestBed.runInInjectionContext(() => adminGuard({} as never, { url: '/admin/home' } as never));
-    expect(result).toBe('/login');
+  it('permite ADMIN (cargo 3)', () => {
+    withToken(fakeJwt({ cargo: 3 }));
+    expect(run()).toBe(true);
   });
 
-  it('denies access for teacher (cargo 2)', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '2', cargo: 2, exp: futureExp() }));
+  it('nega TEACHER (cargo 2)', () => {
+    withToken(fakeJwt({ cargo: 2 }));
+    expect(run()).toBe('/acesso-negado');
+  });
 
-    const result = TestBed.runInInjectionContext(() => adminGuard({} as never, { url: '/admin/home' } as never));
-    expect(result).toBe('/acesso-negado');
+  it('nega GUEST (cargo null)', () => {
+    withToken(fakeJwt({ cargo: null }));
+    expect(run()).toBe('/acesso-negado');
+  });
+
+  it('redireciona para /login sem token', () => {
+    expect(run()).toBe('/login');
   });
 });

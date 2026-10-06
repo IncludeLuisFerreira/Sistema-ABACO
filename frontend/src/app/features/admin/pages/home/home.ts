@@ -30,6 +30,7 @@ export class AdminHome implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   isDirector = false;
+  canSeeCharts = false;
   hoje = new Date();
   kpis: Kpis = { total_alunos_ativos: 0, total_turmas_vigentes: 0, total_pedidos_pendentes: 0, total_estoque_critico: 0 };
   loading = true;
@@ -55,6 +56,7 @@ export class AdminHome implements OnInit, OnDestroy {
   ngOnInit(): void {
     const role = this.auth.getRoleFromToken();
     this.isDirector = role === 'DIRECTOR';
+    this.canSeeCharts = role === 'DIRECTOR' || role === 'ADMIN';
     this.loadDashboard();
   }
 
@@ -67,7 +69,7 @@ export class AdminHome implements OnInit, OnDestroy {
       this.dashboardService.getKpis().pipe(takeUntil(this.destroy$), timeout(15000)),
     ];
 
-    if (this.isDirector) {
+    if (this.canSeeCharts) {
       requests.push(
         this.dashboardService.getChartAcademico().pipe(takeUntil(this.destroy$), timeout(15000)),
         this.dashboardService.getChartLogistica().pipe(takeUntil(this.destroy$), timeout(15000)),
@@ -78,7 +80,7 @@ export class AdminHome implements OnInit, OnDestroy {
       next: (results: any[]) => {
         this.kpis = results[0] as Kpis;
 
-        if (this.isDirector && results.length > 1) {
+        if (this.canSeeCharts && results.length > 1) {
           this.buildAcademicoCharts(results[1] as ChartAcademico);
           this.buildLogisticaChart(results[2] as ChartLogistica);
         }

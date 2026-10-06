@@ -46,7 +46,7 @@ app = FastAPI(
         {"name": "presencas", "description": "Registro e consulta de presenças"},
         {"name": "notas", "description": "Lançamento e consulta de notas e médias"},
         {"name": "historico", "description": "Geração de histórico escolar"},
-        {"name": "usuarios", "description": "Gestão de usuários (restrito à diretoria)"},
+        {"name": "usuarios", "description": "Gestão de usuários (restrito à diretoria e administradores)"},
         {"name": "dashboard", "description": "Indicadores e gráficos administrativos"},
         {"name": "estoque", "description": "Gestão de estoque e baixa de itens"},
         {"name": "pedidos", "description": "Pedidos de material — criar, aprovar, comprar, entregar"},

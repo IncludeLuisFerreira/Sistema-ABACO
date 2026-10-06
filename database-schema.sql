@@ -66,6 +66,8 @@ CREATE TABLE estoque (
     estoqueminimo INTEGER
 );
 
+CREATE UNIQUE INDEX uq_estoque_nomeitem_lower ON estoque (lower(nomeitem));
+
 CREATE TABLE movimentacao_estoque (
     idmovimentacao SERIAL PRIMARY KEY,
     iditemestoque INTEGER REFERENCES estoque(iditemestoque),

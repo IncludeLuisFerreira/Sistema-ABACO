@@ -8,18 +8,49 @@
 # Logs e arquivos temporários
 logs/
 *.log
+
+
+# Python - bytecode e caches
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
 
+# Python - ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+.Python
+.installed.cfg
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Testes e cobertura de código
-Test/
-coverage/
-
-node_modules/
+# Python - build e distribuição
+build/
 dist/
-*.tsbuildinfo
+*.egg
+*.egg-info/
+.eggs/
 
+# Testes e cobertura (pytest / pytest-cov)
+Test/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+coverage/
+.tox/
+.nox/
+nosetests.xml
+
+# Node / frontend
+node_modules/
+*.tsbuildinfo
 frontend/.next/
 
-# .worktrees/
+# Worktrees locais
+.worktrees/

@@ -1,57 +1,76 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { getStoredToken } from '../services/auth.service';
+import { fakeExpiredJwt, fakeJwt } from '../testing/fake-jwt';
 import { roleGuard } from './role.guard';
 
-function makeToken(payload: Record<string, unknown>): string {
-  return `header.${btoa(JSON.stringify(payload))}.signature`;
-}
+const TOKEN_KEY = 'abaco_token';
 
-function futureExp(): number {
-  return Math.floor(Date.now() / 1000) + 3600;
-}
-
-describe('roleGuard', () => {
+describe('roleGuard (fail-closed por cargo)', () => {
   beforeEach(() => {
-    localStorage.clear();
     TestBed.configureTestingModule({
       providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
+    localStorage.clear();
   });
 
-  afterEach(() => localStorage.clear());
-
-  it('allows access when user has an allowed cargo', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '1', cargo: 1, exp: futureExp() }));
-
-    const guard = roleGuard([1, 3]);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, { url: '/admin/home' } as never));
-
-    expect(result).toBe(true);
+  afterEach(() => {
+    localStorage.clear();
   });
 
-  it('redirects to access denied when cargo is not allowed', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '2', cargo: 2, exp: futureExp() }));
+  const run = (allowedCargos: number[]) =>
+    TestBed.runInInjectionContext(() => roleGuard(allowedCargos)({} as never, {} as never));
 
-    const guard = roleGuard([1, 3]);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, { url: '/admin/home' } as never));
+  const withToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
 
-    expect(result).toBe('/acesso-negado');
+  it('permite DIRECTOR (cargo 1) na allowlist [1, 3]', () => {
+    withToken(fakeJwt({ cargo: 1 }));
+    expect(run([1, 3])).toBe(true);
   });
 
-  it('redirects unauthenticated users to login', () => {
-    const guard = roleGuard([1, 3]);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, { url: '/admin/home' } as never));
-
-    expect(result).toBe('/login');
+  it('permite ADMIN (cargo 3) na allowlist [1, 3]', () => {
+    withToken(fakeJwt({ cargo: 3 }));
+    expect(run([1, 3])).toBe(true);
   });
 
-  it('redirects first access users to change password', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '2', cargo: 2, primeiro_acesso: true, exp: futureExp() }));
+  it('nega TEACHER (cargo 2) na allowlist [1, 3]', () => {
+    withToken(fakeJwt({ cargo: 2 }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
 
-    const guard = roleGuard([2]);
-    const result = TestBed.runInInjectionContext(() => guard({} as never, { url: '/academico' } as never));
+  it('nega GUEST (cargo null) — o bug de fail-open corrigido', () => {
+    withToken(fakeJwt({ cargo: null }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
 
-    expect(result).toBe('/alterar-senha');
+  it('nega GUEST (cargo 0, falsy) — pega truthy-check acidental', () => {
+    withToken(fakeJwt({ cargo: 0 }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega cargo fora do enum (99)', () => {
+    withToken(fakeJwt({ cargo: 99 }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega payload sem campo cargo', () => {
+    withToken(fakeJwt({ sub: 'u1' }));
+    expect(run([1, 3])).toBe('/acesso-negado');
+  });
+
+  it('nega token malformado sem lançar exceção', () => {
+    withToken('nao-e-um-jwt');
+    expect(run([1, 3])).toBe('/login');
+  });
+
+  it('nega token expirado e limpa o storage', () => {
+    withToken(fakeExpiredJwt({ cargo: 1 }));
+    expect(run([1, 3])).toBe('/login');
+    expect(getStoredToken()).toBeNull();
+  });
+
+  it('redireciona para /login quando não há token', () => {
+    expect(run([1, 3])).toBe('/login');
   });
 });

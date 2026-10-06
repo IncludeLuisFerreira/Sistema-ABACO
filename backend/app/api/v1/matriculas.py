@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user, verify_cargo
+from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.matricula_schema import MatriculaCreateSchema, MatriculaResponseSchema, MatriculaUpdateSchema
 from app.services.matricula_service import (
@@ -23,18 +23,18 @@ router = APIRouter(prefix="/api/v1/matriculas", tags=["matriculas"])
 
 
 @router.get("")
-def read_matriculas(_current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+def read_matriculas(_current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     return [MatriculaResponseSchema.model_validate(m) for m in list_matriculas(db)]
 
 
 @router.get("/me")
-def read_matriculas_by_professor(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    # REFACTOR: regra de cargo/seleção de dados deveria estar no matricula_service
+def read_matriculas_by_professor(current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+    # Professor (cargo 2) vê apenas as matrículas das suas turmas; Diretoria/Admin veem todas.
     cargo = int(current_user.get("cargo", 0))
-    if cargo != 2:
-        return [MatriculaResponseSchema.model_validate(m) for m in list_matriculas(db)]
-    professor_id = int(current_user.get("sub", 0))
-    return [MatriculaResponseSchema.model_validate(m) for m in list_matriculas_by_professor(db, professor_id)]
+    if cargo == 2:
+        professor_id = int(current_user.get("sub", 0))
+        return [MatriculaResponseSchema.model_validate(m) for m in list_matriculas_by_professor(db, professor_id)]
+    return [MatriculaResponseSchema.model_validate(m) for m in list_matriculas(db)]
 
 
 @router.get("/{matricula_id}")

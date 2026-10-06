@@ -1,61 +1,36 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { getStoredToken } from '../services/auth.service';
+import { fakeExpiredJwt, fakeJwt } from '../testing/fake-jwt';
 import { authGuard } from './auth.guard';
 
-function makeToken(payload: Record<string, unknown>): string {
-  return `header.${btoa(JSON.stringify(payload))}.signature`;
-}
+const TOKEN_KEY = 'abaco_token';
 
-function futureExp(): number {
-  return Math.floor(Date.now() / 1000) + 3600;
-}
-
-describe('authGuard', () => {
+describe('authGuard (autenticação, não autorização)', () => {
   beforeEach(() => {
-    localStorage.clear();
     TestBed.configureTestingModule({
       providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
+    localStorage.clear();
   });
 
   afterEach(() => localStorage.clear());
 
-  it('allows access for authenticated users', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '1', cargo: 1, exp: futureExp() }));
+  const run = () => TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
 
-    const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/admin/home' } as never)
-    );
-
-    expect(result).toBe(true);
+  it('permite usuário autenticado (mesmo GUEST — autenticação ≠ autorização)', () => {
+    localStorage.setItem(TOKEN_KEY, fakeJwt({ cargo: null }));
+    expect(run()).toBe(true);
   });
 
-  it('redirects unauthenticated users to login', () => {
-    const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/admin/home' } as never)
-    );
-
-    expect(result).toBe('/login');
+  it('redireciona para /login sem token', () => {
+    expect(run()).toBe('/login');
   });
 
-  it('redirects first access users to the change password screen', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '1', cargo: 2, primeiro_acesso: true, exp: futureExp() }));
-
-    const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/academico' } as never)
-    );
-
-    expect(result).toBe('/alterar-senha');
-  });
-
-  it('allows first access users to reach the change password screen', () => {
-    localStorage.setItem('abaco_token', makeToken({ sub: '1', cargo: 2, primeiro_acesso: true, exp: futureExp() }));
-
-    const result = TestBed.runInInjectionContext(() =>
-      authGuard({} as never, { url: '/alterar-senha' } as never)
-    );
-
-    expect(result).toBe(true);
+  it('redireciona para /login com token expirado e limpa o storage', () => {
+    localStorage.setItem(TOKEN_KEY, fakeExpiredJwt({ cargo: 1 }));
+    expect(run()).toBe('/login');
+    expect(getStoredToken()).toBeNull();
   });
 });

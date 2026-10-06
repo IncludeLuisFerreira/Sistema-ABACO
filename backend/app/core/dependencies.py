@@ -29,7 +29,7 @@ def _extract_token(authorization: str | None) -> str:
 def decode_access_token(token: str) -> dict:
 	settings = get_settings()
 	try:
-		return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
+		payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
 	except jwt.ExpiredSignatureError:
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
@@ -41,6 +41,15 @@ def decode_access_token(token: str) -> dict:
 			status_code=status.HTTP_401_UNAUTHORIZED,
 			detail="Token de acesso inválido ou expirado. Faça login novamente.",
 		) from exc
+
+	if payload.get("type") not in (None, "access"):
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="Token de acesso inválido ou expirado. Faça login novamente.",
+			headers=AUTH_ERROR_HEADERS,
+		)
+
+	return payload
 
 
 def get_current_user(authorization: str | None = Header(default=None)) -> dict:
@@ -60,6 +69,3 @@ def verify_cargo(*allowed_cargos: int):
 		return payload
 
 	return dependency
-
-
-verify_director_role = verify_cargo(1)
