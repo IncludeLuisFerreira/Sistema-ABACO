@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
 from app.db.database import Base, get_db
+from app.email import EmailDeliveryError
 from main import app
 
 
@@ -54,7 +55,7 @@ class TestAuthEndpoints:
             yield db_session
 
         def fail_to_send_email(email, token):
-            raise RuntimeError("SMTP failure")
+            raise EmailDeliveryError("SMTP failure")
 
         monkeypatch.setattr(auth_routes, "process_forgot_password", lambda db, email: "reset-token")
         monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)

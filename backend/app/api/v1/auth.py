@@ -30,7 +30,7 @@ from app.services.auth_service import (
     process_reset_password,
 )
 from app.core.limiter import limiter
-from app.services.email_service import send_reset_email
+from app.email import EmailDeliveryError, send_reset_email
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 
     try:
         send_reset_email(payload.email, token)
-    except Exception as error:
+    except EmailDeliveryError as error:
         logger.error("Solicitação de recuperação não concluída por falha de envio (%s)", type(error).__name__)
 
     return {"message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"}

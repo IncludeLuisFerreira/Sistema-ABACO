@@ -7,7 +7,7 @@ from app.core.dependencies import verify_cargo
 from app.core.security import create_first_access_token
 from app.db.database import get_db
 from app.schemas.usuario_schema import UsuarioCreateSchema, UsuarioResponseSchema, UsuarioUpdateSchema
-from app.services.email_service import send_first_access_email
+from app.email import EmailDeliveryError, send_first_access_email
 from app.services.usuario_service import (
 	UsuarioEmailAlreadyExistsError,
 	UsuarioHasDependenciesError,
@@ -49,7 +49,7 @@ def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(
 	try:
 		token = create_first_access_token(email=usuario.email)
 		send_first_access_email(usuario.email, token)
-	except Exception:
+	except EmailDeliveryError:
 		logger.warning("Falha ao enviar e-mail de primeiro acesso para %s", usuario.email, exc_info=True)
 
 	return UsuarioResponseSchema.model_validate(usuario)
