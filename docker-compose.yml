@@ -42,6 +42,8 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@abaco.org.br}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      EMAIL_SENDER_NAME: ${EMAIL_SENDER_NAME:-SGA ABACO}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:4200,http://localhost:8000}
     depends_on:
