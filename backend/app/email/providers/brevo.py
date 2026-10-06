@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 BREVO_TIMEOUT_SECONDS = 15
+MAX_DETAIL_LENGTH = 500
 
 
 def send(to_email: str, subject: str, body: str) -> None:
@@ -36,15 +37,14 @@ def send(to_email: str, subject: str, body: str) -> None:
     )
 
     try:
-        with urllib.request.urlopen(request, timeout=BREVO_TIMEOUT_SECONDS) as response:
-            status_code = getattr(response, "status", None) or response.getcode()
-            if status_code >= 400:
-                raise EmailDeliveryError(f"Brevo respondeu com status {status_code}")
+        with urllib.request.urlopen(request, timeout=BREVO_TIMEOUT_SECONDS):
+            pass
     except urllib.error.HTTPError as error:
         try:
             detail = error.read().decode("utf-8", errors="ignore")
         except Exception:
             detail = ""
+        detail = detail[:MAX_DETAIL_LENGTH]
         logger.error(
             "Falha ao enviar email via Brevo para %s: %s %s",
             to_email,

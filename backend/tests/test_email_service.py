@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from app.email import send_first_access_email, send_reset_email
 from app.email import service
-from app.email.providers import console, smtp
+from app.email.providers import brevo, console, smtp
 
 
 def _settings(**overrides):
@@ -25,7 +25,7 @@ def _settings(**overrides):
 
 def test_selects_brevo_when_key_present():
     provider = service._select_provider(_settings(brevo_api_key="key"))
-    assert provider.__module__.endswith("brevo")
+    assert provider is brevo.send
 
 
 def test_selects_smtp_when_no_brevo_key():

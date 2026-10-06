@@ -51,3 +51,20 @@ def test_http_error_raises_email_delivery_error(monkeypatch):
     monkeypatch.setattr(brevo.urllib.request, "urlopen", failing_urlopen)
     with pytest.raises(EmailDeliveryError):
         brevo.send("dest@abaco.org.br", "Assunto", "Corpo")
+
+
+def test_http_error_detail_is_truncated(monkeypatch):
+    long_body = "x" * 1000
+
+    class FakeHTTPError(urllib.error.HTTPError):
+        def read(self, *args, **kwargs):
+            return long_body.encode("utf-8")
+
+    def failing_urlopen(request, timeout):
+        raise FakeHTTPError(brevo.BREVO_API_URL, 500, "Server Error", {}, None)
+
+    monkeypatch.setattr(brevo, "get_settings", lambda: _settings())
+    monkeypatch.setattr(brevo.urllib.request, "urlopen", failing_urlopen)
+    with pytest.raises(EmailDeliveryError) as excinfo:
+        brevo.send("dest@abaco.org.br", "Assunto", "Corpo")
+    assert len(str(excinfo.value)) == brevo.MAX_DETAIL_LENGTH

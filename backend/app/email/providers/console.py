@@ -6,8 +6,14 @@ logger = logging.getLogger(__name__)
 _TOKEN_RE = re.compile(r"(token=)([^&\s]+)")
 
 
+def _mask_value(value: str) -> str:
+    if len(value) <= 8:
+        return "..."
+    return value[:8] + "..."
+
+
 def _mask_tokens(body: str) -> str:
-    return _TOKEN_RE.sub(lambda match: match.group(1) + match.group(2)[:8] + "...", body)
+    return _TOKEN_RE.sub(lambda match: match.group(1) + _mask_value(match.group(2)), body)
 
 
 def send(to_email: str, subject: str, body: str) -> None:
