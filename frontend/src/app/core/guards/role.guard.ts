@@ -1,10 +1,10 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { decodePayload, getStoredToken, isTokenExpired, clearStoredToken } from '../services/auth.service';
+import { clearStoredToken, decodePayload, getStoredToken, isFirstAccessPending, isTokenExpired } from '../services/auth.service';
 
 export function roleGuard(allowedCargos: number[]): CanActivateFn {
-  return () => {
+  return (_route, state) => {
     const router = inject(Router);
     // REFACTOR: duplica a verificação de token/expirado já feita no authGuard
     const token = getStoredToken();
@@ -16,6 +16,11 @@ export function roleGuard(allowedCargos: number[]): CanActivateFn {
     if (isTokenExpired(token)) {
       clearStoredToken();
       return router.parseUrl('/login');
+    }
+
+    const targetUrl = state?.url ?? '';
+    if (isFirstAccessPending(token) && !targetUrl.startsWith('/alterar-senha')) {
+      return router.parseUrl('/alterar-senha');
     }
 
     const payload = decodePayload(token);

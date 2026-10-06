@@ -8,6 +8,34 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 
+def _send_via_smtp(to_email: str, subject: str, body: str) -> None:
+    settings = get_settings()
+
+    msg = MIMEMultipart()
+    msg["From"] = settings.smtp_from
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    try:
+        if settings.smtp_port == 465:
+            with smtplib.SMTP_SSL(host=settings.smtp_host, port=settings.smtp_port) as server:
+                if settings.smtp_user and settings.smtp_password:
+                    server.login(settings.smtp_user, settings.smtp_password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                if settings.smtp_user and settings.smtp_password:
+                    server.login(settings.smtp_user, settings.smtp_password)
+                server.send_message(msg)
+    except smtplib.SMTPException as e:
+        logger.error("Falha ao enviar email para %s: %s", to_email, e)
+        raise
+
+
 def send_reset_email(to_email: str, reset_token: str) -> None:
     settings = get_settings()
 
@@ -34,27 +62,33 @@ Se você não solicitou esta recuperação, ignore este e-mail.
 Atenciosamente,
 Equipe SGA ABACO
 """
+    _send_via_smtp(to_email, subject, body)
 
-    msg = MIMEMultipart()
-    msg["From"] = settings.smtp_from
-    msg["To"] = to_email
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain", "utf-8"))
 
-    try:
-        if settings.smtp_port == 465:
-            with smtplib.SMTP_SSL(host=settings.smtp_host, port=settings.smtp_port) as server:
-                if settings.smtp_user and settings.smtp_password:
-                    server.login(settings.smtp_user, settings.smtp_password)
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-                if settings.smtp_user and settings.smtp_password:
-                    server.login(settings.smtp_user, settings.smtp_password)
-                server.send_message(msg)
-    except smtplib.SMTPException as e:
-        logger.error("Falha ao enviar email para %s: %s", to_email, e)
-        raise
+def send_first_access_email(to_email: str, first_access_token: str) -> None:
+    settings = get_settings()
+
+    first_access_link = f"{settings.frontend_url}/first-access?token={first_access_token}"
+
+    if not settings.smtp_user:
+        # FIXME: loga o link de primeiro acesso em texto puro, vazando o token
+        logger.info("SMTP não configurado. Link de primeiro acesso para %s: %s", to_email, first_access_link)
+        return
+
+    subject = "SGA ABACO - Primeiro Acesso"
+    body = f"""\
+Olá,
+
+Seu acesso ao sistema SGA ABACO foi criado.
+
+Por segurança, defina sua senha pessoal no primeiro acesso clicando no link abaixo:
+{first_access_link}
+
+Este link é válido por {settings.first_access_token_expire_minutes} minutos.
+
+Caso não reconheça este cadastro, ignore este e-mail.
+
+Atenciosamente,
+Equipe SGA ABACO
+"""
+    _send_via_smtp(to_email, subject, body)
