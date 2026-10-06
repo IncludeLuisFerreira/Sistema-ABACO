@@ -30,6 +30,11 @@ class Settings(BaseSettings):
 	smtp_user: str = Field(default="", alias="SMTP_USER")
 	smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
 	smtp_from: str = Field(default="noreply@abaco.org.br", alias="SMTP_FROM")
+	email_sender_name: str = Field(default="SGA ABACO", alias="EMAIL_SENDER_NAME")
+	brevo_api_key: str = Field(
+		default="",
+		validation_alias=AliasChoices("BREVO_API_KEY", "SENDINBLUE_API_KEY"),
+	)
 	frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
 	cors_origins: str = Field(
 		default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:4200,http://localhost:8000",
