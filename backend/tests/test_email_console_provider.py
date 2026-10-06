@@ -12,6 +12,14 @@ def test_logs_masked_token(caplog):
     assert "user@abaco.org.br" in caplog.text
 
 
+def test_short_token_is_fully_masked(caplog):
+    body = "Acesse http://localhost:3000/reset-password?token=abc123"
+    with caplog.at_level(logging.INFO):
+        console.send("user@abaco.org.br", "Assunto", body)
+    assert "abc123" not in caplog.text
+    assert "token=..." in caplog.text
+
+
 def test_body_without_token_does_not_crash(caplog):
     with caplog.at_level(logging.INFO):
         console.send("user@abaco.org.br", "Assunto", "Sem link aqui")

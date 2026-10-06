@@ -6,6 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.security import create_access_token, create_first_access_token, hash_password, verify_password
 from app.db.database import Base, get_db
+from app.email import EmailDeliveryError
 from app.models.usuario import Usuario
 from main import app
 
@@ -172,3 +173,27 @@ class TestCreateUsuarioSendsFirstAccessEmail:
         assert response.json()["primeiro_acesso"] is True
         assert sent["email"] == "novo@abaco.org.br"
         assert sent["token"]
+
+    def test_creates_user_even_when_email_fails(self, monkeypatch):
+        def failing_send(email, token):
+            raise EmailDeliveryError("falha simulada no envio")
+
+        monkeypatch.setattr("app.api.v1.usuarios.send_first_access_email", failing_send)
+        token = create_access_token(subject="1", cargo=1)
+
+        response = client.post(
+            "/api/v1/usuarios",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "nome": "Novo Usuario",
+                "email": "falha@abaco.org.br",
+                "senha": SENHA_INICIAL,
+                "cargo": 2,
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["primeiro_acesso"] is True
+        persistido = _get_usuario("falha@abaco.org.br")
+        assert persistido is not None
+        assert persistido.primeiro_acesso is True
