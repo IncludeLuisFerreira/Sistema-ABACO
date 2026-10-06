@@ -1,5 +1,7 @@
 import pytest
 
+from app.email import EmailDeliveryError
+
 
 RESTRICTED_ENDPOINTS = [
     ("get", "/api/v1/dashboard/kpis"),
@@ -59,7 +61,7 @@ class TestAuthEndpoints:
         import app.api.v1.auth as auth_routes
 
         def fail_to_send_email(email, token):
-            raise RuntimeError("SMTP failure")
+            raise EmailDeliveryError("SMTP failure")
 
         monkeypatch.setattr(auth_routes, "process_forgot_password", lambda db, email: "reset-token")
         monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)
