@@ -1,7 +1,7 @@
 """add unique estoque nomeitem lower
 
-Revision ID: 003
-Revises: b5aaca51a7ff
+Revision ID: 006
+Revises: 005
 Create Date: 2026-09-29
 """
 from typing import Sequence, Union
@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "003"
-down_revision: Union[str, None] = "b5aaca51a7ff"
+revision: str = "006"
+down_revision: Union[str, None] = "005"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
