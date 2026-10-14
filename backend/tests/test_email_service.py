@@ -9,7 +9,7 @@ from app.email.providers import brevo, console, smtp
 def _settings(**overrides):
     base = {
         "frontend_url": "http://localhost:3000",
-        "reset_token_expire_minutes": 15,
+        "reset_token_expire_minutes": 30,
         "first_access_token_expire_minutes": 1440,
         "brevo_api_key": "",
         "email_sender_name": "SGA ABACO",
