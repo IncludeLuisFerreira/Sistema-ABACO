@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -14,7 +14,7 @@ import { PrimaryButton } from '../../../../shared/components/primary-button/prim
   templateUrl: './reset-password.html',
   styleUrls: ['./reset-password.scss'],
 })
-export class ResetPassword implements OnInit {
+export class ResetPassword implements OnInit, OnDestroy {
   form: FormGroup<{ nova_senha: FormControl<string>; confirmar_senha: FormControl<string> }>;
 
   loading = false;
@@ -22,12 +22,17 @@ export class ResetPassword implements OnInit {
   success: string | null = null;
   token: string | null = null;
   tokenValid = false;
+  private redirectTimer?: ReturnType<typeof setTimeout>;
 
   constructor(private fb: FormBuilder, private auth: AuthService, private route: ActivatedRoute, private router: Router) {
     this.form = this.fb.nonNullable.group({
       nova_senha: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
       confirmar_senha: ['', [Validators.required, Validators.minLength(8)]],
     });
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.redirectTimer);
   }
 
   ngOnInit(): void {
@@ -69,7 +74,7 @@ export class ResetPassword implements OnInit {
     ).subscribe({
       next: () => {
         this.success = 'Senha redefinida com sucesso! Redirecionando para o login...';
-        setTimeout(() => this.router.navigate(['/login']), 2500);
+        this.redirectTimer = setTimeout(() => this.router.navigate(['/login']), 2500);
       },
       error: (err) => {
         this.error = err?.message || 'Erro ao redefinir senha';
