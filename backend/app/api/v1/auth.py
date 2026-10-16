@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -28,9 +30,10 @@ from app.services.auth_service import (
     process_reset_password,
 )
 from app.core.limiter import limiter
-from app.services.email_service import send_reset_email
+from app.email import EmailDeliveryError, send_reset_email
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -62,7 +65,10 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 
     try:
         send_reset_email(payload.email, token)
+    except EmailDeliveryError as error:
+        logger.error("Solicitação de recuperação não concluída por falha de envio (%s)", type(error).__name__)
     except Exception:
+        logger.exception("Erro inesperado no envio de e-mail de recuperação")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao enviar e-mail de recuperação. Tente novamente mais tarde.",
@@ -74,15 +80,13 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 @router.post("/reset-password", response_model=MessageResponse)
 @limiter.limit("5/minute")
 def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
-    # REFACTOR: checagem de senhas duplicada (schema + service + router)
-    if payload.nova_senha != payload.confirmar_senha:
+    try:
+        process_reset_password(db, payload.token, payload.nova_senha, payload.confirmar_senha)
+    except PasswordsDoNotMatchError:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="As senhas não conferem",
         )
-
-    try:
-        process_reset_password(db, payload.token, payload.nova_senha, payload.confirmar_senha)
     except InvalidResetTokenError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

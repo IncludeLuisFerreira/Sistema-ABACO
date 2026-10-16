@@ -1,5 +1,7 @@
 import pytest
 
+from app.email import EmailDeliveryError
+
 
 RESTRICTED_ENDPOINTS = [
     ("get", "/api/v1/dashboard/kpis"),
@@ -54,6 +56,25 @@ class TestAuthEndpoints:
     def test_login_missing_fields_returns_422(self, api_client):
         response = api_client.post("/api/v1/auth/login", json={})
         assert response.status_code == 422
+
+    def test_forgot_password_masks_email_delivery_failures(self, api_client, monkeypatch):
+        import app.api.v1.auth as auth_routes
+
+        def fail_to_send_email(email, token):
+            raise EmailDeliveryError("SMTP failure")
+
+        monkeypatch.setattr(auth_routes, "process_forgot_password", lambda db, email: "reset-token")
+        monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)
+
+        response = api_client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "user@abaco.org.br"},
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"
+        }
 
 
 class TestProtectedEndpoints:

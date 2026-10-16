@@ -29,8 +29,12 @@ ENV/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Python - build e distribuição
-build/
+# Testes e cobertura de código
+Test/
+coverage/
+.coverage
+
+node_modules/
 dist/
 *.egg
 *.egg-info/

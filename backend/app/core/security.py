@@ -1,3 +1,5 @@
+import math
+import time
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -35,12 +37,30 @@ def create_reset_token(*, email: str, expires_delta: timedelta | None = None) ->
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
-def decode_reset_token(token: str) -> dict:
+def _decode_typed_token(token: str, expected_type: str) -> dict:
     settings = get_settings()
-    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
-    if payload.get("type") != "password_reset":
+    payload = jwt.decode(
+        token,
+        settings.secret_key,
+        algorithms=[settings.jwt_algorithm],
+        options={"require": ["sub", "type", "exp"]},
+    )
+    exp = payload.get("exp")
+    if (
+        payload.get("type") != expected_type
+        or not isinstance(payload.get("sub"), str)
+        or not payload["sub"]
+        or isinstance(exp, bool)
+        or not isinstance(exp, (int, float))
+        or (isinstance(exp, float) and not math.isfinite(exp))
+        or exp <= time.time()
+    ):
         raise jwt.PyJWTError("Invalid token type")
     return payload
+
+
+def decode_reset_token(token: str) -> dict:
+    return _decode_typed_token(token, "password_reset")
 
 
 def create_first_access_token(*, email: str, expires_delta: timedelta | None = None) -> str:
@@ -53,8 +73,4 @@ def create_first_access_token(*, email: str, expires_delta: timedelta | None = N
 
 
 def decode_first_access_token(token: str) -> dict:
-    settings = get_settings()
-    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
-    if payload.get("type") != "first_access":
-        raise jwt.PyJWTError("Invalid token type")
-    return payload
+    return _decode_typed_token(token, "first_access")
