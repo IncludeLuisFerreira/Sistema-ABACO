@@ -48,12 +48,20 @@ ACCESS_TOKEN_EXPIRE_MINUTES=120
 ADMIN_SEED_EMAIL=admin@abaco.org.br
 ADMIN_SEED_PASSWORD=<SENHA_ADMIN>
 
-# SMTP — configure para enviar emails de recuperação
+# E-mail — Gmail SMTP (recomendado)
+# Gere uma "Senha de app" em https://myaccount.google.com/apppasswords
+# (requer verificação em duas etapas ativada na conta).
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=seu-email@gmail.com
-SMTP_PASSWORD=<SENHA_APP_GMAIL>
-SMTP_FROM=noreply@abaco.org.br
+SMTP_PASSWORD=<SENHA_APP_GMAIL_16_DIGITOS>
+# Prefira o próprio Gmail como remetente para evitar rejeição.
+SMTP_FROM=seu-email@gmail.com
+EMAIL_SENDER_NAME=SGA ABACO
+
+# E-mail — Brevo (alternativa; se BREVO_API_KEY for preenchida tem prioridade sobre o SMTP)
+# BREVO_API_KEY=<BREVO_API_KEY>
+# SMTP_FROM=noreply@abaco.org.br
 
 # Frontend URL (domínio da aplicação)
 FRONTEND_URL=https://sga.abaco.org.br
@@ -141,7 +149,7 @@ As migrations Alembic rodam automaticamente no startup do backend.
 |----------|---------|
 | Banco não sobe | Verifique se `database-schema.sql` existe (não é uma pasta vazia) |
 | Backend não conecta ao banco | Confirme `DATABASE_URL` no `.env` |
-| Emails não chegam | Sem SMTP configurado, links aparecem no log do container: `docker logs sga_backend` |
+| Emails não chegam | Confira `BREVO_API_KEY` (ou SMTP). Sem provedor configurado, os links aparecem no log: `docker logs sga_backend` |
 | CORS bloqueado | Adicione o domínio em `CORS_ORIGINS` no `.env` |
 | Rate limit atingido | Aumente `RATE_LIMIT_AUTH` no `.env` |
 

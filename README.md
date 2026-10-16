@@ -629,6 +629,9 @@ O rebuild completo garante que o banco é recriado, as migrações Alembic são 
 | `ADMIN_SEED_PASSWORD` | Senha do admin inicial | `admin123` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do token JWT | `120` |
 | `FRONTEND_URL` | URL do frontend (para links de email) | `http://localhost:3000` |
+| `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` | Gmail SMTP para envio real de e-mails | (vazio — usa fallback no log) |
+| `EMAIL_SENDER_NAME` | Nome do remetente exibido nos e-mails | `SGA ABACO` |
+| `BREVO_API_KEY` | API key do Brevo (opcional; tem prioridade sobre o SMTP) | (vazio) |
 
 ---
 
