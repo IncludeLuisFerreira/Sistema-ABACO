@@ -7,19 +7,39 @@
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <label>
       <span>Nome *</span>
-      <input formControlName="nome" type="text" placeholder="Nome completo" />
-      <small class="error" *ngIf="form.controls.nome.invalid && form.controls.nome.touched">Nome e obrigatorio.</small>
+      <input formControlName="nome" type="text" placeholder="Nome completo" autocomplete="name" />
+      <small class="error" *ngIf="form.controls.nome.errors?.['required'] && form.controls.nome.touched">Nome e obrigatorio.</small>
+      <small class="error" *ngIf="form.controls.nome.errors?.['personName'] && form.controls.nome.touched">
+        Use ao menos 3 letras (sem numeros ou simbolos).
+      </small>
     </label>
 
     <label>
       <span>E-mail *</span>
-      <input formControlName="email" type="email" placeholder="email@abaco.org" />
-      <small class="error" *ngIf="form.controls.email.invalid && form.controls.email.touched">Informe um e-mail valido.</small>
+      <input formControlName="email" type="email" placeholder="nome@abaco.org.br" autocomplete="email" />
+      <small class="error" *ngIf="form.controls.email.errors?.['required'] && form.controls.email.touched">E-mail e obrigatorio.</small>
+      <small class="error" *ngIf="form.controls.email.errors?.['email'] && form.controls.email.touched">Informe um e-mail valido.</small>
+      <small class="error" *ngIf="form.controls.email.errors?.['institutionalEmail'] && form.controls.email.touched">
+        Use um e-mail @abaco.org.br.
+      </small>
+      <small class="error" *ngIf="form.controls.email.errors?.['emailTaken'] && form.controls.email.touched">
+        Este e-mail ja esta cadastrado.
+      </small>
     </label>
 
     <label>
       <span>Telefone</span>
-      <input formControlName="telefone" type="text" placeholder="(00) 00000-0000" />
+      <input
+        formControlName="telefone"
+        type="tel"
+        inputmode="numeric"
+        placeholder="(00) 00000-0000"
+        maxlength="15"
+        (input)="onTelefoneInput($event)"
+      />
+      <small class="error" *ngIf="form.controls.telefone.invalid && form.controls.telefone.touched">
+        Informe DDD + 9 digitos (ex: 11999999999).
+      </small>
     </label>
 
     <label>
@@ -31,7 +51,7 @@
 
     <label *ngIf="mode === 'create'">
       <span>Senha provisoria *</span>
-      <input formControlName="senha" type="password" placeholder="Defina uma senha inicial" />
+      <input formControlName="senha" type="password" placeholder="Defina uma senha inicial" autocomplete="new-password" />
       <small class="error" *ngIf="form.controls.senha.invalid && form.controls.senha.touched">Senha e obrigatoria para cadastro.</small>
     </label>
 

@@ -25,6 +25,44 @@ class TestUsuariosEndpoints:
         )
         assert response.status_code == 409
 
+    def test_create_email_invalido_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo", "email": "email-invalido", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_telefone_invalido_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={
+                "nome": "Novo Usuario",
+                "email": "telefone.invalido@abaco.org.br",
+                "senha": "senha123",
+                "cargo": 2,
+                "telefone": "119999",
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_email_dominio_externo_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo Usuario", "email": "pessoa@gmail.com", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_nome_invalido_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "A1", "email": "nome.invalido@abaco.org.br", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
     def test_get_por_id(self, seeded, director_headers):
         usuario_id = seeded["professor"]["idUsuario"]
         response = seeded["client"].get(f"/api/v1/usuarios/{usuario_id}", headers=director_headers)
@@ -48,7 +86,7 @@ class TestUsuariosEndpoints:
     def test_update_inexistente_retorna_404(self, api_client, director_headers):
         response = api_client.put(
             "/api/v1/usuarios/9999",
-            json={"nome": "X", "telefone": None, "cargo": 2},
+            json={"nome": "Inexistente", "telefone": None, "cargo": 2},
             headers=director_headers,
         )
         assert response.status_code == 404
