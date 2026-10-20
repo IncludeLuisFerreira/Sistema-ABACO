@@ -628,7 +628,17 @@ O rebuild completo garante que o banco é recriado, as migrações Alembic são 
 | `ADMIN_SEED_EMAIL` | Email do admin inicial | `admin@abaco.org.br` |
 | `ADMIN_SEED_PASSWORD` | Senha do admin inicial | `admin123` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do token JWT | `120` |
+| `RESET_TOKEN_EXPIRE_MINUTES` | Expiração do link de recuperação de senha | `30` |
+| `FIRST_ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do link de primeiro acesso | `1440` |
 | `FRONTEND_URL` | URL do frontend (para links de email) | `http://localhost:3000` |
+| `SMTP_HOST` | Host do servidor SMTP | `localhost` |
+| `SMTP_PORT` | Porta do servidor SMTP (`465` usa SSL, demais usam STARTTLS) | `587` |
+| `SMTP_USER` | Usuário/remetente SMTP; se preenchido, habilita o provedor SMTP | (vazio) |
+| `SMTP_PASSWORD` | Senha SMTP (no Gmail, senha de app de 16 caracteres) | (vazio) |
+| `SMTP_FROM` | Remetente dos e-mails (no Gmail, deve ser igual a `SMTP_USER`) | `noreply@abaco.org.br` |
+| `SMTP_TIMEOUT_SECONDS` | Timeout das conexões SMTP | `15` |
+| `EMAIL_SENDER_NAME` | Nome exibido do remetente | `SGA ABACO` |
+| `BREVO_API_KEY` | Chave da API Brevo; se preenchida, tem prioridade sobre o SMTP | (vazio) |
 
 ---
 

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 	smtp_user: str = Field(default="", alias="SMTP_USER")
 	smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
 	smtp_from: str = Field(default="noreply@abaco.org.br", alias="SMTP_FROM")
+	smtp_timeout_seconds: int = Field(default=15, alias="SMTP_TIMEOUT_SECONDS")
 	email_sender_name: str = Field(default="SGA ABACO", alias="EMAIL_SENDER_NAME")
 	brevo_api_key: str = Field(
 		default="",
@@ -42,6 +43,13 @@ class Settings(BaseSettings):
 	)
 	rate_limit_auth: str = Field(default="5/minute", alias="RATE_LIMIT_AUTH")
 	rate_limit_default: str = Field(default="60/minute", alias="RATE_LIMIT_DEFAULT")
+
+	@field_validator("smtp_from", mode="before")
+	@classmethod
+	def _fallback_smtp_from_when_blank(cls, value: str | None) -> str:
+		if value is None or not str(value).strip():
+			return "noreply@abaco.org.br"
+		return str(value).strip()
 
 	@property
 	def cors_origin_list(self) -> list[str]:
