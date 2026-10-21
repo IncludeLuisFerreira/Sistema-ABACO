@@ -14,6 +14,8 @@ def _settings(**overrides):
         "smtp_user": "user@abaco.org.br",
         "smtp_password": "secret",
         "smtp_from": "noreply@abaco.org.br",
+        "smtp_timeout_seconds": 15,
+        "email_sender_name": "SGA ABACO",
     }
     base.update(overrides)
     return SimpleNamespace(**base)
@@ -23,8 +25,9 @@ def test_sends_via_starttls_on_587(monkeypatch):
     calls = {}
 
     class FakeSMTP:
-        def __init__(self, host, port):
+        def __init__(self, host, port, timeout=None):
             calls["host"] = host
+            calls["timeout"] = timeout
 
         def __enter__(self):
             return self
@@ -48,16 +51,19 @@ def test_sends_via_starttls_on_587(monkeypatch):
     monkeypatch.setattr(smtp.smtplib, "SMTP", FakeSMTP)
     smtp.send("dest@abaco.org.br", "Assunto", "Corpo")
     assert calls["host"] == "localhost"
+    assert calls["timeout"] == 15
     assert calls["tls"] is True
     assert calls["login"] == ("user@abaco.org.br", "secret")
+    assert calls["msg"]["From"] == "SGA ABACO <noreply@abaco.org.br>"
 
 
 def test_uses_smtp_ssl_on_465(monkeypatch):
     calls = {}
 
     class FakeSSL:
-        def __init__(self, host, port):
+        def __init__(self, host, port, timeout=None):
             calls["ssl"] = True
+            calls["timeout"] = timeout
 
         def __enter__(self):
             return self
@@ -75,11 +81,12 @@ def test_uses_smtp_ssl_on_465(monkeypatch):
     monkeypatch.setattr(smtp.smtplib, "SMTP_SSL", FakeSSL)
     smtp.send("dest@abaco.org.br", "Assunto", "Corpo")
     assert calls["ssl"] is True
+    assert calls["timeout"] == 15
 
 
 def test_raises_email_delivery_error_on_failure(monkeypatch):
     class FailingSMTP:
-        def __init__(self, host, port):
+        def __init__(self, host, port, timeout=None):
             pass
 
         def __enter__(self):
@@ -104,3 +111,11 @@ def test_raises_email_delivery_error_on_failure(monkeypatch):
     monkeypatch.setattr(smtp.smtplib, "SMTP", FailingSMTP)
     with pytest.raises(EmailDeliveryError):
         smtp.send("dest@abaco.org.br", "Assunto", "Corpo")
+
+
+def test_blank_smtp_from_falls_back_to_default():
+    from app.core.config import Settings
+
+    settings = Settings(_env_file=None, SMTP_FROM="   ")
+
+    assert settings.smtp_from == "noreply@abaco.org.br"

@@ -6,9 +6,9 @@ from app.email.providers import brevo, console, smtp
 
 
 def _select_provider(settings) -> Callable[[str, str, str], None]:
-    if getattr(settings, "brevo_api_key", "").strip():
+    if settings.brevo_api_key.strip():
         return brevo.send
-    if getattr(settings, "smtp_user", "").strip():
+    if settings.smtp_user.strip():
         return smtp.send
     return console.send
 

@@ -61,3 +61,13 @@ def test_http_error_detail_is_truncated(monkeypatch):
     with pytest.raises(EmailDeliveryError) as excinfo:
         brevo.send("dest@abaco.org.br", "Assunto", "Corpo")
     assert len(str(excinfo.value)) == brevo.MAX_DETAIL_LENGTH
+
+
+def test_connection_error_raises_email_delivery_error(monkeypatch):
+    def fake_post(url, *, json, headers, timeout):
+        raise httpx.ConnectTimeout("tempo esgotado")
+
+    monkeypatch.setattr(brevo, "get_settings", lambda: _settings())
+    monkeypatch.setattr(brevo.httpx, "post", fake_post)
+    with pytest.raises(EmailDeliveryError):
+        brevo.send("dest@abaco.org.br", "Assunto", "Corpo")
