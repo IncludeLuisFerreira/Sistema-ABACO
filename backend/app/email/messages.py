@@ -20,6 +20,33 @@ Equipe SGA ABACO
     return subject, body, reset_link, "Link de recuperação"
 
 
+def build_welcome_credentials_message(
+    settings, email: str, senha_plana: str
+) -> tuple[str, str, str, str]:
+    login_link = f"{settings.frontend_url}"
+
+    subject = "SGA ABACO - Seus dados de acesso à plataforma"
+    body = f"""\
+Olá,
+
+Seu acesso ao sistema SGA ABACO foi criado com sucesso!
+
+Acesse a plataforma pelo link:
+{login_link}
+
+Dados para acesso:
+- E-mail: {email}
+- Senha: {senha_plana}
+
+Recomendamos que, ao realizar seu primeiro acesso, altere sua senha por uma de sua preferência.
+
+Atenciosamente,
+Equipe SGA ABACO
+"""
+    return subject, body, login_link, "Acessar Plataforma"
+
+
+
 def build_first_access_message(settings, first_access_token: str) -> tuple[str, str, str, str]:
     first_access_link = f"{settings.frontend_url}/first-access?token={first_access_token}"
 
@@ -40,3 +67,4 @@ Atenciosamente,
 Equipe SGA ABACO
 """
     return subject, body, first_access_link, "Link de primeiro acesso"
+

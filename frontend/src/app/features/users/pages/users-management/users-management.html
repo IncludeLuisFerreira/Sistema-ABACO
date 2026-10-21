@@ -27,6 +27,8 @@
       [mode]="formMode"
       [usuario]="selectedUsuario"
       [loading]="saving"
+      [canAssignDiretoria]="canAssignDiretoria"
+      [existingEmails]="existingEmails"
       (save)="onSave($event)"
       (cancel)="closePanel()"
     ></app-usuario-form>

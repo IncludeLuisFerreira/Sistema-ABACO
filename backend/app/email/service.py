@@ -24,9 +24,18 @@ def send_reset_email(to_email: str, reset_token: str) -> None:
     _send_email(settings, to_email, subject, body)
 
 
+def send_welcome_credentials_email(to_email: str, senha_plana: str) -> None:
+    settings = get_settings()
+    subject, body, _link, _link_label = messages.build_welcome_credentials_message(
+        settings, to_email, senha_plana
+    )
+    _send_email(settings, to_email, subject, body)
+
+
 def send_first_access_email(to_email: str, first_access_token: str) -> None:
     settings = get_settings()
     subject, body, _link, _link_label = messages.build_first_access_message(
         settings, first_access_token
     )
     _send_email(settings, to_email, subject, body)
+
