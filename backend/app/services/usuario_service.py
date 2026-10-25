@@ -29,6 +29,7 @@ def create_usuario(db: Session, payload: UsuarioCreateSchema) -> Usuario:
 		email=payload.email,
 		senha_hash=hash_password(payload.senha),
 		cargo=payload.cargo,
+		endereco=payload.endereco,
 		primeiro_acesso=True,
 	)
 	db.add(usuario)
@@ -53,6 +54,7 @@ def update_usuario(db: Session, usuario_id: int, payload: UsuarioUpdateSchema) -
 	usuario.nome = payload.nome
 	usuario.telefone = payload.telefone
 	usuario.cargo = payload.cargo
+	usuario.endereco = payload.endereco
 
 	try:
 		db.commit()

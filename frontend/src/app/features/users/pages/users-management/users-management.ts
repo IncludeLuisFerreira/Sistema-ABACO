@@ -44,9 +44,7 @@ export class UsersManagementComponent implements OnInit {
     private readonly changeDetectorRef: ChangeDetectorRef,
   ) {}
 
-  get existingEmails(): string[] {
-    return this.usuarios.map((usuario) => usuario.email);
-  }
+  existingEmails: string[] = [];
 
   ngOnInit(): void {
     this.canAssignDiretoria = this.auth.getRoleFromToken() === 'DIRECTOR';
@@ -99,6 +97,7 @@ export class UsersManagementComponent implements OnInit {
         email: payload.email,
         senha: payload.senha ?? '',
         cargo: payload.cargo,
+        endereco: payload.endereco,
       };
 
       this.usuarioService.create(createPayload).subscribe({
@@ -137,6 +136,7 @@ export class UsersManagementComponent implements OnInit {
       nome: payload.nome,
       telefone: payload.telefone,
       cargo: this.normalizeCargo(payload.cargo),
+      endereco: payload.endereco,
     };
 
     this.usuarioService.update(this.selectedUsuario.idUsuario, updatePayload).subscribe({
@@ -192,6 +192,7 @@ export class UsersManagementComponent implements OnInit {
     this.usuarioService.list().subscribe({
       next: (usuarios) => {
         this.usuarios = usuarios;
+        this.existingEmails = usuarios.map((u) => u.email);
         this.applyFiltersAndPagination();
         this.loadingList = false;
         this.changeDetectorRef.detectChanges();

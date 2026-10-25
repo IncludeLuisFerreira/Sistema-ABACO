@@ -31,14 +31,37 @@ label {
 
 label span {
   font-size: 0.85rem;
+  font-weight: 500;
   color: #0f172a;
 }
 
 input,
 select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f766e !important;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  opacity: 1 !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder {
+    color: #94a3b8;
+    -webkit-text-fill-color: #94a3b8;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+  }
 }
 
 .error {

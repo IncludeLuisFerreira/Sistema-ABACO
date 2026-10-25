@@ -22,6 +22,7 @@
           <th>Nome</th>
           <th>Email</th>
           <th>Telefone</th>
+          <th>Endereço</th>
           <th>Cargo</th>
           <th class="actions-col">Acoes</th>
         </tr>
@@ -31,6 +32,7 @@
           <td>{{ usuario.nome || '-' }}</td>
           <td>{{ usuario.email }}</td>
           <td>{{ usuario.telefone || '-' }}</td>
+          <td>{{ usuario.endereco || '-' }}</td>
           <td>
             <span class="badge">{{ cargoLabel(usuario.cargo) }}</span>
           </td>

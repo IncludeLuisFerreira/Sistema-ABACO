@@ -8,10 +8,7 @@ import {
   formatBrazilianPhone,
   onlyPhoneDigits,
 } from '../../../../shared/validators/brazilian-phone.validator';
-import {
-  institutionalEmailValidator,
-  uniqueEmailValidator,
-} from '../../../../shared/validators/institutional-email.validator';
+import { uniqueEmailValidator } from '../../../../shared/validators/institutional-email.validator';
 import { personNameValidator } from '../../../../shared/validators/person-name.validator';
 
 export interface UsuarioFormSubmit {
@@ -19,6 +16,7 @@ export interface UsuarioFormSubmit {
   telefone: string | null;
   email: string;
   cargo: CargoNivel;
+  endereco?: string | null;
   senha?: string;
 }
 
@@ -54,7 +52,8 @@ export class UsuarioFormComponent implements OnChanges {
   readonly form = this.fb.nonNullable.group({
     nome: ['', [Validators.required, personNameValidator()]],
     telefone: ['', [brazilianPhoneValidator()]],
-    email: ['', [Validators.required, Validators.email, institutionalEmailValidator()]],
+    email: ['', [Validators.required, Validators.email]],
+    endereco: [''],
     cargo: [3 as CargoNivel, [Validators.required]],
     senha: [''],
   });
@@ -64,8 +63,10 @@ export class UsuarioFormComponent implements OnChanges {
       this.refreshRoleOptions();
     }
 
-    if (changes['mode'] || changes['usuario'] || changes['existingEmails']) {
+    if (changes['mode'] || changes['usuario']) {
       this.patchForm();
+    } else if (changes['existingEmails'] && this.mode === 'create') {
+      this.updateExistingEmailsValidator();
     }
 
     if (changes['loading']) {
@@ -92,6 +93,7 @@ export class UsuarioFormComponent implements OnChanges {
       nome: value.nome.trim().replace(/\s+/g, ' '),
       telefone: telefoneDigits || null,
       email: value.email.trim().toLowerCase(),
+      endereco: value.endereco.trim() || null,
       cargo: Number(value.cargo) as CargoNivel,
     };
 
@@ -119,10 +121,11 @@ export class UsuarioFormComponent implements OnChanges {
         nome: this.usuario.nome ?? '',
         telefone: formatBrazilianPhone(this.usuario.telefone ?? ''),
         email: this.usuario.email,
+        endereco: this.usuario.endereco ?? '',
         cargo: this.normalizeCargo(this.usuario.cargo),
         senha: '',
       });
-      this.form.controls.email.setValidators([Validators.required, Validators.email, institutionalEmailValidator()]);
+      this.form.controls.email.setValidators([Validators.required, Validators.email]);
       this.form.controls.email.disable({ emitEvent: false });
       this.form.controls.senha.clearValidators();
       this.form.controls.senha.updateValueAndValidity({ emitEvent: false });
@@ -135,6 +138,7 @@ export class UsuarioFormComponent implements OnChanges {
       nome: '',
       telefone: '',
       email: '',
+      endereco: '',
       cargo: this.canAssignDiretoria ? 3 : 3,
       senha: '',
     });
@@ -142,7 +146,6 @@ export class UsuarioFormComponent implements OnChanges {
     this.form.controls.email.setValidators([
       Validators.required,
       Validators.email,
-      institutionalEmailValidator(),
       uniqueEmailValidator(this.existingEmails),
     ]);
     this.form.controls.senha.setValidators([Validators.required]);
@@ -170,5 +173,14 @@ export class UsuarioFormComponent implements OnChanges {
     if (this.mode === 'edit') {
       this.form.controls.email.disable({ emitEvent: false });
     }
+  }
+
+  private updateExistingEmailsValidator(): void {
+    this.form.controls.email.setValidators([
+      Validators.required,
+      Validators.email,
+      uniqueEmailValidator(this.existingEmails),
+    ]);
+    this.form.controls.email.updateValueAndValidity({ emitEvent: false });
   }
 }

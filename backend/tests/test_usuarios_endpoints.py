@@ -10,12 +10,19 @@ class TestUsuariosEndpoints:
     def test_create_sucesso(self, api_client, director_headers):
         response = api_client.post(
             "/api/v1/usuarios",
-            json={"nome": "Novo", "email": "novo@abaco.org.br", "senha": "senha123", "cargo": 2},
+            json={
+                "nome": "Novo",
+                "email": "novo@abaco.org.br",
+                "senha": "senha123",
+                "cargo": 2,
+                "endereco": "Rua das Flores, 123",
+            },
             headers=director_headers,
         )
         assert response.status_code == 200
         assert response.json()["email"] == "novo@abaco.org.br"
         assert response.json()["cargo"] == 2
+        assert response.json()["endereco"] == "Rua das Flores, 123"
 
     def test_create_email_duplicado_retorna_erro(self, seeded, director_headers):
         response = seeded["client"].post(
@@ -77,11 +84,12 @@ class TestUsuariosEndpoints:
         usuario_id = seeded["professor"]["idUsuario"]
         response = seeded["client"].put(
             f"/api/v1/usuarios/{usuario_id}",
-            json={"nome": "Professor Renomeado", "telefone": "11999999999", "cargo": 2},
+            json={"nome": "Professor Renomeado", "telefone": "11999999999", "cargo": 2, "endereco": "Av. Brasil, 456"},
             headers=director_headers,
         )
         assert response.status_code == 200
         assert response.json()["nome"] == "Professor Renomeado"
+        assert response.json()["endereco"] == "Av. Brasil, 456"
 
     def test_update_inexistente_retorna_404(self, api_client, director_headers):
         response = api_client.put(

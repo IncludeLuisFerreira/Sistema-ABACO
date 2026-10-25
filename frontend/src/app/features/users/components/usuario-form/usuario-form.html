@@ -19,12 +19,6 @@
       <input formControlName="email" type="email" placeholder="nome@abaco.org.br" autocomplete="email" />
       <small class="error" *ngIf="form.controls.email.errors?.['required'] && form.controls.email.touched">E-mail e obrigatorio.</small>
       <small class="error" *ngIf="form.controls.email.errors?.['email'] && form.controls.email.touched">Informe um e-mail valido.</small>
-      <small class="error" *ngIf="form.controls.email.errors?.['institutionalEmail'] && form.controls.email.touched">
-        Use um e-mail @abaco.org.br.
-      </small>
-      <small class="error" *ngIf="form.controls.email.errors?.['emailTaken'] && form.controls.email.touched">
-        Este e-mail ja esta cadastrado.
-      </small>
     </label>
 
     <label>
@@ -40,6 +34,16 @@
       <small class="error" *ngIf="form.controls.telefone.invalid && form.controls.telefone.touched">
         Informe DDD + 9 digitos (ex: 11999999999).
       </small>
+    </label>
+
+    <label>
+      <span>Endereço</span>
+      <input
+        formControlName="endereco"
+        type="text"
+        placeholder="Rua, número, bairro, cidade"
+        autocomplete="street-address"
+      />
     </label>
 
     <label>
