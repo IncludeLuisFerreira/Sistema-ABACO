@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.core.validators import normalize_nome, normalize_telefone_br
+from app.core.validators import normalize_email_institucional, normalize_nome, normalize_telefone_br
 
 
 class UsuarioCreateSchema(BaseModel):
@@ -11,6 +11,11 @@ class UsuarioCreateSchema(BaseModel):
 	cargo: int = Field(ge=1, le=3)
 	telefone: str | None = None
 	endereco: str | None = None
+
+	@field_validator("email")
+	@classmethod
+	def validar_email(cls, value: str) -> str:
+		return normalize_email_institucional(value)
 
 	@field_validator("nome")
 	@classmethod
