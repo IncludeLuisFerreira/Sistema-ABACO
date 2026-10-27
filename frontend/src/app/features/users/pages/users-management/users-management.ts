@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { CargoNivel, Usuario, UsuarioCreatePayload, UsuarioUpdatePayload } from '../../../../core/models/usuario.model';
+import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { UsuarioService } from '../../../../core/services/usuario.service';
@@ -33,15 +34,20 @@ export class UsersManagementComponent implements OnInit {
   saving = false;
   deletingUserId: number | null = null;
   localFeedback: string | null = null;
+  canAssignDiretoria = false;
 
   constructor(
     private readonly usuarioService: UsuarioService,
+    private readonly auth: AuthService,
     private readonly dialog: DialogService,
     private readonly notifications: NotificationService,
     private readonly changeDetectorRef: ChangeDetectorRef,
   ) {}
 
+  existingEmails: string[] = [];
+
   ngOnInit(): void {
+    this.canAssignDiretoria = this.auth.getRoleFromToken() === 'DIRECTOR';
     this.loadUsuarios();
   }
 
@@ -91,6 +97,7 @@ export class UsersManagementComponent implements OnInit {
         email: payload.email,
         senha: payload.senha ?? '',
         cargo: payload.cargo,
+        endereco: payload.endereco,
       };
 
       this.usuarioService.create(createPayload).subscribe({
@@ -102,8 +109,16 @@ export class UsersManagementComponent implements OnInit {
           this.saving = false;
           this.changeDetectorRef.detectChanges();
         },
-        error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar usuario.';
+        error: (err: HttpErrorResponse) => {
+          const detail = err?.error?.detail;
+          let message = err?.message || 'Erro ao criar usuario.';
+          if (err.status === 409) {
+            message = 'Este e-mail ja esta cadastrado.';
+          } else if (typeof detail === 'string') {
+            message = detail;
+          } else if (Array.isArray(detail) && detail[0]?.msg) {
+            message = detail[0].msg;
+          }
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -121,6 +136,7 @@ export class UsersManagementComponent implements OnInit {
       nome: payload.nome,
       telefone: payload.telefone,
       cargo: this.normalizeCargo(payload.cargo),
+      endereco: payload.endereco,
     };
 
     this.usuarioService.update(this.selectedUsuario.idUsuario, updatePayload).subscribe({
@@ -176,6 +192,7 @@ export class UsersManagementComponent implements OnInit {
     this.usuarioService.list().subscribe({
       next: (usuarios) => {
         this.usuarios = usuarios;
+        this.existingEmails = usuarios.map((u) => u.email);
         this.applyFiltersAndPagination();
         this.loadingList = false;
         this.changeDetectorRef.detectChanges();

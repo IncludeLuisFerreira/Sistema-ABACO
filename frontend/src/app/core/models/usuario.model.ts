@@ -6,6 +6,7 @@ export interface Usuario {
   telefone: string | null;
   email: string;
   cargo: number | null;
+  endereco?: string | null;
 }
 
 export interface UsuarioCreatePayload {
@@ -14,10 +15,12 @@ export interface UsuarioCreatePayload {
   email: string;
   senha: string;
   cargo: CargoNivel;
+  endereco?: string | null;
 }
 
 export interface UsuarioUpdatePayload {
   nome: string;
   telefone: string | null;
   cargo: CargoNivel;
+  endereco?: string | null;
 }

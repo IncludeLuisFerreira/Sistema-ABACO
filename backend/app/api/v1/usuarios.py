@@ -7,7 +7,7 @@ from app.core.dependencies import verify_cargo
 from app.core.security import create_first_access_token
 from app.db.database import get_db
 from app.schemas.usuario_schema import UsuarioCreateSchema, UsuarioResponseSchema, UsuarioUpdateSchema
-from app.email import EmailDeliveryError, send_first_access_email
+from app.email import EmailDeliveryError, send_first_access_email, send_welcome_credentials_email
 from app.services.usuario_service import (
 	UsuarioEmailAlreadyExistsError,
 	UsuarioHasDependenciesError,
@@ -75,14 +75,14 @@ def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(
 	except UsuarioEmailAlreadyExistsError as exc:
 		raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado") from exc
 
-	# O envio do e-mail de primeiro acesso não deve impedir a criação do usuário.
+	# O envio do e-mail não deve impedir a criação do usuário.
 	try:
-		token = create_first_access_token(email=usuario.email)
-		send_first_access_email(usuario.email, token)
+		send_welcome_credentials_email(usuario.email, payload.senha)
 	except EmailDeliveryError:
-		logger.warning("Falha ao enviar e-mail de primeiro acesso para %s", usuario.email, exc_info=True)
+		logger.warning("Falha ao enviar e-mail com credenciais para %s", usuario.email, exc_info=True)
 
 	return UsuarioResponseSchema.model_validate(usuario)
+
 
 
 @router.put("/{usuario_id}")
