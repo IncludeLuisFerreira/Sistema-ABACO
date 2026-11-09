@@ -17,6 +17,7 @@ export class AcademicoHome implements OnInit {
   totalTurmas = 0;
   totalAlunos = 0;
   loading = true;
+  errorMessage = '';
 
   constructor(
     private readonly turmaService: TurmaService,
@@ -39,10 +40,17 @@ export class AcademicoHome implements OnInit {
             this.totalAlunos = alunosUnicos.size;
             this.loading = false;
           },
-          error: () => { this.loading = false; },
+          error: () => {
+            this.errorMessage =
+              'Não foi possível carregar os alunos das suas turmas. Tente novamente mais tarde.';
+            this.loading = false;
+          },
         });
       },
-      error: () => { this.loading = false; },
+      error: () => {
+        this.errorMessage = 'Não foi possível carregar suas turmas. Tente novamente mais tarde.';
+        this.loading = false;
+      },
     });
   }
 }
