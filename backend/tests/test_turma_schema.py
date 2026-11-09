@@ -177,3 +177,33 @@ def test_response_tolera_avaliacao_legada_com_tipos_escalares_distintos(avaliaca
     )
 
     assert schema.avaliacoes[0].model_dump() == avaliacao
+
+
+@pytest.mark.parametrize(
+    "avaliacoes",
+    [
+        {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"},
+        "Prova",
+        1,
+        [None],
+        ["Prova"],
+        [1],
+        [None, "Prova", {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"}],
+    ],
+)
+def test_response_nunca_falha_para_formatos_legados(avaliacoes):
+    schema = TurmaResponseSchema.model_validate(
+        {"idTurma": 1, "idCurso": 1, "avaliacoes": avaliacoes}
+    )
+
+    assert schema.model_dump()["avaliacoes"] == avaliacoes
+
+
+def test_response_preserva_dict_legado_com_tipo_desconhecido_e_chave_extra():
+    item = {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"}
+
+    schema = TurmaResponseSchema.model_validate(
+        {"idTurma": 1, "idCurso": 1, "avaliacoes": [item]}
+    )
+
+    assert schema.model_dump()["avaliacoes"] == [item]

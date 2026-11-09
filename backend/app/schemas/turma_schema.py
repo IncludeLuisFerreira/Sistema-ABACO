@@ -103,6 +103,18 @@ class TurmaResponseSchema(BaseModel):
     id_professor: int | None = Field(None, alias="idProfessor")
     dias_aula: str | None = Field(None, alias="diasAula")
     vagas_ocupadas: int | None = Field(None, alias="vagasOcupadas")
-    avaliacoes: list[AvaliacaoResponseSchema] | None = None
+    avaliacoes: Any = None
     curso: TurmaCursoInfo | None = None
     professor: TurmaProfessorInfo | None = None
+
+    @field_validator("avaliacoes", mode="before")
+    @classmethod
+    def normaliza_avaliacoes_legadas(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if not isinstance(value, list):
+            return value
+        return [
+            AvaliacaoResponseSchema.model_validate(item) if isinstance(item, dict) else item
+            for item in value
+        ]

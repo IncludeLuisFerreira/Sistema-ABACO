@@ -384,3 +384,39 @@ class TestTurmasEndpoints:
 
         db_session.expire_all()
         assert db_session.get(Turma, seeded["turma"]["idTurma"]).capacidade == 25
+
+    def test_formatos_legados_mistos_nunca_retornam_500(
+        self, seeded, db_session, admin_headers, director_headers
+    ):
+        turma_id = seeded["turma"]["idTurma"]
+        legado = [
+            None,
+            "Prova",
+            {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"},
+        ]
+        turma = db_session.get(Turma, turma_id)
+        turma.avaliacoes = legado
+        db_session.commit()
+
+        lista = seeded["client"].get("/api/v1/turmas", headers=admin_headers)
+        assert lista.status_code == 200
+        alvo = next(t for t in lista.json() if t["idTurma"] == turma_id)
+        assert alvo["avaliacoes"] == legado
+
+        detalhe = seeded["client"].get(f"/api/v1/turmas/{turma_id}", headers=admin_headers)
+        assert detalhe.status_code == 200
+        assert detalhe.json()["avaliacoes"] == legado
+
+        response = seeded["client"].put(
+            f"/api/v1/turmas/{turma_id}",
+            json={"capacidade": 25},
+            headers=director_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["avaliacoes"] == legado
+
+        db_session.expire_all()
+        atualizada = db_session.get(Turma, turma_id)
+        assert atualizada.capacidade == 25
+        assert atualizada.avaliacoes == legado
