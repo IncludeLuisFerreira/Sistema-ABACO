@@ -5,10 +5,10 @@
   </header>
 
   <p *ngIf="loading" class="loading">Carregando seus dados...</p>
-  <p *ngIf="error" class="error" role="alert">{{ error }}</p>
+  <p *ngIf="!loading && errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
 
   <!-- KPIs com dados reais -->
-  <div class="kpi-grid" *ngIf="!loading && !error && totalTurmas > 0">
+  <div class="kpi-grid" *ngIf="!loading && totalTurmas > 0">
     <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--green">📚</div>
       <div class="kpi-card__info">
@@ -26,7 +26,7 @@
   </div>
 
   <!-- Se não tem turma -->
-  <div class="empty-state" *ngIf="!loading && !error && totalTurmas === 0" role="status">
+  <div class="empty-state" *ngIf="!loading && !errorMessage && totalTurmas === 0" role="status">
     <p class="empty-state__title">Você ainda não está cadastrado em uma turma</p>
     <p class="empty-state__desc">Entre em contato com a administração para ser cadastrado em uma turma.</p>
     <p>Você será direcionado para Minhas Turmas em instantes.</p>
@@ -34,7 +34,7 @@
   </div>
 
   <!-- Atalhos -->
-  <ng-container *ngIf="!loading && !error && totalTurmas > 0">
+  <ng-container *ngIf="!loading && totalTurmas > 0">
     <section class="dashboard__section">
       <h2 class="dashboard__section-title">Minhas Turmas</h2>
       <div class="dashboard__cards">

@@ -706,6 +706,26 @@ cd backend && pytest
 cd frontend && npm test
 ```
 
+### Rebuild após trocar de branch ou atualizar o código
+
+As imagens Docker **não** são atualizadas automaticamente quando o código muda. Ao trocar de branch, dar `git pull` ou aplicar correções no backend/frontend, reconstrua os containers antes de testar:
+
+```bash
+git switch minha-branch
+docker compose up -d --build backend frontend
+```
+
+Sem o `--build`, o container pode continuar rodando uma imagem antiga (por exemplo, sem a rota `GET /api/v1/matriculas/me`) e o frontend exibirá erros ou dados zerados.
+
+Para confirmar que o backend em execução está atualizado, autentique-se como professor e verifique:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/turmas/me
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/matriculas/me
+```
+
+Ambos devem retornar **200** com apenas as turmas/matrículas vinculadas ao professor. Para recriar tudo do zero (incluindo o banco), use `./rebuild.sh`.
+
 ### Credenciais de Teste (Seed Automático)
 
 | Perfil | Email | Senha |

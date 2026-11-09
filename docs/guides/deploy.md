@@ -156,11 +156,22 @@ docker exec -i sga_database psql -U postgres sga_abacos < backup_20260621.sql
 ## 5. Atualização
 
 ```bash
-git pull origin dev
+git pull origin develop
 docker compose up --build -d
 ```
 
 As migrations Alembic rodam automaticamente no startup do backend.
+
+> **Importante:** sempre use `--build` ao atualizar o código ou trocar de branch. Sem ele, os containers continuam com a imagem antiga, mesmo que o repositório já tenha as mudanças. Isso já causou o dashboard do professor aparecer zerado por falta da rota `GET /api/v1/matriculas/me` na imagem em execução.
+
+Após o rebuild, valide como professor autenticado:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/turmas/me
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/matriculas/me
+```
+
+Esperado: **200** e somente dados das turmas vinculadas ao professor. Se `/matriculas/me` retornar **403**, a imagem do backend provavelmente está desatualizada — rode novamente com `--build`.
 
 ---
 

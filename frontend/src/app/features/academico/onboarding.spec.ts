@@ -119,7 +119,7 @@ describe('Onboarding do professor sem turmas — issue #23', () => {
     fixture.detectChanges();
     vi.advanceTimersByTime(3000);
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Erro ao carregar turmas');
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('carregar suas turmas');
     expect(fixture.nativeElement.textContent).not.toContain(mensagem);
     expect(router.navigate).not.toHaveBeenCalled();
   });
@@ -131,7 +131,9 @@ describe('Onboarding do professor sem turmas — issue #23', () => {
     fixture.detectChanges();
     vi.advanceTimersByTime(3000);
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Erro ao carregar alunos');
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('carregar os alunos');
+    expect(fixture.nativeElement.querySelector('[href="/academico/turmas"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.kpi-grid')).not.toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain(mensagem);
     expect(router.navigate).not.toHaveBeenCalled();
   });

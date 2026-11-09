@@ -20,7 +20,7 @@ export class AcademicoHome implements OnInit {
   totalTurmas = 0;
   totalAlunos = 0;
   loading = true;
-  error: string | null = null;
+  errorMessage = '';
 
   constructor(
     private readonly turmaService: TurmaService,
@@ -51,14 +51,15 @@ export class AcademicoHome implements OnInit {
             this.changeDetectorRef.markForCheck();
           },
           error: () => {
-            this.error = 'Erro ao carregar alunos. Tente novamente mais tarde.';
+            this.errorMessage =
+              'Não foi possível carregar os alunos das suas turmas. Tente novamente mais tarde.';
             this.loading = false;
             this.changeDetectorRef.markForCheck();
           },
         });
       },
       error: () => {
-        this.error = 'Erro ao carregar turmas. Tente novamente mais tarde.';
+        this.errorMessage = 'Não foi possível carregar suas turmas. Tente novamente mais tarde.';
         this.loading = false;
         this.changeDetectorRef.markForCheck();
       },

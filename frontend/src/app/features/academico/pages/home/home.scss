@@ -19,7 +19,15 @@
 }
 
 .loading { color: #64748b; padding: 2rem 0; }
-.error { color: #d93025; }
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #b91c1c;
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.5rem;
+}
 
 /* KPIs */
 .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; max-width: 500px; }
