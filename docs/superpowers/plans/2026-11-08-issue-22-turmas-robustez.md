@@ -246,6 +246,8 @@ Expected: PASS.
 
 Criar turma completa, editar, tentar salvar inválidos e excluir turma sem vínculos.
 
+> **Nota (2026-11-09):** a validação a nível de API foi executada via `scripts/verify_issue_22.sh` (23/23) em 2026-11-09. A validação visual em navegador não foi executada; este checklist manual permanece pendente.
+
 ---
 
 ## Auditoria pós-implementação

@@ -42,21 +42,21 @@
 - Chaves extras de registros legados são preservadas (`extra="allow"`).
 - Nada é descartado silenciosamente.
 
-- [ ] **Step 1: Escrever testes de schema (falhar primeiro)**
+- [x] **Step 1: Escrever testes de schema (falhar primeiro)**
   - resposta com `{"nome": "Legada", "tipo": "Prova", "peso": null}` valida e normaliza `tipo` para `prova`;
   - resposta com `{"nome": "Legada", "tipo": "seminario", "peso": 10}` valida e preserva `seminario`;
   - resposta com item sem `nome`/`tipo`/`peso` valida;
   - chave extra (`observacao`) permanece em `model_dump()`.
 
-- [ ] **Step 2: Implementar o schema de leitura**
+- [x] **Step 2: Implementar o schema de leitura**
 
-- [ ] **Step 3: Escrever testes de endpoint (falhar primeiro)**
+- [x] **Step 3: Escrever testes de endpoint (falhar primeiro)**
   - gravar turma legada direto via `db_session` com `avaliacoes=[{"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"}]`;
   - `GET /api/v1/turmas` → 200 e preserva `tipo`/chave extra;
   - `GET /api/v1/turmas/{id}` → 200;
   - `PUT /api/v1/turmas/{id}` com `{"capacidade": 25}` → 200, resposta 200 e banco com capacidade 25.
 
-- [ ] **Step 4: Rodar e ver passar**
+- [x] **Step 4: Rodar e ver passar**
   - `cd backend && .venv/bin/python -m pytest tests/test_turma_schema.py tests/test_turmas_endpoints.py -q`
   - `cd backend && .venv/bin/python -m pytest tests -q`
 
@@ -73,9 +73,9 @@
 - usar `TurmaService`, `CursoService`, `UsuarioService` e `DialogService` mockados; `NotificationService` real com spy.
 - Não testar template/visual.
 
-- [ ] **Step 1: Escrever os testes (falhar primeiro)**
-- [ ] **Step 2: Ajustar apenas o necessário para passar (sem alterar comportamento de produção, salvo defeito real)**
-- [ ] **Step 3: Rodar**
+- [x] **Step 1: Escrever os testes (falhar primeiro)**
+- [x] **Step 2: Ajustar apenas o necessário para passar (sem alterar comportamento de produção, salvo defeito real)**
+- [x] **Step 3: Rodar**
   - `cd frontend && npm test -- --run src/app/features/classes/pages/classes-management/classes-management.spec.ts`
   - `cd frontend && npm test -- --run`
 
@@ -89,24 +89,37 @@
 
 **Regra:** backend e validator Angular aceitam peso `> 0`. O HTML deve refletir isso.
 
-- [ ] **Step 1: Ajustar input para `min="0.01" step="0.01"`, remover `max="100"`**
-- [ ] **Step 2: Adicionar teste de componente aceitando peso fracionário positivo (`0.5`)**
-- [ ] **Step 3: Rodar o spec do formulário**
+- [x] **Step 1: Ajustar input para `min="0.01" step="0.01"`, remover `max="100"`**
+- [x] **Step 2: Adicionar teste de componente aceitando peso fracionário positivo (`0.5`)**
+- [x] **Step 3: Rodar o spec do formulário**
 
 ---
 
 ### Task 4: Verificação manual/API
 
-- [ ] **Step 1: Rebuild da stack** (`docker compose up -d --build`) sem apagar volume.
-- [ ] **Step 2: Rodar `bash scripts/verify_issue_22.sh`** e registrar saída no relatório/ledger.
-- [ ] **Step 3: Registrar evidência para comentário do PR.**
+- [x] **Step 1: Rebuild da stack** (`docker compose up -d --build`) sem apagar volume.
+- [x] **Step 2: Rodar `bash scripts/verify_issue_22.sh`** e registrar saída no relatório/ledger.
+- [x] **Step 3: Registrar evidência para comentário do PR.**
 
 ---
 
 ## Verificação final
 
-- [ ] `cd backend && .venv/bin/python -m pytest tests -q`
-- [ ] `cd frontend && npm test -- --run`
-- [ ] `cd frontend && npm run build`
+- [x] `cd backend && .venv/bin/python -m pytest tests -q`
+- [x] `cd frontend && npm test -- --run`
+- [x] `cd frontend && npm run build`
 - [ ] Review final do diff completo (base `8ed1aad`).
 - [ ] Rebase em `origin/develop` e push da branch do PR.
+
+---
+
+## Resultado da verificação
+
+Verificação final em 2026-11-09:
+
+- Backend: `491 passed, 1 skipped` (`482 passed, 1 skipped` antes dos testes desta onda).
+- Frontend: `18 arquivos / 120 testes` (`18 arquivos / 112 testes` antes dos testes desta onda).
+- Build: `npm run build` concluído com sucesso.
+- API: `scripts/verify_issue_22.sh` → `PASS=23 FAIL=0` (execução da onda anterior).
+- PostgreSQL real com linha legada: `GET /api/v1/turmas` e `GET /api/v1/turmas/{id}` → 200; `PUT` de capacidade → 200; chaves extras preservadas.
+- Correções desta onda: formatos legados de `avaliacoes` nunca retornam 500; formulário tolera `nome` escalar e itens não-objeto; edição preserva avaliações legadas via `avaliacoesChanged`; `diasAula` nulo não vira domingo.
