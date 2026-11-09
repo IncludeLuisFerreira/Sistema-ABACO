@@ -172,4 +172,86 @@ describe('ClassFormComponent', () => {
 
     expect(component.conflitoLabel).toBeNull();
   });
+
+  it('edita avaliação legada com nome numérico sem quebrar e normaliza para string', () => {
+    const legada = {
+      ...turmaExistente,
+      avaliacoes: [{ nome: 123, tipo: 'prova', peso: 10 }],
+    } as unknown as Turma;
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('turma', legada);
+    fixture.detectChanges();
+
+    const envios = capturarEnvios();
+    component.submit();
+
+    expect(envios).toHaveLength(1);
+    expect(envios[0].avaliacoes).toEqual([{ nome: '123', tipo: 'prova', peso: 10 }]);
+  });
+
+  it('ignora itens legados não-objeto de avaliacoes ao carregar', () => {
+    const legada = {
+      ...turmaExistente,
+      avaliacoes: [null, 'Prova'],
+    } as unknown as Turma;
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('turma', legada);
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(component.avaliacoesArray.length).toBe(0);
+  });
+
+  it('edita sem tocar em avaliações mantendo avaliacoesChanged false', () => {
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('turma', turmaExistente);
+    fixture.detectChanges();
+
+    const envios = capturarEnvios();
+    component.submit();
+
+    expect(envios).toHaveLength(1);
+    expect(envios[0].avaliacoesChanged).toBe(false);
+  });
+
+  it('marca avaliacoesChanged ao adicionar avaliação', () => {
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('turma', turmaExistente);
+    fixture.detectChanges();
+
+    const envios = capturarEnvios();
+    component.addAvaliacao();
+    component.avaliacoesArray.at(1).patchValue({ nome: 'Trabalho', tipo: 'trabalho', peso: 5 });
+    component.submit();
+
+    expect(envios).toHaveLength(1);
+    expect(envios[0].avaliacoesChanged).toBe(true);
+  });
+
+  it('marca avaliacoesChanged ao remover avaliação', () => {
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('turma', turmaExistente);
+    fixture.detectChanges();
+
+    const envios = capturarEnvios();
+    component.removeAvaliacao(0);
+    component.submit();
+
+    expect(envios).toHaveLength(1);
+    expect(envios[0].avaliacoesChanged).toBe(true);
+  });
+
+  it('não marca domingo quando a turma legada tem diasAula nulo', () => {
+    const legada: Turma = { ...turmaExistente, diasAula: null };
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('turma', legada);
+    fixture.detectChanges();
+
+    const envios = capturarEnvios();
+    expect(component.diasAulaArray.value).toEqual([false, false, false, false, false, false, false]);
+    expect(component.form.invalid).toBe(true);
+
+    component.submit();
+
+    expect(envios).toHaveLength(0);
+  });
 });

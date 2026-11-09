@@ -33,6 +33,7 @@ describe('ClassesManagementComponent', () => {
     idProfessor: 2,
     diasAula: '1,3',
     avaliacoes: null,
+    avaliacoesChanged: false,
   };
 
   const turma: Turma = {
@@ -127,5 +128,34 @@ describe('ClassesManagementComponent', () => {
     expect(notificationErrorSpy).toHaveBeenCalledWith(detail);
     expect(component.saving).toBe(false);
     expect(component.panelOpen).toBe(true);
+  });
+
+  it('update sem alterar avaliações envia null para preservar dados legados', () => {
+    turmaService.update.mockReturnValue(of(turma));
+    component.openEdit(turma);
+
+    component.onSave({
+      ...payload,
+      avaliacoes: [{ nome: 'Prova 1', tipo: 'prova', peso: 10 }],
+      avaliacoesChanged: false,
+    });
+
+    expect(turmaService.update).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ avaliacoes: null }),
+    );
+  });
+
+  it('update com avaliações alteradas envia a lista', () => {
+    turmaService.update.mockReturnValue(of(turma));
+    component.openEdit(turma);
+    const avaliacoes = [{ nome: 'Prova 1', tipo: 'prova' as const, peso: 10 }];
+
+    component.onSave({ ...payload, avaliacoes, avaliacoesChanged: true });
+
+    expect(turmaService.update).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ avaliacoes }),
+    );
   });
 });

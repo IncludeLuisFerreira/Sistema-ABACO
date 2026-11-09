@@ -181,7 +181,7 @@ export class ClassesManagementComponent implements OnInit {
       dataInicio: payload.dataInicio,
       dataFim: payload.dataFim,
       diasAula: payload.diasAula,
-      avaliacoes: (payload.avaliacoes as Avaliacao[]) ?? null,
+      avaliacoes: payload.avaliacoesChanged ? (payload.avaliacoes as Avaliacao[]) : null,
     };
 
     this.turmaService.update(this.selectedTurma.idTurma, updatePayload).subscribe({

@@ -24,11 +24,16 @@ export interface ClassFormSubmit {
   idProfessor: number;
   diasAula: string;
   avaliacoes: { nome: string; tipo: string; peso: number }[] | null;
+  avaliacoesChanged: boolean;
 }
 
 interface DiaSemana {
   label: string;
   value: number;
+}
+
+function normalizarNome(value: unknown): string {
+  return typeof value === 'string' ? value : value == null ? '' : String(value);
 }
 
 function atLeastOneDayValidator(control: AbstractControl): ValidationErrors | null {
@@ -119,10 +124,12 @@ export class ClassFormComponent implements OnChanges {
       tipo: ['prova', [Validators.required]],
       peso: [10, [Validators.required, Validators.min(0.01)]],
     }));
+    this.avaliacoesArray.markAsDirty();
   }
 
   removeAvaliacao(index: number): void {
     this.avaliacoesArray.removeAt(index);
+    this.avaliacoesArray.markAsDirty();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -202,13 +209,14 @@ export class ClassFormComponent implements OnChanges {
       diasAula: this.diasAulaString ?? '',
       avaliacoes: this.avaliacoesArray.value.length > 0
         ? this.avaliacoesArray.value.map((a: { nome: string; tipo: string; peso: number }) => ({
-            nome: a.nome.trim(),
+            nome: normalizarNome(a.nome).trim(),
             tipo: a.tipo,
             peso: a.peso,
           }))
         : this.mode === 'edit'
           ? []
           : null,
+      avaliacoesChanged: this.avaliacoesArray.dirty,
     };
 
     this.save.emit(payload);
@@ -219,7 +227,10 @@ export class ClassFormComponent implements OnChanges {
 
     if (this.turma && (this.mode === 'edit' || this.duplicate)) {
       const duplicating = this.mode === 'create' && this.duplicate;
-      const diasSelecionados = (this.turma.diasAula ?? '').split(',').map(Number);
+      const diasSelecionados = (this.turma.diasAula ?? '')
+        .split(',')
+        .filter((dia) => dia.trim() !== '')
+        .map(Number);
       const diasArray = this.diasSemana.map((d) => diasSelecionados.includes(d.value));
 
       this.form.reset({
@@ -231,15 +242,19 @@ export class ClassFormComponent implements OnChanges {
       });
       this.diasAulaArray.patchValue(diasArray);
 
-      if (this.turma.avaliacoes?.length) {
+      if (Array.isArray(this.turma.avaliacoes)) {
         for (const a of this.turma.avaliacoes) {
+          if (!a || typeof a !== 'object') {
+            continue;
+          }
           this.avaliacoesArray.push(this.fb.nonNullable.group({
-            nome: [a.nome || '', [Validators.required, Validators.pattern(/\S/)]],
+            nome: [normalizarNome(a.nome), [Validators.required, Validators.pattern(/\S/)]],
             tipo: [a.tipo || 'prova', [Validators.required]],
             peso: [a.peso || 10, [Validators.required, Validators.min(0.01)]],
           }));
         }
       }
+      this.avaliacoesArray.markAsPristine();
       return;
     }
 
@@ -251,6 +266,7 @@ export class ClassFormComponent implements OnChanges {
       dataFim: '',
     });
     this.diasAulaArray.patchValue(this.diasSemana.map(() => false));
+    this.avaliacoesArray.markAsPristine();
   }
 
   private toggleFormState(): void {
