@@ -90,6 +90,18 @@ describe('ClassFormComponent', () => {
     expect(envios).toHaveLength(0);
   });
 
+  it('aceita peso fracionário positivo e emite no payload', () => {
+    const envios = capturarEnvios();
+    preencherFormularioValido();
+    component.addAvaliacao();
+    component.avaliacoesArray.at(0).patchValue({ nome: 'Seminário', tipo: 'trabalho', peso: 0.5 });
+
+    component.submit();
+
+    expect(envios).toHaveLength(1);
+    expect(envios[0].avaliacoes).toEqual([{ nome: 'Seminário', tipo: 'trabalho', peso: 0.5 }]);
+  });
+
   it('emite payload válido sem converter obrigatórios para null', () => {
     const envios = capturarEnvios();
     preencherFormularioValido();
