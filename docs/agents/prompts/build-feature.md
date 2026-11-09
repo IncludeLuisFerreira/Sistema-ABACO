@@ -32,12 +32,12 @@ sem relação com a tarefa.
 
 ```bash
 git status --short
-git fetch origin --prune
-./scripts/agent-preflight.sh --check
+./scripts/agent-preflight.sh --check        # faz fetch da base e valida a branch atual
 ./scripts/agent-preflight.sh --start feature/<slug>
 ```
 
 Nunca crie branch a partir da `develop` local. Nunca trabalhe em `main`/`develop`.
+A base remota é `upstream` em fork e `origin` em clone direto (o preflight resolve sozinho).
 
 ### 3. Teste primeiro
 

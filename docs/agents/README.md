@@ -40,3 +40,5 @@ Não carregue os dois contextos de stack "por garantia". Isso dobra o custo sem 
   mesmo PR. Contexto desatualizado é pior que ausência de contexto.
 - Não copie regra de processo do `CONTRIBUTING.md` para cá. Cite o arquivo.
 - Prompt deve continuar abaixo de ~150 linhas. Se passar, quebre em etapas e referencie.
+- Alterou `scripts/agent-preflight.sh`? Rode `bash scripts/test_agent_preflight.sh` para validar a
+  detecção de base remota e o comportamento em falha de `fetch`.

@@ -12,7 +12,8 @@ reporte. Qualquer item bloqueante reprovado impede o PR.
 
 1. `AGENTS.md`.
 2. `docs/agents/CONTEXT.md` — só para conferir se a mudança respeita o domínio.
-3. O diff: `git diff origin/develop...HEAD --stat` e `git diff origin/develop...HEAD`.
+3. O diff: `git diff "$BASE/develop"...HEAD --stat` e `git diff "$BASE/develop"...HEAD`
+   (`BASE=upstream` em fork, `BASE=origin` em clone direto).
 
 Não leia arquivos que não aparecem no diff, exceto para confirmar um contrato.
 
@@ -23,20 +24,21 @@ Rode na ordem. Pare no primeiro bloqueante e reporte; não continue "para econom
 ### 1. Sincronização
 
 ```bash
-git fetch origin --prune
+BASE=upstream   # ou origin, em clone direto (sem upstream)
+git fetch "$BASE" --prune
 git status --short
-git log --oneline HEAD..origin/develop
+git log --oneline "HEAD..$BASE/develop"
 ```
 
 - [ ] Working tree limpa (ou mudanças intencionais e commitadas)
-- [ ] Branch não está atrasada em relação a `origin/develop` (se estiver, `git rebase origin/develop`)
+- [ ] Branch não está atrasada em relação a `$BASE/develop` (se estiver, `git rebase "$BASE/develop"`)
 - [ ] Branch não é `main` nem `develop`
 - [ ] Nome da branch segue `feature|fix|docs|refactor|test|chore/<slug>`
 
 ### 2. Escopo
 
 ```bash
-git diff origin/develop...HEAD --stat
+git diff "$BASE/develop"...HEAD --stat
 ```
 
 - [ ] Só arquivos do módulo da issue
@@ -91,7 +93,7 @@ cd backend && alembic heads
 ### 6. Commits e descrição
 
 ```bash
-git log origin/develop..HEAD --oneline
+git log "$BASE/develop"..HEAD --oneline
 ```
 
 - [ ] Commits no padrão `tipo(escopo): descrição`

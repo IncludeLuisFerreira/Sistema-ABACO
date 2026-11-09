@@ -44,28 +44,33 @@ Faça sempre, nesta ordem:
 
 ```bash
 git status --short                  # se houver mudança não commitada, pare e pergunte
-git fetch origin --prune            # atualiza referências sem alterar sua working tree
 ./scripts/agent-preflight.sh --check
 ```
+
+O preflight resolve a **base remota** sozinho e faz o `fetch` dela. A base é `upstream/develop`
+quando você trabalha num fork (o `CONTRIBUTING.md` define `origin` como o fork e `upstream` como o
+repositório principal) e `origin/develop` em clone direto. Se o fetch falhar, o preflight aborta com
+código não-zero em vez de seguir com referência desatualizada.
 
 Depois:
 
 1. Nunca trabalhe diretamente em `main` ou `develop`.
-2. Crie a branch a partir de `origin/develop` — nunca da `develop` local:
+2. Crie a branch a partir da base remota — nunca da `develop` local:
 
 ```bash
-git switch -c feature/descricao-curta origin/develop
-# ou
+BASE=upstream   # ou origin, em clone direto (sem upstream)
+git switch -c feature/descricao-curta "$BASE/develop"
+# ou, deixando o script resolver:
 ./scripts/agent-preflight.sh --start feature/descricao-curta
 ```
 
 3. Se já estiver numa branch de trabalho, verifique se ela está atrasada:
 
 ```bash
-git log --oneline HEAD..origin/develop     # commits que faltam na sua branch
+git log --oneline "HEAD..$BASE/develop"     # commits que faltam na sua branch
 ```
 
-Se estiver atrasada, faça `git rebase origin/develop` antes de continuar. Se o rebase gerar conflito
+Se estiver atrasada, faça `git rebase "$BASE/develop"` antes de continuar. Se o rebase gerar conflito
 que você não entende, pare e peça ajuda em vez de "resolver" escolhendo um lado.
 
 4. Leia a issue antes de propor código: `gh issue view <N>` (ou o texto colado pelo usuário).

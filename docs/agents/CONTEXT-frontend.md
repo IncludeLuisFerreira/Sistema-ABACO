@@ -38,7 +38,9 @@ ou `loadComponent`. Rotas internas usam `loadComponent`.
 - Serviços usam caminho relativo (`private readonly baseUrl = '/api/v1/turmas'`), que o proxy de dev
   e o Nginx resolvem. O `auth.service.ts` usa o prefixo `environment.apiUrl`; siga o padrão do
   service que está editando, não misture os dois no mesmo arquivo.
-- Erros de API são convertidos com `getApiErrorMessage(...)` de `core/utils/api-error.ts`.
+- Erros de API são convertidos com `getApiErrorMessage(...)` de `core/utils/api-error.ts`. Se esse
+  helper ainda não existir na base em que você trabalha (ele chega numa PR de erro de API), extraia a
+  mensagem de `err.error.detail` em vez de exibir `[object Object]`.
   Feedback ao usuário via `NotificationService` e confirmação via `DialogService`.
 - Rotas protegidas: `authGuard` para autenticação; `roleGuard([cargos])` para perfil;
   `adminGuard` (= `roleGuard([1, 3])`) para área administrativa. Professor é cargo `2`.

@@ -15,7 +15,8 @@ contexto necessário, com foco em correção, segurança, regressão e aderênci
 3. `CONTEXT-backend.md` e/ou `CONTEXT-frontend.md` — conforme os arquivos do diff.
 4. A issue vinculada (`gh pr view <N> --json title,body,baseRefName,headRefName,files`).
 5. `gh pr diff <N>` — o diff completo. Sem `gh` disponível, use
-   `git diff origin/develop...HEAD` e `git log origin/develop..HEAD --oneline`.
+   `git diff "$BASE/develop"...HEAD` e `git log "$BASE/develop"..HEAD --oneline`
+   (`BASE=upstream` em fork, `BASE=origin` em clone direto).
 6. Só abra arquivo fora do diff quando precisar confirmar um contrato (assinatura de função, schema,
    rota, model). Nesse caso, leia o trecho com `grep -n`, não o arquivo inteiro.
 

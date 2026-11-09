@@ -15,7 +15,8 @@ gastar tokens explorando o repositório.
 - Uma fonte curta e sempre carregada de regras (`AGENTS.md`).
 - Contexto técnico especialista por stack, carregado sob demanda.
 - Prompts operacionais detalhados para build, fix, review e gate de PR.
-- Verificação automatizada de sincronização com `origin/develop`.
+- Verificação automatizada de sincronização com a base remota (`upstream/develop` em fork,
+  `origin/develop` em clone direto).
 - Reduzir idas e voltas e custo de contexto.
 
 ## Não objetivos
@@ -54,8 +55,8 @@ scripts/agent-preflight.sh         # --check e --start
 
 ### Regras centrais em `AGENTS.md`
 
-- Início de sessão obrigatório: `git status`, `git fetch`, preflight; branch sempre de
-  `origin/develop`.
+- Início de sessão obrigatório: `git status`, `git fetch`, preflight; branch sempre da base remota
+  (`upstream/develop` em fork, `origin/develop` em clone direto).
 - Fronteiras de arquitetura: regra em service, resposta por schema, HTTP em service do frontend,
   autorização explícita, migration com head único.
 - Comandos canônicos, definição de pronto, proibições e orçamento de contexto.
@@ -70,10 +71,11 @@ scripts/agent-preflight.sh         # --check e --start
 
 ### Preflight
 
-- `--check`: valida repositório, branch, working tree, atraso vs `origin/develop`, `.env`.
-  Retorna código 1 em bloqueio.
-- `--start <tipo/nome>`: exige árvore limpa, valida nome, busca `origin`, cria branch sem tracking a
-  partir de `origin/develop`.
+- Base remota: `upstream` se o remote existir (fork), senão `origin` (clone direto).
+- `--check`: faz `fetch` da base, valida repositório, branch, working tree, atraso vs a base, `.env`.
+  Retorna código 1 em bloqueio. Se o `fetch` falhar, aborta com código não-zero.
+- `--start <tipo/nome>`: valida nome, faz `fetch` da base, exige árvore limpa e cria a branch sem
+  tracking a partir da base. Se o `fetch` falhar, nada é criado nem alterado.
 - Nunca faz `pull` automático na branch atual nem `reset`.
 
 ## Decisões
@@ -87,7 +89,8 @@ scripts/agent-preflight.sh         # --check e --start
 
 ## Verificação
 
-- `bash -n scripts/agent-preflight.sh` e execução real em clone temporário.
+- `bash -n scripts/agent-preflight.sh` e `bash scripts/test_agent_preflight.sh` (cobre fetch
+  malsucedido e fork atrasado com upstream atualizado).
 - Links/referências entre documentos conferidos.
 - Nenhum arquivo de produto alterado.
 
