@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TurmaService } from '../../../../core/services/turma.service';
@@ -22,6 +23,7 @@ interface AlunoRow {
   styleUrls: ['./alunos.scss'],
 })
 export class AlunosPage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   alunos: AlunoRow[] = [];
   todosAlunos: AlunoRow[] = [];
   turmas: Turma[] = [];
@@ -33,6 +35,7 @@ export class AlunosPage implements OnInit {
     private readonly turmaService: TurmaService,
     private readonly matriculaService: MatriculaService,
     private readonly notifications: NotificationService,
+    private readonly changeDetectorRef: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void { this.loadData(); }
@@ -46,18 +49,27 @@ export class AlunosPage implements OnInit {
   }
 
   private loadData(): void {
-    this.turmaService.listMine().subscribe({
+    this.turmaService.listMine().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (turmas) => {
         this.turmas = turmas;
-        if (turmas.length === 0) { this.loading = false; return; }
+        if (turmas.length === 0) {
+          this.loading = false;
+          this.changeDetectorRef.markForCheck();
+          return;
+        }
         this.loadMatriculas(turmas);
       },
-      error: () => { this.loading = false; this.error = 'Erro ao carregar turmas.'; this.notifications.error('Erro ao carregar turmas.'); },
+      error: () => {
+        this.loading = false;
+        this.error = 'Erro ao carregar turmas.';
+        this.notifications.error(this.error);
+        this.changeDetectorRef.markForCheck();
+      },
     });
   }
 
   private loadMatriculas(turmas: Turma[]): void {
-    this.matriculaService.listMine().subscribe({
+    this.matriculaService.listMine().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (matriculas) => {
         const turmaIds = new Set(turmas.map((t) => t.idTurma));
         const statusNomes: Record<number, string> = { 0: 'Ativa', 1: 'Concluída', 2: 'Cancelada' };
@@ -74,8 +86,14 @@ export class AlunosPage implements OnInit {
 
         this.alunos = this.todosAlunos;
         this.loading = false;
+        this.changeDetectorRef.markForCheck();
       },
-      error: () => { this.loading = false; this.error = 'Erro ao carregar matrículas.'; this.notifications.error('Erro ao carregar matrículas.'); },
+      error: () => {
+        this.loading = false;
+        this.error = 'Erro ao carregar matrículas.';
+        this.notifications.error(this.error);
+        this.changeDetectorRef.markForCheck();
+      },
     });
   }
 }

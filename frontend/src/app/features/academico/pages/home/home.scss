@@ -19,6 +19,7 @@
 }
 
 .loading { color: #64748b; padding: 2rem 0; }
+.error { color: #d93025; }
 
 /* KPIs */
 .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; max-width: 500px; }

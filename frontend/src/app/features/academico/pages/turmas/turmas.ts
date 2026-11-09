@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TurmaService } from '../../../../core/services/turma.service';
@@ -12,21 +13,27 @@ import { Turma } from '../../../../core/models/turma.model';
   styleUrls: ['./turmas.scss'],
 })
 export class TurmasPage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   turmas: Turma[] = [];
   loading = true;
   error: string | null = null;
 
-  constructor(private readonly turmaService: TurmaService) {}
+  constructor(
+    private readonly turmaService: TurmaService,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
-    this.turmaService.listMine().subscribe({
+    this.turmaService.listMine().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (turmas) => {
         this.turmas = turmas;
         this.loading = false;
+        this.changeDetectorRef.markForCheck();
       },
       error: () => {
         this.error = 'Erro ao carregar turmas';
         this.loading = false;
+        this.changeDetectorRef.markForCheck();
       },
     });
   }
