@@ -1,6 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 
 import { Curso } from '../../../../core/models/curso.model';
 import { Turma } from '../../../../core/models/turma.model';
@@ -8,18 +17,32 @@ import { getStatusTurma } from '../turma-card/turma-card';
 import { Usuario } from '../../../../core/models/usuario.model';
 
 export interface ClassFormSubmit {
-  capacidade: number | null;
-  dataInicio: string | null;
-  dataFim: string | null;
+  capacidade: number;
+  dataInicio: string;
+  dataFim: string;
   idCurso: number;
-  idProfessor: number | null;
-  diasAula: string | null;
+  idProfessor: number;
+  diasAula: string;
   avaliacoes: { nome: string; tipo: string; peso: number }[] | null;
 }
 
 interface DiaSemana {
   label: string;
   value: number;
+}
+
+function atLeastOneDayValidator(control: AbstractControl): ValidationErrors | null {
+  const days = control.value as boolean[] | null;
+  return days?.some(Boolean) ? null : { atLeastOneDay: true };
+}
+
+function dateRangeValidator(control: AbstractControl): ValidationErrors | null {
+  const inicio = control.get('dataInicio')?.value as string;
+  const fim = control.get('dataFim')?.value as string;
+  if (!inicio || !fim) {
+    return null;
+  }
+  return fim < inicio ? { dateRange: true } : null;
 }
 
 @Component({
@@ -38,6 +61,8 @@ export class ClassFormComponent implements OnChanges {
   @Input() professores: Usuario[] = [];
   @Input() allTurmas: Turma[] = [];
   @Input() loading = false;
+  @Input() errorMessage: string | null = null;
+  @Input() duplicate = false;
 
   @Output() readonly save = new EventEmitter<ClassFormSubmit>();
   @Output() readonly cancel = new EventEmitter<void>();
@@ -56,15 +81,18 @@ export class ClassFormComponent implements OnChanges {
     { label: 'Sab', value: 6 },
   ];
 
-  readonly form = this.fb.nonNullable.group({
-    idCurso: [0, [Validators.required, Validators.min(1)]],
-    idProfessor: [0],
-    capacidade: [0],
-    dataInicio: [''],
-    dataFim: [''],
-    diasAula: this.fb.array(this.diasSemana.map(() => false)),
-    avaliacoes: this.fb.array<FormGroup>([]),
-  });
+  readonly form = this.fb.nonNullable.group(
+    {
+      idCurso: [0, [Validators.required, Validators.min(1)]],
+      idProfessor: [0, [Validators.required, Validators.min(1)]],
+      capacidade: [0, [Validators.required, Validators.min(1)]],
+      dataInicio: ['', [Validators.required]],
+      dataFim: ['', [Validators.required]],
+      diasAula: this.fb.array(this.diasSemana.map(() => false), [atLeastOneDayValidator]),
+      avaliacoes: this.fb.array<FormGroup>([]),
+    },
+    { validators: [dateRangeValidator] },
+  );
 
   get diasAulaArray(): FormArray {
     return this.form.controls.diasAula as FormArray;
@@ -87,9 +115,9 @@ export class ClassFormComponent implements OnChanges {
 
   addAvaliacao(): void {
     this.avaliacoesArray.push(this.fb.nonNullable.group({
-      nome: [''],
-      tipo: ['prova'],
-      peso: [10],
+      nome: ['', [Validators.required, Validators.pattern(/\S/)]],
+      tipo: ['prova', [Validators.required]],
+      peso: [10, [Validators.required, Validators.min(0.01)]],
     }));
   }
 
@@ -98,7 +126,7 @@ export class ClassFormComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['mode'] || changes['turma']) {
+    if (changes['mode'] || changes['turma'] || changes['duplicate']) {
       this.patchForm();
     }
 
@@ -167,18 +195,20 @@ export class ClassFormComponent implements OnChanges {
     const value = this.form.getRawValue();
     const payload: ClassFormSubmit = {
       idCurso: value.idCurso,
-      idProfessor: value.idProfessor > 0 ? value.idProfessor : null,
-      capacidade: value.capacidade > 0 ? value.capacidade : null,
-      dataInicio: value.dataInicio || null,
-      dataFim: value.dataFim || null,
-      diasAula: this.diasAulaString,
+      idProfessor: value.idProfessor,
+      capacidade: value.capacidade,
+      dataInicio: value.dataInicio,
+      dataFim: value.dataFim,
+      diasAula: this.diasAulaString ?? '',
       avaliacoes: this.avaliacoesArray.value.length > 0
         ? this.avaliacoesArray.value.map((a: { nome: string; tipo: string; peso: number }) => ({
-            nome: a.nome || `Avaliação`,
-            tipo: a.tipo || 'prova',
-            peso: a.peso || 10,
+            nome: a.nome.trim(),
+            tipo: a.tipo,
+            peso: a.peso,
           }))
-        : null,
+        : this.mode === 'edit'
+          ? []
+          : null,
     };
 
     this.save.emit(payload);
@@ -187,7 +217,8 @@ export class ClassFormComponent implements OnChanges {
   private patchForm(): void {
     this.avaliacoesArray.clear();
 
-    if (this.mode === 'edit' && this.turma) {
+    if (this.turma && (this.mode === 'edit' || this.duplicate)) {
+      const duplicating = this.mode === 'create' && this.duplicate;
       const diasSelecionados = (this.turma.diasAula ?? '').split(',').map(Number);
       const diasArray = this.diasSemana.map((d) => diasSelecionados.includes(d.value));
 
@@ -195,17 +226,17 @@ export class ClassFormComponent implements OnChanges {
         idCurso: this.turma.idCurso,
         idProfessor: this.turma.idProfessor ?? 0,
         capacidade: this.turma.capacidade ?? 0,
-        dataInicio: this.turma.dataInicio ?? '',
-        dataFim: this.turma.dataFim ?? '',
+        dataInicio: duplicating ? '' : (this.turma.dataInicio ?? ''),
+        dataFim: duplicating ? '' : (this.turma.dataFim ?? ''),
       });
       this.diasAulaArray.patchValue(diasArray);
 
       if (this.turma.avaliacoes?.length) {
         for (const a of this.turma.avaliacoes) {
           this.avaliacoesArray.push(this.fb.nonNullable.group({
-            nome: [a.nome || ''],
-            tipo: [a.tipo || 'prova'],
-            peso: [a.peso || 10],
+            nome: [a.nome || '', [Validators.required, Validators.pattern(/\S/)]],
+            tipo: [a.tipo || 'prova', [Validators.required]],
+            peso: [a.peso || 10, [Validators.required, Validators.min(0.01)]],
           }));
         }
       }

@@ -66,6 +66,8 @@
       [professores]="professores"
       [allTurmas]="turmas"
       [loading]="saving"
+      [errorMessage]="formError"
+      [duplicate]="isDuplicate"
       (save)="onSave($event)"
       (cancel)="closePanel()"
     ></app-class-form>

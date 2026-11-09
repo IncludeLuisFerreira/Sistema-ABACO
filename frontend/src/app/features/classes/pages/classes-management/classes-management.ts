@@ -10,6 +10,7 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { TurmaService } from '../../../../core/services/turma.service';
 import { UsuarioService } from '../../../../core/services/usuario.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { ClassFormComponent, ClassFormSubmit } from '../../components/class-form/class-form';
 import { TurmaGrupoComponent, TurmaGrupo } from '../../components/turma-grupo/turma-grupo';
 import { getStatusTurma } from '../../components/turma-card/turma-card';
@@ -37,6 +38,8 @@ export class ClassesManagementComponent implements OnInit {
   panelOpen = false;
   formMode: 'create' | 'edit' = 'create';
   selectedTurma: Turma | null = null;
+  isDuplicate = false;
+  formError: string | null = null;
 
   loadingList = false;
   saving = false;
@@ -108,25 +111,32 @@ export class ClassesManagementComponent implements OnInit {
   openCreate(): void {
     this.formMode = 'create';
     this.selectedTurma = null;
+    this.isDuplicate = false;
     this.localFeedback = null;
+    this.formError = null;
     this.panelOpen = true;
   }
 
   openEdit(turma: Turma): void {
     this.formMode = 'edit';
     this.selectedTurma = turma;
+    this.isDuplicate = false;
     this.localFeedback = null;
+    this.formError = null;
     this.panelOpen = true;
   }
 
   closePanel(): void {
     this.panelOpen = false;
     this.selectedTurma = null;
+    this.isDuplicate = false;
+    this.formError = null;
   }
 
   onSave(payload: ClassFormSubmit): void {
     this.saving = true;
     this.localFeedback = null;
+    this.formError = null;
 
     if (this.formMode === 'create') {
       const createPayload: TurmaCreatePayload = {
@@ -149,7 +159,8 @@ export class ClassesManagementComponent implements OnInit {
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar turma.';
+          const message = getApiErrorMessage(err, 'Erro ao criar turma.');
+          this.formError = message;
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -183,7 +194,8 @@ export class ClassesManagementComponent implements OnInit {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar turma.';
+        const message = getApiErrorMessage(err, 'Erro ao atualizar turma.');
+        this.formError = message;
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
@@ -194,7 +206,9 @@ export class ClassesManagementComponent implements OnInit {
   onDuplicate(turma: Turma): void {
     this.formMode = 'create';
     this.selectedTurma = turma;
+    this.isDuplicate = true;
     this.localFeedback = null;
+    this.formError = null;
     this.panelOpen = true;
   }
 
