@@ -1,10 +1,35 @@
+from datetime import date
+
 import pytest
+
+from app.email import EmailDeliveryError
+from app.models.estoque import Estoque
+from app.models.movimentacao_estoque import MovimentacaoEstoque
+from app.models.pedido import Pedido
+from app.services import pedido_service
 
 
 @pytest.fixture
 def write_headers(seeded):
     """Token cujo subject é o id real da diretoria semeada (FK de pedido.id_usuario)."""
     return seeded["director_headers"]
+
+
+def _criar_pedido(seeded, headers, quantidade: int = 1, item_id: int | None = None) -> dict:
+    return seeded["client"].post(
+        "/api/v1/pedidos",
+        json={
+            "idTurma": seeded["turma"]["idTurma"],
+            "itens": [
+                {
+                    "nomeItem": "Papel A4",
+                    "quantidade": quantidade,
+                    "idItemEstoque": item_id or seeded["estoque"]["idItemEstoque"],
+                }
+            ],
+        },
+        headers=headers,
+    ).json()
 
 
 class TestPedidosEndpoints:
@@ -188,3 +213,191 @@ class TestPedidosEndpoints:
         ).json()
         response = client.delete(f"/api/v1/pedidos/{created['idPedido']}", headers=write_headers)
         assert response.status_code == 200
+
+    def test_aprovar_somente_diretor(self, seeded, admin_headers, professor_headers, guest_headers):
+        client = seeded["client"]
+        pedido = _criar_pedido(seeded, seeded["director_headers"])
+
+        assert client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar", headers=admin_headers
+        ).status_code == 403
+        assert client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar", headers=professor_headers
+        ).status_code == 403
+        assert client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar", headers=guest_headers
+        ).status_code == 403
+
+        aprovado = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        )
+        assert aprovado.status_code == 200
+        assert aprovado.json()["status"] == 1
+
+    def test_update_status_para_aprovado_tambem_e_exclusivo_do_diretor(
+        self, seeded, admin_headers, professor_headers, guest_headers
+    ):
+        client = seeded["client"]
+        pedido = _criar_pedido(seeded, seeded["director_headers"])
+
+        for headers in (admin_headers, professor_headers, guest_headers):
+            response = client.put(
+                f"/api/v1/pedidos/{pedido['idPedido']}",
+                json={"status": 1},
+                headers=headers,
+            )
+            assert response.status_code == 403
+
+        aprovado = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}",
+            json={"status": 1},
+            headers=seeded["director_headers"],
+        )
+        assert aprovado.status_code == 200
+        assert aprovado.json()["status"] == 1
+
+    def test_aprovar_deduz_estoque_e_registra_auditoria(self, seeded, db_session):
+        client = seeded["client"]
+        item_id = seeded["estoque"]["idItemEstoque"]
+        pedido = _criar_pedido(seeded, seeded["director_headers"], quantidade=3)
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        )
+        assert response.status_code == 200
+
+        db_session.expire_all()
+        estoque = db_session.get(Estoque, item_id)
+        assert estoque.quantidade_disponivel == 7
+
+        movimentacoes = (
+            db_session.query(MovimentacaoEstoque)
+            .filter(MovimentacaoEstoque.tipo_movimentacao == "pedido_aprovado")
+            .all()
+        )
+        assert len(movimentacoes) == 1
+        assert movimentacoes[0].quantidade == -3
+        assert f"Pedido #{pedido['idPedido']}" in movimentacoes[0].justificativa
+        assert "Papel A4" in movimentacoes[0].justificativa
+
+    def test_saldo_insuficiente_reverte_aprovacao_sem_auditoria(self, seeded, db_session):
+        client = seeded["client"]
+        item = client.post(
+            "/api/v1/estoque",
+            json={"nomeItem": "Item Rolamento", "quantidadeDisponivel": 1},
+            headers=seeded["director_headers"],
+        ).json()
+        pedido = _criar_pedido(
+            seeded,
+            seeded["director_headers"],
+            quantidade=5,
+            item_id=item["idItemEstoque"],
+        )
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        )
+        assert response.status_code == 400
+
+        db_session.expire_all()
+        estoque = db_session.get(Estoque, item["idItemEstoque"])
+        assert estoque.quantidade_disponivel == 1
+        assert db_session.get(Pedido, pedido["idPedido"]).status == 0
+        assert (
+            db_session.query(MovimentacaoEstoque)
+            .filter(MovimentacaoEstoque.tipo_movimentacao == "pedido_aprovado")
+            .count()
+            == 0
+        )
+
+    def test_aprovar_envia_email_ao_solicitante(self, seeded, monkeypatch):
+        client = seeded["client"]
+        pedido = _criar_pedido(seeded, seeded["professor_headers"], quantidade=2)
+        chamadas = []
+
+        def fake_send(to_email, pedido_id, data_aprovacao, itens):
+            chamadas.append((to_email, pedido_id, data_aprovacao, itens))
+
+        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        )
+        assert response.status_code == 200
+        assert chamadas == [
+            (
+                "prof@abaco.org.br",
+                pedido["idPedido"],
+                date.today(),
+                [("Papel A4", 2)],
+            )
+        ]
+
+    def test_aprovacao_nao_envia_email_quando_baixa_falha(self, seeded, monkeypatch):
+        client = seeded["client"]
+        item = client.post(
+            "/api/v1/estoque",
+            json={"nomeItem": "Item Sem Saldo", "quantidadeDisponivel": 0},
+            headers=seeded["director_headers"],
+        ).json()
+        pedido = _criar_pedido(
+            seeded,
+            seeded["director_headers"],
+            quantidade=1,
+            item_id=item["idItemEstoque"],
+        )
+        chamadas = []
+        monkeypatch.setattr(
+            pedido_service,
+            "send_pedido_aprovado_email",
+            lambda *args, **kwargs: chamadas.append(args),
+        )
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        )
+        assert response.status_code == 400
+        assert chamadas == []
+
+    def test_falha_de_email_nao_reverte_aprovacao(self, seeded, monkeypatch, caplog):
+        client = seeded["client"]
+        pedido = _criar_pedido(seeded, seeded["director_headers"], quantidade=1)
+
+        def fake_send(*args, **kwargs):
+            raise EmailDeliveryError("provedor indisponível")
+
+        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == 1
+        assert "Falha ao enviar e-mail de aprovação" in caplog.text
+        assert "provedor indisponível" not in response.text
+
+    def test_aprovar_pedido_ja_aprovado_nao_reenvia_email(self, seeded, monkeypatch):
+        client = seeded["client"]
+        pedido = _criar_pedido(seeded, seeded["director_headers"], quantidade=1)
+        chamadas = []
+        monkeypatch.setattr(
+            pedido_service,
+            "send_pedido_aprovado_email",
+            lambda *args, **kwargs: chamadas.append(args),
+        )
+
+        assert client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        ).status_code == 200
+        assert client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        ).status_code == 400
+        assert len(chamadas) == 1
