@@ -1,3 +1,6 @@
+from datetime import date
+
+
 def build_reset_message(settings, reset_token: str) -> tuple[str, str, str, str]:
     reset_link = f"{settings.frontend_url}/reset-password?token={reset_token}"
 
@@ -18,9 +21,6 @@ Atenciosamente,
 Equipe SGA ABACO
 """
     return subject, body, reset_link, "Link de recuperação"
-
-
-from datetime import date
 
 
 def build_pedido_aprovado_message(

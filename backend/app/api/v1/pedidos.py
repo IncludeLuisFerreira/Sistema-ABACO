@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.authorization import require_diretor_para_aprovacao
 from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoResponseSchema, PedidoUpdateSchema
@@ -48,9 +49,14 @@ def create_pedidos(payload: PedidoCreateSchema, current_user: dict = Depends(ver
 
 
 @router.put("/{pedido_id}/aprovar")
-def aprovar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def aprovar_pedido_endpoint(
+    pedido_id: int,
+    background_tasks: BackgroundTasks,
+    _current_user: dict = Depends(verify_cargo(1)),
+    db: Session = Depends(get_db),
+):
     try:
-        pedido = aprovar_pedido(db, pedido_id)
+        pedido = aprovar_pedido(db, pedido_id, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoInvalidTransitionError:
@@ -74,15 +80,15 @@ def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, _curren
 
 
 @router.put("/{pedido_id}")
-def update_pedidos(pedido_id: int, payload: PedidoUpdateSchema, current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
-    if payload.status == 1 and int(current_user.get("cargo", 0) or 0) != 1:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas o Diretor pode aprovar pedidos.",
-        )
-
+def update_pedidos(
+    pedido_id: int,
+    payload: PedidoUpdateSchema,
+    background_tasks: BackgroundTasks,
+    _current_user: dict = Depends(require_diretor_para_aprovacao),
+    db: Session = Depends(get_db),
+):
     try:
-        pedido = update_pedido_status(db, pedido_id, payload)
+        pedido = update_pedido_status(db, pedido_id, payload, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoInvalidTransitionError:

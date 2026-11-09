@@ -257,6 +257,25 @@ class TestPedidosEndpoints:
         assert aprovado.status_code == 200
         assert aprovado.json()["status"] == 1
 
+    def test_update_status_para_comprado_continua_permitido_para_admin(
+        self, seeded, admin_headers
+    ):
+        client = seeded["client"]
+        pedido = _criar_pedido(seeded, seeded["director_headers"])
+
+        assert client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
+            headers=seeded["director_headers"],
+        ).status_code == 200
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido['idPedido']}",
+            json={"status": 2},
+            headers=admin_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == 2
+
     def test_aprovar_deduz_estoque_e_registra_auditoria(self, seeded, db_session):
         client = seeded["client"]
         item_id = seeded["estoque"]["idItemEstoque"]
