@@ -18,6 +18,25 @@ class AvaliacaoSchema(BaseModel):
         return value
 
 
+class AvaliacaoResponseSchema(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    nome: str | None = None
+    tipo: str | None = None
+    peso: float | None = None
+
+    @field_validator("tipo", mode="before")
+    @classmethod
+    def normaliza_tipo_legado(cls, value: str | None) -> str | None:
+        if not isinstance(value, str):
+            return value
+        stripped = value.strip()
+        lowered = stripped.lower()
+        if lowered in {"prova", "trabalho"}:
+            return lowered
+        return stripped
+
+
 def _validate_dias_aula(value: str) -> str:
     dias = value.split(",")
     if any(dia not in {"0", "1", "2", "3", "4", "5", "6"} for dia in dias):
@@ -84,6 +103,6 @@ class TurmaResponseSchema(BaseModel):
     id_professor: int | None = Field(None, alias="idProfessor")
     dias_aula: str | None = Field(None, alias="diasAula")
     vagas_ocupadas: int | None = Field(None, alias="vagasOcupadas")
-    avaliacoes: list[AvaliacaoSchema] | None = None
+    avaliacoes: list[AvaliacaoResponseSchema] | None = None
     curso: TurmaCursoInfo | None = None
     professor: TurmaProfessorInfo | None = None

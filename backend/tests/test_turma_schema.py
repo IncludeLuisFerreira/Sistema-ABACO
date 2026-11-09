@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.turma_schema import TurmaCreateSchema, TurmaResponseSchema
+from app.schemas.turma_schema import AvaliacaoResponseSchema, TurmaCreateSchema, TurmaResponseSchema
 
 
 def payload(**overrides):
@@ -107,3 +107,57 @@ def test_response_accepts_legacy_null_fields():
 
     assert schema.capacidade is None
     assert schema.avaliacoes is None
+
+
+def test_response_aceita_avaliacoes_legadas():
+    schema = TurmaResponseSchema.model_validate(
+        {
+            "idTurma": 1,
+            "idCurso": 1,
+            "avaliacoes": [
+                {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"}
+            ],
+        }
+    )
+
+    assert schema.avaliacoes[0].tipo == "seminario"
+    assert schema.avaliacoes[0].model_dump()["observacao"] == "antiga"
+
+
+@pytest.mark.parametrize(
+    ("raw", "normalized"),
+    [
+        ("Prova", "prova"),
+        ("prova", "prova"),
+        ("TRABALHO", "trabalho"),
+        ("trabalho", "trabalho"),
+    ],
+)
+def test_response_avaliacao_normaliza_tipo_conhecido(raw, normalized):
+    schema = AvaliacaoResponseSchema.model_validate({"tipo": raw})
+
+    assert schema.tipo == normalized
+
+
+def test_response_avaliacao_preserva_tipo_desconhecido():
+    schema = AvaliacaoResponseSchema.model_validate(
+        {"nome": "Legada", "tipo": "seminario", "peso": 10}
+    )
+
+    assert schema.tipo == "seminario"
+
+
+def test_response_avaliacao_aceita_campos_ausentes():
+    schema = AvaliacaoResponseSchema.model_validate({})
+
+    assert schema.nome is None
+    assert schema.tipo is None
+    assert schema.peso is None
+
+
+def test_response_avaliacao_preserva_chave_extra():
+    schema = AvaliacaoResponseSchema.model_validate(
+        {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"}
+    )
+
+    assert schema.model_dump()["observacao"] == "antiga"

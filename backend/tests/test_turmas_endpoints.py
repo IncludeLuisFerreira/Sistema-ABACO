@@ -1,5 +1,7 @@
 import pytest
 
+from app.models.turma import Turma
+
 
 def turma_payload(seeded, **overrides):
     data = {
@@ -335,3 +337,50 @@ class TestTurmasEndpoints:
             headers=director_headers,
         )
         assert response.status_code == 409
+
+    def _gravar_avaliacoes_legadas(self, db_session, turma_id):
+        turma = db_session.get(Turma, turma_id)
+        turma.avaliacoes = [
+            {"nome": "Legada", "tipo": "seminario", "peso": 10, "observacao": "antiga"}
+        ]
+        db_session.commit()
+
+    def test_get_listar_preserva_avaliacoes_legadas(self, seeded, db_session, admin_headers):
+        self._gravar_avaliacoes_legadas(db_session, seeded["turma"]["idTurma"])
+
+        response = seeded["client"].get("/api/v1/turmas", headers=admin_headers)
+
+        assert response.status_code == 200
+        alvo = next(
+            t for t in response.json() if t["idTurma"] == seeded["turma"]["idTurma"]
+        )
+        assert alvo["avaliacoes"][0]["tipo"] == "seminario"
+        assert alvo["avaliacoes"][0]["observacao"] == "antiga"
+
+    def test_get_por_id_preserva_avaliacoes_legadas(self, seeded, db_session, admin_headers):
+        self._gravar_avaliacoes_legadas(db_session, seeded["turma"]["idTurma"])
+
+        response = seeded["client"].get(
+            f"/api/v1/turmas/{seeded['turma']['idTurma']}",
+            headers=admin_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["avaliacoes"][0]["tipo"] == "seminario"
+
+    def test_update_legada_preserva_leitura_e_aplica_capacidade(
+        self, seeded, db_session, director_headers
+    ):
+        self._gravar_avaliacoes_legadas(db_session, seeded["turma"]["idTurma"])
+
+        response = seeded["client"].put(
+            f"/api/v1/turmas/{seeded['turma']['idTurma']}",
+            json={"capacidade": 25},
+            headers=director_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["avaliacoes"][0]["tipo"] == "seminario"
+
+        db_session.expire_all()
+        assert db_session.get(Turma, seeded["turma"]["idTurma"]).capacidade == 25
