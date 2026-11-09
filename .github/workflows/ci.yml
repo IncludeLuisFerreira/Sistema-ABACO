@@ -7,6 +7,20 @@ on:
     branches: [develop, main]
 
 jobs:
+  preflight:
+    name: Preflight (shell)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Valida sintaxe dos scripts
+        run: |
+          bash -n scripts/agent-preflight.sh
+          bash -n scripts/test_agent_preflight.sh
+
+      - name: Roda testes do preflight
+        run: bash scripts/test_agent_preflight.sh
+
   backend:
     name: Backend (pytest)
     runs-on: ubuntu-latest
