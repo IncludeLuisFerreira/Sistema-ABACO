@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -21,13 +21,13 @@ class AvaliacaoSchema(BaseModel):
 class AvaliacaoResponseSchema(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    nome: str | None = None
-    tipo: str | None = None
-    peso: float | None = None
+    nome: Any = None
+    tipo: Any = None
+    peso: Any = None
 
     @field_validator("tipo", mode="before")
     @classmethod
-    def normaliza_tipo_legado(cls, value: str | None) -> str | None:
+    def normaliza_tipo_legado(cls, value: Any) -> Any:
         if not isinstance(value, str):
             return value
         stripped = value.strip()

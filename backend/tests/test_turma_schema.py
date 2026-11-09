@@ -161,3 +161,19 @@ def test_response_avaliacao_preserva_chave_extra():
     )
 
     assert schema.model_dump()["observacao"] == "antiga"
+
+
+@pytest.mark.parametrize(
+    "avaliacao",
+    [
+        {"nome": 123, "tipo": "prova", "peso": 10},
+        {"nome": "Legada", "tipo": "seminario", "peso": "dez"},
+        {"nome": "Legada", "tipo": 1, "peso": None},
+    ],
+)
+def test_response_tolera_avaliacao_legada_com_tipos_escalares_distintos(avaliacao):
+    schema = TurmaResponseSchema.model_validate(
+        {"idTurma": 1, "idCurso": 1, "avaliacoes": [avaliacao]}
+    )
+
+    assert schema.avaliacoes[0].model_dump() == avaliacao
