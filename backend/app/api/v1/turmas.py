@@ -7,7 +7,11 @@ from app.db.database import get_db
 from app.models.turma import Turma
 from app.schemas.turma_schema import TurmaCreateSchema, TurmaResponseSchema, TurmaUpdateSchema
 from app.services.turma_service import (
+    CampoObrigatorioError,
+    CapacidadeAbaixoDasVagasError,
     CursoNotFoundForTurmaError,
+    DatasInvalidasError,
+    ProfessorCargoInvalidoError,
     ProfessorNotFoundForTurmaError,
     TurmaHasDependenciesError,
     TurmaNotFoundError,
@@ -45,6 +49,16 @@ def create_turmas(payload: TurmaCreateSchema, _current_user: dict = Depends(veri
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Curso informado não existe") from exc
     except ProfessorNotFoundForTurmaError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Professor informado não existe") from exc
+    except ProfessorCargoInvalidoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Professor informado não possui cargo de Professor",
+        ) from exc
+    except DatasInvalidasError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data de término deve ser maior ou igual à data de início",
+        ) from exc
     return TurmaResponseSchema.model_validate(turma)
 
 
@@ -58,6 +72,26 @@ def update_turmas(turma_id: int, payload: TurmaUpdateSchema, _current_user: dict
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Curso informado não existe") from exc
     except ProfessorNotFoundForTurmaError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Professor informado não existe") from exc
+    except ProfessorCargoInvalidoError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Professor informado não possui cargo de Professor",
+        ) from exc
+    except DatasInvalidasError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data de término deve ser maior ou igual à data de início",
+        ) from exc
+    except CampoObrigatorioError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Campo obrigatório não pode ser removido: {exc.campo}",
+        ) from exc
+    except CapacidadeAbaixoDasVagasError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Capacidade não pode ser menor que o número de vagas ocupadas ({exc.vagas})",
+        ) from exc
     except TurmaHasDependenciesError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Não foi possível atualizar a turma") from exc
     return TurmaResponseSchema.model_validate(turma)
