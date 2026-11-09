@@ -30,7 +30,7 @@ def normalize_telefone_br(value: str | None) -> str | None:
 
 def normalize_nome(value: str) -> str:
 	cleaned = re.sub(r"\s+", " ", value.strip())
-	if len(cleaned) < NOME_MIN_LENGTH or not NOME_PATTERN.fullmatch(cleaned):
+	if sum(char.isalpha() for char in cleaned) < NOME_MIN_LENGTH or not NOME_PATTERN.fullmatch(cleaned):
 		raise ValueError(NOME_MSG)
 	return cleaned
 

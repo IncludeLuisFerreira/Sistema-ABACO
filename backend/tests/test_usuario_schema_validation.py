@@ -102,15 +102,7 @@ class TestUsuarioCreateSchemaValidation:
 			)
 
 
-class TestUsuarioUpdateSchemaValidation:
-	def test_telefone_invalido_rejeitado(self):
-		with pytest.raises(ValidationError):
-			UsuarioUpdateSchema(nome="Usuario", telefone="123", cargo=2)
-
-	def test_telefone_valido_aceito(self):
-		payload = UsuarioUpdateSchema(nome="Usuario", telefone="21987654321", cargo=2)
-		assert payload.telefone == "21987654321"
-
-	def test_nome_invalido_rejeitado(self):
-		with pytest.raises(ValidationError):
-			UsuarioUpdateSchema(nome="<>", telefone=None, cargo=2)
+@pytest.mark.parametrize("nome", ["---", "a--", "a b"])
+def test_nome_exige_tres_letras(nome):
+    with pytest.raises(ValidationError):
+        UsuarioCreateSchema(nome=nome, email="novo@abaco.org.br", senha="123", cargo=2)

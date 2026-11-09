@@ -26,7 +26,7 @@ export function institutionalEmailValidator(): ValidatorFn {
 
 /** Bloqueia e-mail já cadastrado (comparação case-insensitive). */
 export function uniqueEmailValidator(existingEmails: string[]): ValidatorFn {
-  const taken = new Set(existingEmails.map((e) => e.trim().toLowerCase()));
+  const taken = new Set(existingEmails.map((e) => (e ?? '').trim().toLowerCase()));
 
   return (control: AbstractControl): ValidationErrors | null => {
     const email = String(control.value ?? '').trim().toLowerCase();

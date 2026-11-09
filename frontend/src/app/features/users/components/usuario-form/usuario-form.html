@@ -4,6 +4,7 @@
     <p>{{ mode === 'create' ? 'Cadastre um novo acesso ao sistema.' : 'Atualize dados e perfil de acesso.' }}</p>
   </header>
 
+  <p class="error" *ngIf="editBlocked">Administrador nao pode editar colaboradores da Diretoria.</p>
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <label>
       <span>Nome *</span>
@@ -21,6 +22,8 @@
       <small class="error" *ngIf="form.controls.email.errors?.['email'] && form.controls.email.touched">Informe um e-mail valido.</small>
     </label>
 
+    <small class="error" *ngIf="form.controls.email.errors?.['institutionalEmail'] && form.controls.email.touched">Use um e-mail do dominio @abaco.org.br.</small>
+    <small class="error" *ngIf="form.controls.email.errors?.['emailTaken'] && form.controls.email.touched">Este e-mail ja esta cadastrado.</small>
     <label>
       <span>Telefone</span>
       <input
@@ -61,7 +64,7 @@
 
     <footer>
       <button type="button" class="btn btn--ghost" (click)="cancel.emit()" [disabled]="loading">Cancelar</button>
-      <button type="submit" class="btn btn--primary" [disabled]="loading">
+      <button type="submit" class="btn btn--primary" [disabled]="loading || editBlocked">
         <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
         {{ loading ? 'Salvando...' : 'Salvar' }}
       </button>

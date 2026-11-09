@@ -153,8 +153,8 @@ class TestCreateUsuarioSendsFirstAccessEmail:
     def test_sends_email_to_new_user(self, monkeypatch):
         sent = {}
         monkeypatch.setattr(
-            "app.api.v1.usuarios.send_welcome_credentials_email",
-            lambda email, senha: sent.update({"email": email, "senha": senha}),
+            "app.api.v1.usuarios.send_first_access_email",
+            lambda email, token: sent.update({"email": email, "token": token}),
         )
         token = create_access_token(subject="1", cargo=1)
 
@@ -172,13 +172,18 @@ class TestCreateUsuarioSendsFirstAccessEmail:
         assert response.status_code == 200
         assert response.json()["primeiro_acesso"] is True
         assert sent["email"] == "novo@abaco.org.br"
-        assert sent["senha"] == SENHA_INICIAL
+        assert sent["token"] != SENHA_INICIAL
+        completed = client.post("/api/v1/auth/first-access", json={
+            "token": sent["token"], "nova_senha": SENHA_NOVA, "confirmar_senha": SENHA_NOVA,
+        })
+        assert completed.status_code == 200
+        assert verify_password(SENHA_NOVA, _get_usuario(sent["email"]).senha_hash)
 
     def test_creates_user_even_when_email_fails(self, monkeypatch):
         def failing_send(email, senha):
             raise EmailDeliveryError("falha simulada no envio")
 
-        monkeypatch.setattr("app.api.v1.usuarios.send_welcome_credentials_email", failing_send)
+        monkeypatch.setattr("app.api.v1.usuarios.send_first_access_email", failing_send)
         token = create_access_token(subject="1", cargo=1)
 
         response = client.post(

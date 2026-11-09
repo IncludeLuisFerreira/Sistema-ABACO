@@ -13,6 +13,7 @@ import { Usuario } from '../../../../core/models/usuario.model';
 export class UsuariosListComponent {
   @Input() usuarios: Usuario[] = [];
   @Input() loading = false;
+  @Input() canManageDiretoria = true;
   @Input() currentPage = 1;
   @Input() totalPages = 1;
   @Input() deletingUserId: number | null = null;

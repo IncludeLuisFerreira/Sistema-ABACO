@@ -34,16 +34,6 @@ class UsuarioUpdateSchema(BaseModel):
 	endereco: str | None = None
 	cargo: int = Field(ge=1, le=3)
 
-	@field_validator("nome")
-	@classmethod
-	def validar_nome(cls, value: str) -> str:
-		return normalize_nome(value)
-
-	@field_validator("telefone")
-	@classmethod
-	def validar_telefone(cls, value: str | None) -> str | None:
-		return normalize_telefone_br(value)
-
 
 class UsuarioResponseSchema(BaseModel):
 	model_config = ConfigDict(from_attributes=True, populate_by_name=True)

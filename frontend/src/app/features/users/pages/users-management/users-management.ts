@@ -75,6 +75,7 @@ export class UsersManagementComponent implements OnInit {
   }
 
   openEdit(usuario: Usuario): void {
+    if (!this.canAssignDiretoria && Number(usuario.cargo) === 1) return;
     this.formMode = 'edit';
     this.selectedUsuario = usuario;
     this.localFeedback = null;
@@ -87,6 +88,7 @@ export class UsersManagementComponent implements OnInit {
   }
 
   onSave(payload: UsuarioFormSubmit): void {
+    if (this.formMode === 'edit' && !this.canAssignDiretoria && Number(this.selectedUsuario?.cargo) === 1) return;
     this.saving = true;
     this.localFeedback = null;
 
@@ -110,15 +112,8 @@ export class UsersManagementComponent implements OnInit {
           this.changeDetectorRef.detectChanges();
         },
         error: (err: HttpErrorResponse) => {
-          const detail = err?.error?.detail;
-          let message = err?.message || 'Erro ao criar usuario.';
-          if (err.status === 409) {
-            message = 'Este e-mail ja esta cadastrado.';
-          } else if (typeof detail === 'string') {
-            message = detail;
-          } else if (Array.isArray(detail) && detail[0]?.msg) {
-            message = detail[0].msg;
-          }
+          const message = err.status === 409 ? 'Este e-mail ja esta cadastrado.'
+            : this.errorMessage(err, 'Erro ao criar usuario.');
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -149,7 +144,7 @@ export class UsersManagementComponent implements OnInit {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar usuario.';
+        const message = this.errorMessage(err, 'Erro ao atualizar usuario.');
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
@@ -187,12 +182,19 @@ export class UsersManagementComponent implements OnInit {
     });
   }
 
+  private errorMessage(err: HttpErrorResponse, fallback: string): string {
+    const detail = err?.error?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') return detail[0].msg;
+    return err?.message || fallback;
+  }
+
   private loadUsuarios(): void {
     this.loadingList = true;
     this.usuarioService.list().subscribe({
       next: (usuarios) => {
         this.usuarios = usuarios;
-        this.existingEmails = usuarios.map((u) => u.email);
+        this.existingEmails = usuarios.map((u) => u.email).filter((email): email is string => typeof email === 'string');
         this.applyFiltersAndPagination();
         this.loadingList = false;
         this.changeDetectorRef.detectChanges();
@@ -212,7 +214,7 @@ export class UsersManagementComponent implements OnInit {
       }
 
       const nome = (usuario.nome ?? '').toLowerCase();
-      const email = usuario.email.toLowerCase();
+      const email = (usuario.email ?? '').toLowerCase();
       return nome.includes(this.searchTerm) || email.includes(this.searchTerm);
     });
 

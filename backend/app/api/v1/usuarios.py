@@ -7,9 +7,10 @@ from app.core.dependencies import verify_cargo
 from app.core.security import create_first_access_token
 from app.db.database import get_db
 from app.schemas.usuario_schema import UsuarioCreateSchema, UsuarioResponseSchema, UsuarioUpdateSchema
-from app.email import EmailDeliveryError, send_first_access_email, send_welcome_credentials_email
+from app.email import EmailDeliveryError, send_first_access_email
 from app.services.usuario_service import (
 	UsuarioEmailAlreadyExistsError,
+	UsuarioInvalidDataError,
 	UsuarioHasDependenciesError,
 	UsuarioNotFoundError,
 	create_usuario,
@@ -77,9 +78,10 @@ def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(
 
 	# O envio do e-mail não deve impedir a criação do usuário.
 	try:
-		send_welcome_credentials_email(usuario.email, payload.senha)
+		token = create_first_access_token(email=usuario.email)
+		send_first_access_email(usuario.email, token)
 	except EmailDeliveryError:
-		logger.warning("Falha ao enviar e-mail com credenciais para %s", usuario.email, exc_info=True)
+		logger.warning("Falha ao enviar e-mail de primeiro acesso para %s", usuario.email)
 
 	return UsuarioResponseSchema.model_validate(usuario)
 
@@ -103,6 +105,8 @@ def update_usuarios(usuario_id: int, payload: UsuarioUpdateSchema, _current_user
 		usuario = update_usuario(db, usuario_id, payload)
 	except UsuarioNotFoundError as exc:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado") from exc
+	except UsuarioInvalidDataError as exc:
+		raise HTTPException(status_code=422, detail=str(exc)) from exc
 	except UsuarioHasDependenciesError as exc:
 		raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Não foi possível atualizar o usuário") from exc
 	return UsuarioResponseSchema.model_validate(usuario)

@@ -10,7 +10,7 @@ export function personNameValidator(): ValidatorFn {
     if (!cleaned) {
       return null;
     }
-    if (cleaned.length < NOME_MIN_LENGTH || !NOME_PATTERN.test(cleaned)) {
+    if ((cleaned.match(/\p{L}/gu) ?? []).length < NOME_MIN_LENGTH || !NOME_PATTERN.test(cleaned)) {
       return { personName: true };
     }
     return null;

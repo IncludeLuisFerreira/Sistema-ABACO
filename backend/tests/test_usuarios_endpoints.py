@@ -240,3 +240,43 @@ class TestUsuariosEndpoints:
         assert response.status_code == 200
         assert response.json()["nome"] == "Admin Atualizado"
         assert response.json()["cargo"] == 3
+
+
+def test_update_preserves_legacy_and_omitted_address(api_client, director_headers, usuario, db_session):
+    usuario.nome = "Dr. Joao"
+    usuario.telefone = "1133334444"
+    usuario.endereco = "Rua antiga"
+    db_session.commit()
+    response = api_client.put(f"/api/v1/usuarios/{usuario.id_usuario}", headers=director_headers,
+        json={"nome": usuario.nome, "telefone": usuario.telefone, "cargo": 1})
+    assert response.status_code == 200
+    assert response.json()["endereco"] == "Rua antiga"
+    response = api_client.put(f"/api/v1/usuarios/{usuario.id_usuario}", headers=director_headers,
+        json={"nome": "---", "cargo": 1})
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], str)
+
+
+def test_create_email_and_logs_never_include_password(api_client, director_headers, monkeypatch, caplog):
+    import logging
+    from types import SimpleNamespace
+    from app.email import service
+    from app.email.providers import console
+    sent = {}
+    monkeypatch.setattr(service, "get_settings", lambda: SimpleNamespace(
+        frontend_url="http://localhost:3000", first_access_token_expire_minutes=1440,
+        brevo_api_key="", smtp_user=""))
+    def capture(email, subject, body):
+        sent["body"] = body
+        console.send(email, subject, body)
+    monkeypatch.setattr(service, "_select_provider", lambda settings: capture)
+    password = "Secret-never-email-123"
+    with caplog.at_level(logging.INFO):
+        response = api_client.post("/api/v1/usuarios", headers=director_headers,
+            json={"nome": "Novo Usuario", "email": "safe@abaco.org.br", "senha": password, "cargo": 2})
+    assert response.status_code == 200
+    assert "/first-access?token=" in sent["body"]
+    assert password not in sent["body"]
+    assert password not in caplog.text
+    token = sent["body"].split("token=")[1].split()[0]
+    assert token not in caplog.text

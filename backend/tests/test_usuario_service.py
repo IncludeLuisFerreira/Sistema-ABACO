@@ -74,3 +74,31 @@ class TestDeleteUsuario:
     def test_raises_for_nonexistent(self, db_session: Session):
         with pytest.raises(UsuarioNotFoundError):
             delete_usuario(db_session, 9999)
+
+
+class TestUpdateReviewRegressions:
+    def test_preserves_omitted_address_and_legacy_fields(self, db_session, usuario):
+        usuario.nome = "Dr. Joao"
+        usuario.telefone = "1133334444"
+        usuario.endereco = "Rua antiga"
+        db_session.commit()
+        result = update_usuario(db_session, usuario.id_usuario, UsuarioUpdateSchema(
+            nome="Dr. Joao", telefone="1133334444", cargo=2,
+        ))
+        assert result.nome == "Dr. Joao"
+        assert result.telefone == "1133334444"
+        assert result.endereco == "Rua antiga"
+
+    def test_explicit_null_clears_address(self, db_session, usuario):
+        usuario.endereco = "Rua antiga"
+        db_session.commit()
+        result = update_usuario(db_session, usuario.id_usuario,
+            UsuarioUpdateSchema(nome=usuario.nome, cargo=1, endereco=None))
+        assert result.endereco is None
+
+    @pytest.mark.parametrize("fields", [{"nome": "---"}, {"telefone": "123"}])
+    def test_rejects_changed_invalid_fields(self, db_session, usuario, fields):
+        from app.services.usuario_service import UsuarioInvalidDataError
+        values = {"nome": usuario.nome, "cargo": usuario.cargo, **fields}
+        with pytest.raises(UsuarioInvalidDataError):
+            update_usuario(db_session, usuario.id_usuario, UsuarioUpdateSchema(**values))

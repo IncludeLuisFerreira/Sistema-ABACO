@@ -8,7 +8,7 @@ import {
   formatBrazilianPhone,
   onlyPhoneDigits,
 } from '../../../../shared/validators/brazilian-phone.validator';
-import { uniqueEmailValidator } from '../../../../shared/validators/institutional-email.validator';
+import { institutionalEmailValidator, uniqueEmailValidator } from '../../../../shared/validators/institutional-email.validator';
 import { personNameValidator } from '../../../../shared/validators/person-name.validator';
 
 export interface UsuarioFormSubmit {
@@ -69,7 +69,7 @@ export class UsuarioFormComponent implements OnChanges {
       this.updateExistingEmailsValidator();
     }
 
-    if (changes['loading']) {
+    if (changes['loading'] || changes['usuario'] || changes['mode'] || changes['canAssignDiretoria']) {
       this.toggleFormState();
     }
   }
@@ -82,6 +82,7 @@ export class UsuarioFormComponent implements OnChanges {
   }
 
   submit(): void {
+    if (this.editBlocked) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -90,8 +91,10 @@ export class UsuarioFormComponent implements OnChanges {
     const value = this.form.getRawValue();
     const telefoneDigits = onlyPhoneDigits(value.telefone.trim());
     const payload: UsuarioFormSubmit = {
-      nome: value.nome.trim().replace(/\s+/g, ' '),
-      telefone: telefoneDigits || null,
+      nome: this.mode === 'edit' && value.nome === this.usuario?.nome
+        ? value.nome : value.nome.trim().replace(/\s+/g, ' '),
+      telefone: this.mode === 'edit' && telefoneDigits === onlyPhoneDigits(this.usuario?.telefone ?? '')
+        ? this.usuario?.telefone ?? null : telefoneDigits || null,
       email: value.email.trim().toLowerCase(),
       endereco: value.endereco.trim() || null,
       cargo: Number(value.cargo) as CargoNivel,
@@ -104,18 +107,23 @@ export class UsuarioFormComponent implements OnChanges {
     this.save.emit(payload);
   }
 
+  get editBlocked(): boolean {
+    return this.mode === 'edit' && !this.canAssignDiretoria && Number(this.usuario?.cargo) === 1;
+  }
+
   private refreshRoleOptions(): void {
     this.roleOptions = this.canAssignDiretoria
       ? [...this.allRoleOptions]
       : this.allRoleOptions.filter((option) => option.value !== 1);
-
-    const cargoAtual = Number(this.form.controls.cargo.value);
-    if (!this.canAssignDiretoria && cargoAtual === 1) {
-      this.form.controls.cargo.setValue(3, { emitEvent: false });
-    }
   }
 
   private patchForm(): void {
+    this.form.controls.nome.setValidators([Validators.required, (control) =>
+      this.mode === 'edit' && control.value === (this.usuario?.nome ?? '')
+        ? null : personNameValidator()(control)]);
+    this.form.controls.telefone.setValidators([(control) =>
+      this.mode === 'edit' && onlyPhoneDigits(control.value) === onlyPhoneDigits(this.usuario?.telefone ?? '')
+        ? null : brazilianPhoneValidator()(control)]);
     if (this.mode === 'edit' && this.usuario) {
       this.form.reset({
         nome: this.usuario.nome ?? '',
@@ -139,13 +147,14 @@ export class UsuarioFormComponent implements OnChanges {
       telefone: '',
       email: '',
       endereco: '',
-      cargo: this.canAssignDiretoria ? 3 : 3,
+      cargo: 3,
       senha: '',
     });
     this.form.controls.email.enable({ emitEvent: false });
     this.form.controls.email.setValidators([
       Validators.required,
       Validators.email,
+      institutionalEmailValidator(),
       uniqueEmailValidator(this.existingEmails),
     ]);
     this.form.controls.senha.setValidators([Validators.required]);
@@ -164,7 +173,7 @@ export class UsuarioFormComponent implements OnChanges {
   }
 
   private toggleFormState(): void {
-    if (this.loading) {
+    if (this.loading || this.editBlocked) {
       this.form.disable({ emitEvent: false });
       return;
     }
@@ -179,6 +188,7 @@ export class UsuarioFormComponent implements OnChanges {
     this.form.controls.email.setValidators([
       Validators.required,
       Validators.email,
+      institutionalEmailValidator(),
       uniqueEmailValidator(this.existingEmails),
     ]);
     this.form.controls.email.updateValueAndValidity({ emitEvent: false });

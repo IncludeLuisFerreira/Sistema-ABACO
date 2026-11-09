@@ -12,6 +12,7 @@
   <section class="users-management__layout">
     <app-usuarios-list
       [usuarios]="pagedUsuarios"
+      [canManageDiretoria]="canAssignDiretoria"
       [loading]="loadingList || saving"
       [currentPage]="currentPage"
       [totalPages]="totalPages"
