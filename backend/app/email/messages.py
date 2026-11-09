@@ -20,6 +20,35 @@ Equipe SGA ABACO
     return subject, body, reset_link, "Link de recuperação"
 
 
+from datetime import date
+
+
+def build_pedido_aprovado_message(
+    pedido_id: int,
+    data_aprovacao: date,
+    itens: list[tuple[str, int]],
+) -> tuple[str, str]:
+    subject = f"SGA ABACO - Pedido #{pedido_id} aprovado"
+    itens_descricao = "\n".join(
+        f"- {nome}: {quantidade}" for nome, quantidade in itens
+    ) or "- Nenhum item informado"
+    body = f"""\
+Olá,
+
+Seu pedido de materiais foi aprovado.
+
+Pedido: #{pedido_id}
+Data da aprovação: {data_aprovacao.strftime('%d/%m/%Y')}
+
+Itens aprovados:
+{itens_descricao}
+
+Atenciosamente,
+Equipe SGA ABACO
+"""
+    return subject, body
+
+
 def build_first_access_message(settings, first_access_token: str) -> tuple[str, str, str, str]:
     first_access_link = f"{settings.frontend_url}/first-access?token={first_access_token}"
 

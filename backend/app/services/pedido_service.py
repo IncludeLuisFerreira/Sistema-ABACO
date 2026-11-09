@@ -1,11 +1,17 @@
+import logging
 from datetime import date
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.email import EmailDeliveryError, send_pedido_aprovado_email
 from app.models.item_pedido import ItemPedido
 from app.models.pedido import Pedido
+from app.models.usuario import Usuario
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoUpdateSchema
+
+
+logger = logging.getLogger(__name__)
 
 
 class PedidoNotFoundError(Exception):
@@ -82,10 +88,44 @@ def get_pedido_by_id(db: Session, pedido_id: int) -> Pedido:
     return pedido
 
 
-def aprovar_pedido(db: Session, pedido_id: int) -> Pedido:
-    from app.services.estoque_service import EstoqueSaldoInsuficienteError, deduzir_por_pedido
+def _notificar_solicitante_aprovacao(db: Session, pedido: Pedido) -> None:
+    """Envia o e-mail de aprovação após o commit, sem reverter a aprovação em caso de falha."""
+    usuario = pedido.usuario
+    if usuario is None:
+        usuario = db.query(Usuario).filter(Usuario.id_usuario == pedido.id_usuario).first()
 
-    pedido = get_pedido_by_id(db, pedido_id)
+    email = (usuario.email or "").strip() if usuario else ""
+    if not email:
+        logger.warning(
+            "Pedido #%s aprovado sem envio de e-mail: solicitante não possui e-mail cadastrado",
+            pedido.id_pedido,
+        )
+        return
+
+    itens = [
+        (item.nome_item or f"Item #{item.id_item_estoque}", item.quantidade)
+        for item in pedido.itens
+        if item.quantidade is not None
+    ]
+
+    try:
+        send_pedido_aprovado_email(email, pedido.id_pedido, date.today(), itens)
+    except EmailDeliveryError:
+        logger.error(
+            "Falha ao enviar e-mail de aprovação do pedido #%s para %s",
+            pedido.id_pedido,
+            email,
+        )
+    except Exception:
+        logger.exception(
+            "Erro inesperado ao enviar e-mail de aprovação do pedido #%s para %s",
+            pedido.id_pedido,
+            email,
+        )
+
+
+def _aprovar_pedido(db: Session, pedido: Pedido) -> Pedido:
+    from app.services.estoque_service import EstoqueSaldoInsuficienteError, deduzir_por_pedido
 
     if pedido.status != 0:
         raise PedidoInvalidTransitionError("Apenas pedidos com status 'Solicitado' podem ser aprovados")
@@ -103,7 +143,14 @@ def aprovar_pedido(db: Session, pedido_id: int) -> Pedido:
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    # O e-mail só é enviado depois do commit e nunca deve desfazer a aprovação.
+    _notificar_solicitante_aprovacao(db, pedido)
     return pedido
+
+
+def aprovar_pedido(db: Session, pedido_id: int) -> Pedido:
+    pedido = get_pedido_by_id(db, pedido_id)
+    return _aprovar_pedido(db, pedido)
 
 
 def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> Pedido:
@@ -132,8 +179,6 @@ def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> 
 
 
 def update_pedido_status(db: Session, pedido_id: int, payload: PedidoUpdateSchema) -> Pedido:
-    from app.services.estoque_service import EstoqueSaldoInsuficienteError, deduzir_por_pedido
-
     pedido = get_pedido_by_id(db, pedido_id)
 
     if payload.status not in (1, 2):
@@ -141,8 +186,11 @@ def update_pedido_status(db: Session, pedido_id: int, payload: PedidoUpdateSchem
             "Transição de status inválida. Use os endpoints específicos para aprovar, comprar ou entregar."
         )
 
-    expected_previous = 0 if payload.status == 1 else 1
-    if pedido.status != expected_previous:
+    # Aprovação deve passar exatamente pelo mesmo fluxo do endpoint /aprovar.
+    if payload.status == 1:
+        return _aprovar_pedido(db, pedido)
+
+    if pedido.status != 1:
         raise PedidoInvalidTransitionError(
             f"Não é possível alterar o status de {pedido.status} para {payload.status}"
         )
@@ -150,12 +198,7 @@ def update_pedido_status(db: Session, pedido_id: int, payload: PedidoUpdateSchem
     pedido.status = payload.status
 
     try:
-        if payload.status == 1:
-            deduzir_por_pedido(db, pedido)
         db.commit()
-    except EstoqueSaldoInsuficienteError as exc:
-        db.rollback()
-        raise PedidoInvalidTransitionError(str(exc)) from exc
     except IntegrityError as exc:
         db.rollback()
         raise PedidoHasDependenciesError from exc

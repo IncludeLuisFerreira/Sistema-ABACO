@@ -48,7 +48,7 @@ def create_pedidos(payload: PedidoCreateSchema, current_user: dict = Depends(ver
 
 
 @router.put("/{pedido_id}/aprovar")
-def aprovar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+def aprovar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
     try:
         pedido = aprovar_pedido(db, pedido_id)
     except PedidoNotFoundError as exc:
@@ -74,7 +74,13 @@ def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, _curren
 
 
 @router.put("/{pedido_id}")
-def update_pedidos(pedido_id: int, payload: PedidoUpdateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+def update_pedidos(pedido_id: int, payload: PedidoUpdateSchema, current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+    if payload.status == 1 and int(current_user.get("cargo", 0) or 0) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Diretor pode aprovar pedidos.",
+        )
+
     try:
         pedido = update_pedido_status(db, pedido_id, payload)
     except PedidoNotFoundError as exc:
