@@ -10,12 +10,19 @@ class TestUsuariosEndpoints:
     def test_create_sucesso(self, api_client, director_headers):
         response = api_client.post(
             "/api/v1/usuarios",
-            json={"nome": "Novo", "email": "novo@abaco.org.br", "senha": "senha123", "cargo": 2},
+            json={
+                "nome": "Novo",
+                "email": "novo@abaco.org.br",
+                "senha": "senha123",
+                "cargo": 2,
+                "endereco": "Rua das Flores, 123",
+            },
             headers=director_headers,
         )
         assert response.status_code == 200
         assert response.json()["email"] == "novo@abaco.org.br"
         assert response.json()["cargo"] == 2
+        assert response.json()["endereco"] == "Rua das Flores, 123"
 
     def test_create_email_duplicado_retorna_erro(self, seeded, director_headers):
         response = seeded["client"].post(
@@ -24,6 +31,44 @@ class TestUsuariosEndpoints:
             headers=director_headers,
         )
         assert response.status_code == 409
+
+    def test_create_email_invalido_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo", "email": "email-invalido", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_telefone_invalido_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={
+                "nome": "Novo Usuario",
+                "email": "telefone.invalido@abaco.org.br",
+                "senha": "senha123",
+                "cargo": 2,
+                "telefone": "119999",
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_email_dominio_externo_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo Usuario", "email": "pessoa@gmail.com", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_nome_invalido_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "A1", "email": "nome.invalido@abaco.org.br", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
 
     def test_get_por_id(self, seeded, director_headers):
         usuario_id = seeded["professor"]["idUsuario"]
@@ -39,16 +84,17 @@ class TestUsuariosEndpoints:
         usuario_id = seeded["professor"]["idUsuario"]
         response = seeded["client"].put(
             f"/api/v1/usuarios/{usuario_id}",
-            json={"nome": "Professor Renomeado", "telefone": "11999999999", "cargo": 2},
+            json={"nome": "Professor Renomeado", "telefone": "11999999999", "cargo": 2, "endereco": "Av. Brasil, 456"},
             headers=director_headers,
         )
         assert response.status_code == 200
         assert response.json()["nome"] == "Professor Renomeado"
+        assert response.json()["endereco"] == "Av. Brasil, 456"
 
     def test_update_inexistente_retorna_404(self, api_client, director_headers):
         response = api_client.put(
             "/api/v1/usuarios/9999",
-            json={"nome": "X", "telefone": None, "cargo": 2},
+            json={"nome": "Inexistente", "telefone": None, "cargo": 2},
             headers=director_headers,
         )
         assert response.status_code == 404
@@ -194,3 +240,43 @@ class TestUsuariosEndpoints:
         assert response.status_code == 200
         assert response.json()["nome"] == "Admin Atualizado"
         assert response.json()["cargo"] == 3
+
+
+def test_update_preserves_legacy_and_omitted_address(api_client, director_headers, usuario, db_session):
+    usuario.nome = "Dr. Joao"
+    usuario.telefone = "1133334444"
+    usuario.endereco = "Rua antiga"
+    db_session.commit()
+    response = api_client.put(f"/api/v1/usuarios/{usuario.id_usuario}", headers=director_headers,
+        json={"nome": usuario.nome, "telefone": usuario.telefone, "cargo": 1})
+    assert response.status_code == 200
+    assert response.json()["endereco"] == "Rua antiga"
+    response = api_client.put(f"/api/v1/usuarios/{usuario.id_usuario}", headers=director_headers,
+        json={"nome": "---", "cargo": 1})
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], str)
+
+
+def test_create_email_and_logs_never_include_password(api_client, director_headers, monkeypatch, caplog):
+    import logging
+    from types import SimpleNamespace
+    from app.email import service
+    from app.email.providers import console
+    sent = {}
+    monkeypatch.setattr(service, "get_settings", lambda: SimpleNamespace(
+        frontend_url="http://localhost:3000", first_access_token_expire_minutes=1440,
+        brevo_api_key="", smtp_user=""))
+    def capture(email, subject, body):
+        sent["body"] = body
+        console.send(email, subject, body)
+    monkeypatch.setattr(service, "_select_provider", lambda settings: capture)
+    password = "Secret-never-email-123"
+    with caplog.at_level(logging.INFO):
+        response = api_client.post("/api/v1/usuarios", headers=director_headers,
+            json={"nome": "Novo Usuario", "email": "safe@abaco.org.br", "senha": password, "cargo": 2})
+    assert response.status_code == 200
+    assert "/first-access?token=" in sent["body"]
+    assert password not in sent["body"]
+    assert password not in caplog.text
+    token = sent["body"].split("token=")[1].split()[0]
+    assert token not in caplog.text

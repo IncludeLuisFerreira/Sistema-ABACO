@@ -30,3 +30,4 @@ def send_first_access_email(to_email: str, first_access_token: str) -> None:
         settings, first_access_token
     )
     _send_email(settings, to_email, subject, body)
+

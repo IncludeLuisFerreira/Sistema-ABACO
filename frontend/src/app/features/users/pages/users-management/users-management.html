@@ -12,6 +12,7 @@
   <section class="users-management__layout">
     <app-usuarios-list
       [usuarios]="pagedUsuarios"
+      [canManageDiretoria]="canAssignDiretoria"
       [loading]="loadingList || saving"
       [currentPage]="currentPage"
       [totalPages]="totalPages"
@@ -27,6 +28,8 @@
       [mode]="formMode"
       [usuario]="selectedUsuario"
       [loading]="saving"
+      [canAssignDiretoria]="canAssignDiretoria"
+      [existingEmails]="existingEmails"
       (save)="onSave($event)"
       (cancel)="closePanel()"
     ></app-usuario-form>

@@ -2,11 +2,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.core.validators import normalize_nome, normalize_telefone_br
 from app.models.usuario import Usuario
 from app.schemas.usuario_schema import UsuarioCreateSchema, UsuarioUpdateSchema
 
 
 class UsuarioEmailAlreadyExistsError(Exception):
+	pass
+
+
+class UsuarioInvalidDataError(ValueError):
 	pass
 
 
@@ -29,6 +34,7 @@ def create_usuario(db: Session, payload: UsuarioCreateSchema) -> Usuario:
 		email=payload.email,
 		senha_hash=hash_password(payload.senha),
 		cargo=payload.cargo,
+		endereco=payload.endereco,
 		primeiro_acesso=True,
 	)
 	db.add(usuario)
@@ -50,9 +56,16 @@ def get_usuario_by_id(db: Session, usuario_id: int) -> Usuario:
 
 def update_usuario(db: Session, usuario_id: int, payload: UsuarioUpdateSchema) -> Usuario:
 	usuario = get_usuario_by_id(db, usuario_id)
-	usuario.nome = payload.nome
-	usuario.telefone = payload.telefone
-	usuario.cargo = payload.cargo
+	# Validate changed fields before mutating, preserving unchanged legacy values.
+	updates = payload.model_dump(exclude_unset=True)
+	try:
+		for field, normalize in (("nome", normalize_nome), ("telefone", normalize_telefone_br)):
+			if field in updates and updates[field] != getattr(usuario, field):
+				updates[field] = normalize(updates[field])
+	except ValueError as exc:
+		raise UsuarioInvalidDataError(str(exc)) from exc
+	for field, value in updates.items():
+		setattr(usuario, field, value)
 
 	try:
 		db.commit()

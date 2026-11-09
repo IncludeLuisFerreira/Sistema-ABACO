@@ -40,3 +40,4 @@ Atenciosamente,
 Equipe SGA ABACO
 """
     return subject, body, first_access_link, "Link de primeiro acesso"
+

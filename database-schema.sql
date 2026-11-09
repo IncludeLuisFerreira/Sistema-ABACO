@@ -20,6 +20,7 @@ CREATE TABLE usuario (
     email TEXT UNIQUE,
     senhahash TEXT,
     cargo INTEGER,
+    endereco TEXT,
     primeiroacesso BOOLEAN NOT NULL DEFAULT TRUE
 );
 

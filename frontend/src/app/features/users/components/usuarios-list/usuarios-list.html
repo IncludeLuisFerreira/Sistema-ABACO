@@ -22,6 +22,7 @@
           <th>Nome</th>
           <th>Email</th>
           <th>Telefone</th>
+          <th>Endereço</th>
           <th>Cargo</th>
           <th class="actions-col">Acoes</th>
         </tr>
@@ -31,16 +32,17 @@
           <td>{{ usuario.nome || '-' }}</td>
           <td>{{ usuario.email }}</td>
           <td>{{ usuario.telefone || '-' }}</td>
+          <td>{{ usuario.endereco || '-' }}</td>
           <td>
             <span class="badge">{{ cargoLabel(usuario.cargo) }}</span>
           </td>
           <td class="actions-col">
-            <button type="button" class="btn btn--ghost" (click)="edit.emit(usuario)" [disabled]="loading">Editar</button>
+            <button type="button" class="btn btn--ghost" (click)="edit.emit(usuario)" [disabled]="loading || (!canManageDiretoria && usuario.cargo === 1)">Editar</button>
             <button
               type="button"
               class="btn btn--danger"
               (click)="remove.emit(usuario)"
-              [disabled]="loading || deletingUserId === usuario.idUsuario"
+              [disabled]="loading || (!canManageDiretoria && usuario.cargo === 1) || deletingUserId === usuario.idUsuario"
             >
               <span *ngIf="deletingUserId === usuario.idUsuario" class="spinner" aria-hidden="true"></span>
               {{ deletingUserId === usuario.idUsuario ? 'Excluindo...' : 'Excluir' }}

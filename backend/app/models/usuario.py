@@ -13,6 +13,7 @@ class Usuario(Base):
     email: Mapped[str | None] = mapped_column(Text, unique=True, nullable=True, index=True)
     senha_hash: Mapped[str | None] = mapped_column("senhahash", Text, nullable=True)
     cargo: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    endereco: Mapped[str | None] = mapped_column(Text, nullable=True)
     primeiro_acesso: Mapped[bool] = mapped_column(
         "primeiroacesso", Boolean, nullable=False, default=True, server_default=true()
     )
