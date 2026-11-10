@@ -29,15 +29,16 @@ import { UsuarioFormComponent } from './usuario-form';
     expect(saved).toBe(false);
   });
 
-  it('displays institutional domain and duplicate email feedback', () => {
+  it('aceita dominio externo e avisa apenas duplicidade', () => {
     const { fixture, component } = setup();
     const email = component.form.controls.email;
     email.setValue('user@gmail.com');
     email.markAsTouched();
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
-    expect(email.hasError('institutionalEmail')).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('dominio @abaco.org.br');
+    expect(email.hasError('institutionalEmail')).toBe(false);
+    expect(email.hasError('email')).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('dominio @abaco.org.br');
     email.setValue('TAKEN@abaco.org.br');
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();

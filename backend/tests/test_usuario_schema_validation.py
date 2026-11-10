@@ -14,15 +14,23 @@ class TestUsuarioCreateSchemaValidation:
 				cargo=2,
 			)
 
-	def test_email_dominio_externo_rejeitado(self):
-		with pytest.raises(ValidationError) as exc:
-			UsuarioCreateSchema(
-				nome="Novo Usuario",
-				email="pessoa@gmail.com",
-				senha="senha123",
-				cargo=2,
-			)
-		assert "abaco.org.br" in str(exc.value)
+	def test_email_dominio_externo_aceito(self):
+		payload = UsuarioCreateSchema(
+			nome="Novo Usuario",
+			email="pessoa@gmail.com",
+			senha="senha123",
+			cargo=2,
+		)
+		assert payload.email == "pessoa@gmail.com"
+
+	def test_email_externo_normalizado_para_minusculo(self):
+		payload = UsuarioCreateSchema(
+			nome="Novo Usuario",
+			email="Pessoa.Silva@GMAIL.com",
+			senha="senha123",
+			cargo=2,
+		)
+		assert payload.email == "pessoa.silva@gmail.com"
 
 	def test_email_normalizado_para_minusculo(self):
 		payload = UsuarioCreateSchema(
