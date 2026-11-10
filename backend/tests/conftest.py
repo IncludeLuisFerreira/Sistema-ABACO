@@ -17,6 +17,21 @@ from app.models.usuario import Usuario
 from main import app
 
 
+@pytest.fixture(autouse=True)
+def _force_console_email_provider(request, monkeypatch):
+    """Impede envio real de e-mail na suíte, exceto nos testes marcados como integration."""
+    if request.node.get_closest_marker("integration"):
+        yield
+        return
+
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "brevo_api_key", "")
+    monkeypatch.setattr(settings, "smtp_user", "")
+    yield
+
+
 @pytest.fixture
 def db_session():
     # TODO: testes só em SQLite; JSONB e with_for_update não são cobertos

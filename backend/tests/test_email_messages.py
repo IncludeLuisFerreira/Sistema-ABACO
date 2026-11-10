@@ -1,6 +1,11 @@
+from datetime import date
 from types import SimpleNamespace
 
-from app.email.messages import build_first_access_message, build_reset_message
+from app.email.messages import (
+    build_first_access_message,
+    build_pedido_aprovado_message,
+    build_reset_message,
+)
 
 
 def _settings(**overrides):
@@ -29,3 +34,21 @@ def test_build_first_access_message_has_link_and_subject():
     assert link in body
     assert "1440 minutos" in body
     assert label == "Link de primeiro acesso"
+
+
+def test_build_pedido_aprovado_message_has_order_date_and_items():
+    subject, body = build_pedido_aprovado_message(
+        42, date(2026, 11, 9), [("Papel A4", 3), ("Caneta", 10)]
+    )
+
+    assert subject == "SGA ABACO - Pedido #42 aprovado"
+    assert "Pedido: #42" in body
+    assert "Data da aprovação: 09/11/2026" in body
+    assert "Papel A4: 3" in body
+    assert "Caneta: 10" in body
+
+
+def test_build_pedido_aprovado_message_without_items():
+    _subject, body = build_pedido_aprovado_message(7, date(2026, 11, 9), [])
+
+    assert "Nenhum item informado" in body

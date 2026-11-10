@@ -1,10 +1,11 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, verify_cargo
 from app.db.database import get_db
 from app.models.matricula import Matricula
 from app.models.turma import Turma
+from app.schemas.pedido_schema import PedidoUpdateSchema
 from app.services.matricula_service import MatriculaNotFoundError
 from app.services.turma_service import TurmaNotFoundError
 
@@ -18,6 +19,20 @@ class TurmaAccessDeniedError(Exception):
 
 def is_privileged(current_user: dict) -> bool:
     return int(current_user.get("cargo", 0) or 0) in (1, 3)
+
+
+def require_diretor_para_aprovacao(
+    payload: PedidoUpdateSchema,
+    current_user: dict = Depends(verify_cargo(1, 3)),
+) -> dict:
+    """Restringe a transição 0 -> 1 ao Diretor, mantendo os demais status em 1/3."""
+    cargo = int(current_user.get("cargo", 0) or 0)
+    if payload.status == 1 and cargo != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Diretor pode aprovar pedidos.",
+        )
+    return current_user
 
 
 def get_user_id(current_user: dict) -> int:
