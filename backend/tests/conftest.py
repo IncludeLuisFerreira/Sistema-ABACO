@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
@@ -108,9 +110,11 @@ def curso(db_session: Session) -> Curso:
 def turma(db_session: Session, curso: Curso, usuario_professor: Usuario) -> Turma:
     t = Turma(
         capacidade=30,
+        data_inicio=date(2026, 3, 1),
+        data_fim=date(2026, 6, 30),
         id_curso=curso.id_curso,
         id_professor=usuario_professor.id_usuario,
-        dias_aula="Seg/Qua/Sex",
+        dias_aula="1,3,5",
     )
     db_session.add(t)
     db_session.commit()
@@ -205,9 +209,11 @@ def seeded(api_client, director_headers):
         "/api/v1/turmas",
         json={
             "capacidade": 2,
+            "dataInicio": "2026-03-01",
+            "dataFim": "2026-06-30",
             "idCurso": curso["idCurso"],
             "idProfessor": professor["idUsuario"],
-            "diasAula": "Seg",
+            "diasAula": "1",
         },
         headers=headers,
     ).json()

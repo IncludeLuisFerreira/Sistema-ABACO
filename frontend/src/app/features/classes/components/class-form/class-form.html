@@ -5,6 +5,8 @@
   </header>
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-error" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+
     <label>
       <span>Curso *</span>
       <select formControlName="idCurso" (change)="onCursoChange()">
@@ -16,27 +18,34 @@
     </label>
 
     <label>
-      <span>Professor</span>
+      <span>Professor *</span>
       <select formControlName="idProfessor" (change)="onProfessorChange()">
-        <option [value]="0">Selecione um professor</option>
+        <option [value]="0" disabled>Selecione um professor</option>
         <option *ngFor="let prof of professores" [value]="prof.idUsuario">{{ prof.nome }}</option>
       </select>
+      <small class="error" *ngIf="form.controls.idProfessor.invalid && form.controls.idProfessor.touched">Professor é obrigatório.</small>
       <small class="hint" *ngIf="professorContextLabel">{{ professorContextLabel }}</small>
     </label>
 
     <label>
-      <span>Capacidade</span>
-      <input formControlName="capacidade" type="number" min="0" placeholder="Numero de vagas" />
+      <span>Capacidade *</span>
+      <input formControlName="capacidade" type="number" min="1" placeholder="Numero de vagas" />
+      <small class="error" *ngIf="form.controls.capacidade.invalid && form.controls.capacidade.touched">Capacidade deve ser maior que zero.</small>
     </label>
 
     <label>
-      <span>Data de inicio</span>
-      <input formControlName="dataInicio" type="date" />
+      <span>Data de inicio *</span>
+      <input formControlName="dataInicio" type="date" (change)="updateContexto()" />
+      <small class="error" *ngIf="form.controls.dataInicio.invalid && form.controls.dataInicio.touched">Data de inicio é obrigatória.</small>
     </label>
 
     <label>
-      <span>Data de fim</span>
-      <input formControlName="dataFim" type="date" />
+      <span>Data de fim *</span>
+      <input formControlName="dataFim" type="date" (change)="updateContexto()" />
+      <small class="error" *ngIf="form.controls.dataFim.invalid && form.controls.dataFim.touched">Data de fim é obrigatória.</small>
+      <small class="error" *ngIf="form.hasError('dateRange') && (form.controls.dataInicio.touched || form.controls.dataFim.touched)">
+        Data de fim deve ser maior ou igual à data de inicio.
+      </small>
     </label>
 
     <fieldset class="avaliacoes">
@@ -56,21 +65,23 @@
           <option value="prova">Prova</option>
           <option value="trabalho">Trabalho</option>
         </select>
-        <input type="number" formControlName="peso" min="1" max="100" placeholder="10" />
+        <input type="number" formControlName="peso" min="0.01" step="0.01" placeholder="10" />
         <button type="button" class="avaliacao-row__remove" (click)="removeAvaliacao(i)" title="Remover">✕</button>
+        <small class="error avaliacao-row__error" *ngIf="av.invalid && av.touched">Informe nome e peso maior que zero.</small>
       </div>
 
       <button type="button" class="avaliacoes__add" (click)="addAvaliacao()">+ Adicionar avaliação</button>
     </fieldset>
 
     <fieldset class="dias-aula">
-      <legend>Dias de aula</legend>
+      <legend>Dias de aula *</legend>
       <div class="dias-aula__grid">
         <label *ngFor="let dia of diasSemana; let i = index" class="dia-checkbox">
           <input type="checkbox" [formControl]="diasAulaControls[i]" (change)="updateContexto()" />
           <span>{{ dia.label }}</span>
         </label>
       </div>
+      <small class="error" *ngIf="diasAulaArray.hasError('atLeastOneDay') && diasAulaArray.touched">Selecione ao menos um dia de aula.</small>
     </fieldset>
 
     <div class="conflito-alert" *ngIf="conflitoLabel">

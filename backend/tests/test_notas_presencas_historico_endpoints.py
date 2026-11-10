@@ -29,7 +29,14 @@ class TestNotasEndpoints:
         outro_aluno = client.post("/api/v1/alunos", json={"nome": "Alheio"}, headers=director_headers).json()
         outra_turma = client.post(
             "/api/v1/turmas",
-            json={"capacidade": 5, "idCurso": seeded["curso"]["idCurso"]},
+            json={
+                "capacidade": 5,
+                "dataInicio": "2026-03-01",
+                "dataFim": "2026-06-30",
+                "idCurso": seeded["curso"]["idCurso"],
+                "idProfessor": seeded["professor"]["idUsuario"],
+                "diasAula": "1",
+            },
             headers=director_headers,
         ).json()
         outra_matricula = client.post(
