@@ -29,15 +29,20 @@ import { UsuarioFormComponent } from './usuario-form';
     expect(saved).toBe(false);
   });
 
-  it('displays institutional domain and duplicate email feedback', () => {
+  it('accepts institutional and gmail domains and shows duplicate email feedback', () => {
     const { fixture, component } = setup();
     const email = component.form.controls.email;
+
     email.setValue('user@gmail.com');
+    email.markAsTouched();
+    expect(email.hasError('institutionalEmail')).toBe(false);
+
+    email.setValue('user@hotmail.com');
     email.markAsTouched();
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     expect(email.hasError('institutionalEmail')).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('dominio @abaco.org.br');
+    expect(fixture.nativeElement.textContent).toContain('@gmail.com');
     email.setValue('TAKEN@abaco.org.br');
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();

@@ -9,8 +9,12 @@ describe('institutionalEmailValidator', () => {
     expect(validate(new FormControl('prof@abaco.org.br'))).toBeNull();
   });
 
+  it('aceita dominio gmail', () => {
+    expect(validate(new FormControl('pessoa@gmail.com'))).toBeNull();
+  });
+
   it('rejeita dominio externo', () => {
-    expect(validate(new FormControl('pessoa@gmail.com'))).toEqual({ institutionalEmail: true });
+    expect(validate(new FormControl('pessoa@hotmail.com'))).toEqual({ institutionalEmail: true });
   });
 });
 

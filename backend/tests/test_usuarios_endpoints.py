@@ -54,10 +54,19 @@ class TestUsuariosEndpoints:
         )
         assert response.status_code == 422
 
-    def test_create_email_dominio_externo_retorna_422(self, api_client, director_headers):
+    def test_create_email_gmail_aceito(self, api_client, director_headers):
         response = api_client.post(
             "/api/v1/usuarios",
             json={"nome": "Novo Usuario", "email": "pessoa@gmail.com", "senha": "senha123", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["email"] == "pessoa@gmail.com"
+
+    def test_create_email_dominio_externo_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo Usuario", "email": "pessoa@hotmail.com", "senha": "senha123", "cargo": 2},
             headers=director_headers,
         )
         assert response.status_code == 422
