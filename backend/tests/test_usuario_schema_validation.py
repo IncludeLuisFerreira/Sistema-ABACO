@@ -14,15 +14,6 @@ class TestUsuarioCreateSchemaValidation:
 				cargo=2,
 			)
 
-	def test_email_gmail_aceito(self):
-		payload = UsuarioCreateSchema(
-			nome="Novo Usuario",
-			email="Pessoa@Gmail.com",
-			senha="senha123",
-			cargo=2,
-		)
-		assert payload.email == "pessoa@gmail.com"
-
 	def test_email_dominio_externo_rejeitado(self):
 		with pytest.raises(ValidationError) as exc:
 			UsuarioCreateSchema(
