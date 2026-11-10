@@ -9,9 +9,6 @@ NOME_PATTERN = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿĀ-ž' -]+$")
 NOME_MIN_LENGTH = 3
 NOME_MSG = "Nome deve ter ao menos 3 letras e conter apenas letras, espaços, hífen ou apóstrofo"
 
-ALLOWED_EMAIL_DOMAINS = ("abaco.org.br",)
-EMAIL_DOMAIN_MSG = "E-mail deve ser do domínio @abaco.org.br"
-
 
 def normalize_telefone_br(value: str | None) -> str | None:
 	"""Aceita vazio/None; rejeita formato inválido; devolve só dígitos."""
@@ -35,9 +32,9 @@ def normalize_nome(value: str) -> str:
 	return cleaned
 
 
-def normalize_email_institucional(value: str) -> str:
-	email = value.strip().lower()
-	domain = email.rsplit("@", 1)[-1]
-	if domain not in ALLOWED_EMAIL_DOMAINS:
-		raise ValueError(EMAIL_DOMAIN_MSG)
-	return email
+def normalize_email(value: str) -> str:
+	"""Normaliza e-mail: remove espaços e converte para minúsculas.
+
+	O formato é validado pelo pydantic (`EmailStr`); não há restrição de domínio.
+	"""
+	return value.strip().lower()
