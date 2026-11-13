@@ -201,6 +201,8 @@ export class AttendanceManagementComponent implements OnInit {
     this.matriculaService.list().subscribe({
       next: (matriculas) => {
         this.matriculas = matriculas;
+        // Reconstroi a lista mesmo que as presencas ja tenham chegado antes das matriculas.
+        this.buildStudentList();
         this.changeDetectorRef.detectChanges();
       },
       error: () => {

@@ -239,7 +239,17 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
 
   private loadEstoque(): void {
     this.loadingList = true;
-    this.estoqueService.loadAll();
+    this.estoqueService.loadAll().subscribe({
+      next: () => {
+        this.loadingList = false;
+        this.changeDetectorRef.detectChanges();
+      },
+      error: () => {
+        this.loadingList = false;
+        this.notifications.error('Erro ao carregar estoque. Tente novamente.');
+        this.changeDetectorRef.detectChanges();
+      },
+    });
   }
 
   private loadAlertas(): void {

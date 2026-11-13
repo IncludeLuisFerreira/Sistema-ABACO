@@ -15,15 +15,14 @@ export class EstoqueService {
 
   constructor(private readonly http: HttpClient) {}
 
-  loadAll(): void {
-    // FIXME: subscribe interno sem error handler engole falhas de rede
-    this.http.get<Estoque[]>(this.baseUrl).subscribe({
-      next: (items) => this.estoqueSubject.next(items),
-    });
+  loadAll(): Observable<Estoque[]> {
+    return this.http.get<Estoque[]>(this.baseUrl).pipe(
+      tap((items) => this.estoqueSubject.next(items)),
+    );
   }
 
   refresh(): void {
-    this.loadAll();
+    this.reload();
     this.loadAlertasCount();
   }
 
@@ -39,19 +38,19 @@ export class EstoqueService {
 
   create(payload: EstoqueCreatePayload): Observable<Estoque> {
     return this.http.post<Estoque>(this.baseUrl, payload).pipe(
-      tap(() => this.loadAll()),
+      tap(() => this.reload()),
     );
   }
 
   update(estoqueId: number, payload: EstoqueUpdatePayload): Observable<Estoque> {
     return this.http.put<Estoque>(`${this.baseUrl}/${estoqueId}`, payload).pipe(
-      tap(() => this.loadAll()),
+      tap(() => this.reload()),
     );
   }
 
   delete(estoqueId: number): Observable<{ detail: string }> {
     return this.http.delete<{ detail: string }>(`${this.baseUrl}/${estoqueId}`).pipe(
-      tap(() => this.loadAll()),
+      tap(() => this.reload()),
     );
   }
 
@@ -68,6 +67,14 @@ export class EstoqueService {
   loadAlertasCount(): void {
     this.getAlertas().subscribe({
       next: (items) => this.alertasCount.set(items.length),
+      error: () => this.alertasCount.set(0),
+    });
+  }
+
+  private reload(): void {
+    this.loadAll().subscribe({
+      // A chamada principal (create/update/delete/baixa) ja informa o erro ao usuario.
+      error: () => undefined,
     });
   }
 }

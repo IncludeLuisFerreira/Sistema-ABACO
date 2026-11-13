@@ -132,6 +132,8 @@ export class GradesManagementComponent implements OnInit {
     this.matriculaService.list().subscribe({
       next: (matriculas) => {
         this.matriculas = matriculas;
+        // Reconstroi a lista mesmo que as notas ja tenham chegado antes das matriculas.
+        this.buildStudentList();
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
