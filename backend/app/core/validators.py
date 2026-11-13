@@ -9,8 +9,9 @@ NOME_PATTERN = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿĀ-ž' -]+$")
 NOME_MIN_LENGTH = 3
 NOME_MSG = "Nome deve ter ao menos 3 letras e conter apenas letras, espaços, hífen ou apóstrofo"
 
-ALLOWED_EMAIL_DOMAINS = ("abaco.org.br", "gmail.com, @alunos.ifsuldeminas.edu.br, @ifsuldeminas.edu.br")
+ALLOWED_EMAIL_DOMAINS = ("abaco.org.br", "gmail.com")
 EMAIL_DOMAIN_MSG = "E-mail deve ser do domínio @abaco.org.br ou @gmail.com"
+
 
 def normalize_telefone_br(value: str | None) -> str | None:
 	"""Aceita vazio/None; rejeita formato inválido; devolve só dígitos."""
