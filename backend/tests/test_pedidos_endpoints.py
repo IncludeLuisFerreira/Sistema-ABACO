@@ -32,10 +32,76 @@ def _criar_pedido(seeded, headers, quantidade: int = 1, item_id: int | None = No
     ).json()
 
 
+def _criar_turma_de_outro_professor(seeded, email: str = "outro.prof@abaco.org.br") -> dict:
+    client = seeded["client"]
+    headers = seeded["headers"]
+    professor = client.post(
+        "/api/v1/usuarios",
+        json={"nome": "Outro Professor", "email": email, "senha": "senha123", "cargo": 2},
+        headers=headers,
+    ).json()
+    return client.post(
+        "/api/v1/turmas",
+        json={
+            "capacidade": 2,
+            "dataInicio": "2026-03-01",
+            "dataFim": "2026-06-30",
+            "idCurso": seeded["curso"]["idCurso"],
+            "idProfessor": professor["idUsuario"],
+            "diasAula": "1",
+        },
+        headers=headers,
+    ).json()
+
+
 class TestPedidosEndpoints:
     def test_listar(self, seeded, professor_headers):
         response = seeded["client"].get("/api/v1/pedidos", headers=professor_headers)
         assert response.status_code == 200
+
+    def test_professor_cria_pedido_na_propria_turma(self, seeded):
+        response = seeded["client"].post(
+            "/api/v1/pedidos",
+            json={"idTurma": seeded["turma"]["idTurma"], "itens": []},
+            headers=seeded["professor_headers"],
+        )
+        assert response.status_code == 200
+        assert response.json()["idUsuario"] == seeded["professor"]["idUsuario"]
+
+    def test_professor_nao_cria_pedido_em_turma_de_outro(self, seeded):
+        turma_alheia = _criar_turma_de_outro_professor(seeded)
+
+        response = seeded["client"].post(
+            "/api/v1/pedidos",
+            json={"idTurma": turma_alheia["idTurma"], "itens": []},
+            headers=seeded["professor_headers"],
+        )
+
+        assert response.status_code == 403
+
+    def test_professor_lista_apenas_proprios_pedidos(self, seeded):
+        proprio = _criar_pedido(seeded, seeded["professor_headers"])
+        _criar_pedido(seeded, seeded["director_headers"])
+
+        response = seeded["client"].get("/api/v1/pedidos", headers=seeded["professor_headers"])
+
+        assert response.status_code == 200
+        assert [pedido["idPedido"] for pedido in response.json()] == [proprio["idPedido"]]
+
+    def test_professor_nao_acessa_pedido_de_terceiro(self, seeded):
+        proprio = _criar_pedido(seeded, seeded["professor_headers"])
+        de_terceiro = _criar_pedido(seeded, seeded["director_headers"])
+
+        client = seeded["client"]
+        assert client.get(
+            f"/api/v1/pedidos/{proprio['idPedido']}", headers=seeded["professor_headers"]
+        ).status_code == 200
+
+        response = client.get(
+            f"/api/v1/pedidos/{de_terceiro['idPedido']}", headers=seeded["professor_headers"]
+        )
+        assert response.status_code == 404
+        assert "Papel A4" not in response.text
 
     def test_create_sucesso(self, seeded, write_headers):
         client = seeded["client"]
