@@ -103,6 +103,31 @@ class TestPedidosEndpoints:
         assert response.status_code == 404
         assert "Papel A4" not in response.text
 
+    def test_diretor_e_admin_continuam_vendo_pedidos_de_terceiros(self, seeded, admin_headers):
+        de_professor = _criar_pedido(seeded, seeded["professor_headers"])
+        client = seeded["client"]
+
+        for headers in (seeded["director_headers"], admin_headers):
+            lista = client.get("/api/v1/pedidos", headers=headers)
+            assert lista.status_code == 200
+            assert de_professor["idPedido"] in [pedido["idPedido"] for pedido in lista.json()]
+
+            detalhe = client.get(
+                f"/api/v1/pedidos/{de_professor['idPedido']}", headers=headers
+            )
+            assert detalhe.status_code == 200
+            assert detalhe.json()["idPedido"] == de_professor["idPedido"]
+
+    def test_professor_criar_em_turma_inexistente_retorna_400(self, seeded):
+        response = seeded["client"].post(
+            "/api/v1/pedidos",
+            json={"idTurma": 9999, "itens": []},
+            headers=seeded["professor_headers"],
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Turma informada não existe"
+
     def test_create_sucesso(self, seeded, write_headers):
         client = seeded["client"]
         response = client.post(
