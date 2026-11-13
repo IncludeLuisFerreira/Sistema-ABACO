@@ -14,10 +14,10 @@
   <!-- Sidebar -->
   <nav class="admin-nav" [class.admin-nav--open]="menuOpen">
     <button class="admin-nav__close" (click)="menuOpen = false" aria-label="Fechar menu">&times;</button>
-    <div class="admin-nav__brand">
+    <a class="admin-nav__brand" routerLink="/admin/home" (click)="menuOpen = false">
       <img src="/Logo_ABACO.png" alt="ABACO" class="admin-nav__logo" />
       <span class="admin-nav__title">SGA ABACO</span>
-    </div>
+    </a>
 
     <ul class="admin-nav__links">
       <li>
