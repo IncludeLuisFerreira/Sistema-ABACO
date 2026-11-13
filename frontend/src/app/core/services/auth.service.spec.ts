@@ -3,8 +3,26 @@ import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
-import { AuthService, isTokenExpired, mapCargoToRole } from './auth.service';
-import { fakeExpiredJwt, fakeJwt } from '../testing/fake-jwt';
+import { AuthService, getStoredSession, mapCargoToRole } from './auth.service';
+import { fakeJwt } from '../testing/fake-jwt';
+
+const SESSION_KEY = 'abaco_session';
+const LOGIN_URL = 'http://localhost:8000/api/v1/auth/login';
+const LOGOUT_URL = 'http://localhost:8000/api/v1/auth/logout';
+
+function storeSession(overrides: Record<string, unknown> = {}): void {
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      userId: 1,
+      cargo: 1,
+      role: 'DIRECTOR',
+      primeiroAcesso: false,
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      ...overrides,
+    }),
+  );
+}
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -12,9 +30,15 @@ describe('AuthService', () => {
   let router: { navigate: ReturnType<typeof vi.fn> };
 
   const loginResponse = {
-    access_token: 'header.eyJzdWIiOiIxIiwiY2FyZ28iOjEsImV4cCI6OTk5OTk5OTk5OX0.signature',
+    access_token: fakeJwt({ sub: '1', cargo: 1 }),
     token_type: 'bearer',
-    usuario: { idUsuario: 1, nome: 'Admin', email: 'admin@abaco.org.br', cargo: 1 },
+    usuario: {
+      idUsuario: 1,
+      nome: 'Admin',
+      email: 'admin@abaco.org.br',
+      cargo: 1,
+      primeiro_acesso: false,
+    },
   };
 
   beforeEach(() => {
@@ -36,15 +60,23 @@ describe('AuthService', () => {
     localStorage.clear();
   });
 
-  it('login stores token and updates authState', () => {
+  it('login guarda apenas metadados da sessão, nunca o JWT', () => {
     service.login('admin@abaco.org.br', 'senha').subscribe((res) => {
       expect(res.role).toBe('DIRECTOR');
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/api/v1/auth/login');
+    const req = httpMock.expectOne(LOGIN_URL);
+    expect(req.request.withCredentials).toBe(true);
+    expect(req.request.body).toEqual({ email: 'admin@abaco.org.br', senha: 'senha' });
     req.flush(loginResponse);
 
-    expect(localStorage.getItem('abaco_token')).toBe(loginResponse.access_token);
+    expect(localStorage.getItem('abaco_token')).toBeNull();
+    expect(getStoredSession()).toMatchObject({
+      userId: 1,
+      cargo: 1,
+      role: 'DIRECTOR',
+      primeiroAcesso: false,
+    });
     expect(service.authState().role).toBe('DIRECTOR');
   });
 
@@ -68,13 +100,41 @@ describe('AuthService', () => {
     req.flush({ message: 'Senha redefinida' });
   });
 
-  it('logout clears state', () => {
+  it('logout revoga a sessão no servidor e limpa os metadados locais', () => {
+    storeSession();
+
     service.logout();
-    expect(localStorage.getItem('abaco_token')).toBeNull();
-    expect(service.authState().token).toBeNull();
+
+    const req = httpMock.expectOne(LOGOUT_URL);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.withCredentials).toBe(true);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(getStoredSession()).toBeNull();
+    expect(service.authState().role).toBeNull();
   });
 
-  it('isAuthenticated returns false with no token', () => {
+  it('logout limpa a sessão mesmo quando a revogação falha', () => {
+    storeSession();
+
+    service.logout();
+
+    const req = httpMock.expectOne(LOGOUT_URL);
+    req.flush({}, { status: 500, statusText: 'Server Error' });
+
+    expect(getStoredSession()).toBeNull();
+  });
+
+  it('logoutAndRedirect limpa a sessão e navega sem chamar a API', () => {
+    storeSession();
+    service.logoutAndRedirect();
+
+    expect(httpMock.match(LOGOUT_URL)).toHaveLength(0);
+    expect(getStoredSession()).toBeNull();
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('isAuthenticated returns false with no session', () => {
     expect(service.isAuthenticated()).toBe(false);
   });
 
@@ -95,92 +155,70 @@ describe('AuthService', () => {
       it(`mapCargoToRole(${JSON.stringify(cargo)}) -> ${esperado}`, () => {
         expect(mapCargoToRole(cargo)).toBe(esperado);
       });
-
-      it(`getRoleFromToken com cargo ${JSON.stringify(cargo)} -> ${esperado}`, () => {
-        localStorage.setItem('abaco_token', fakeJwt({ cargo }));
-        expect(service.getRoleFromToken()).toBe(esperado);
-      });
     });
 
-    it('getRoleFromToken sem token -> GUEST', () => {
-      localStorage.removeItem('abaco_token');
+    it('getRoleFromToken sem sessão -> GUEST', () => {
       expect(service.getRoleFromToken()).toBe('GUEST');
     });
 
-    it('getRoleFromToken com token malformado -> GUEST (não lança)', () => {
-      localStorage.setItem('abaco_token', 'nao-e-um-jwt');
-      expect(service.getRoleFromToken()).toBe('GUEST');
-    });
-
-    it('getRoleFromToken com payload sem cargo -> GUEST', () => {
-      localStorage.setItem('abaco_token', fakeJwt({ sub: 'u1' }));
+    it('getRoleFromToken com sessão malformada -> GUEST (não lança)', () => {
+      localStorage.setItem(SESSION_KEY, 'nao-e-json');
       expect(service.getRoleFromToken()).toBe('GUEST');
     });
   });
 
   describe('sessão, utilitários e erros de rede', () => {
-    const TOKEN_KEY = 'abaco_token';
-
-    it('setToken e getToken manipulam o storage', () => {
-      service.setToken('abc.def.ghi');
-      expect(localStorage.getItem(TOKEN_KEY)).toBe('abc.def.ghi');
-      expect(service.getToken()).toBe('abc.def.ghi');
-    });
-
-    it('getUserId reflete o sub do token restaurado', () => {
-      localStorage.setItem(TOKEN_KEY, fakeJwt({ sub: '42', cargo: 2 }));
+    it('getUserId reflete o usuário da sessão restaurada', () => {
+      storeSession({ userId: 42, cargo: 2, role: 'TEACHER' });
       (service as unknown as { restoreSession: () => void }).restoreSession();
+
       expect(service.getUserId()).toBe(42);
       service.logout();
+      httpMock.match(LOGOUT_URL).forEach((req) => req.flush(null));
     });
 
-    it('hasRole decide pela role derivada do cargo', () => {
-      localStorage.setItem(TOKEN_KEY, fakeJwt({ cargo: 3 }));
+    it('hasRole decide pela role da sessão', () => {
+      storeSession({ cargo: 3, role: 'ADMIN' });
       expect(service.hasRole(['ADMIN'])).toBe(true);
       expect(service.hasRole(['DIRECTOR'])).toBe(false);
     });
 
-    it('isAuthenticated é true com token válido e false com expirado', () => {
-      localStorage.setItem(TOKEN_KEY, fakeJwt({ cargo: 1 }));
+    it('getCargo retorna o cargo da sessão', () => {
+      storeSession({ cargo: 2, role: 'TEACHER' });
+      expect(service.getCargo()).toBe(2);
+    });
+
+    it('isAuthenticated é true com sessão válida e false com expirada', () => {
+      storeSession();
       expect(service.isAuthenticated()).toBe(true);
 
-      localStorage.setItem(TOKEN_KEY, fakeExpiredJwt({ cargo: 1 }));
+      storeSession({ expiresAt: Math.floor(Date.now() / 1000) - 60 });
       expect(service.isAuthenticated()).toBe(false);
     });
 
-    it('isTokenExpired considera token sem exp como expirado', () => {
-      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-      const body = btoa(JSON.stringify({ sub: '1' }));
-      expect(isTokenExpired(`${header}.${body}.assinatura`)).toBe(true);
-    });
-
-    it('restoreSession restaura sessão de token válido', () => {
-      localStorage.setItem(TOKEN_KEY, fakeJwt({ sub: '7', cargo: 2 }));
+    it('restoreSession restaura sessão válida', () => {
+      storeSession({ userId: 7, cargo: 2, role: 'TEACHER' });
       (service as unknown as { restoreSession: () => void }).restoreSession();
+
       expect(service.authState().role).toBe('TEACHER');
-      expect(service.authState().token).not.toBeNull();
+      expect(service.authState().userId).toBe(7);
       service.logout();
+      httpMock.match(LOGOUT_URL).forEach((req) => req.flush(null));
     });
 
-    it('restoreSession descarta token expirado', () => {
-      localStorage.setItem(TOKEN_KEY, fakeExpiredJwt({ cargo: 1 }));
+    it('restoreSession descarta sessão expirada', () => {
+      storeSession({ expiresAt: Math.floor(Date.now() / 1000) - 60 });
       (service as unknown as { restoreSession: () => void }).restoreSession();
-      expect(service.getToken()).toBeNull();
+
+      expect(getStoredSession()).toBeNull();
     });
 
-    it('logoutAndRedirect limpa a sessão e navega para /login', () => {
-      service.setToken('abc.def.ghi');
-      service.logoutAndRedirect();
-      expect(service.getToken()).toBeNull();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-    });
-
-    it('agenda logout automático quando o token expira', () => {
+    it('agenda logout automático quando a sessão expira', () => {
       vi.useFakeTimers();
       try {
-        (service as unknown as { scheduleAutoLogout: (t: string) => void }).scheduleAutoLogout(
-          fakeJwt({ cargo: 1 }),
-        );
+        (
+          service as unknown as { scheduleAutoLogout: (expiresAt: number) => void }
+        ).scheduleAutoLogout(Math.floor(Date.now() / 1000) + 3600);
         vi.advanceTimersByTime(3600 * 1000 + 1000);
         expect(router.navigate).toHaveBeenCalledWith(['/login']);
       } finally {
@@ -193,8 +231,11 @@ describe('AuthService', () => {
       service.login('admin@abaco.org.br', 'x').subscribe({
         error: (err) => (captured = err),
       });
-      const req = httpMock.expectOne('http://localhost:8000/api/v1/auth/login');
-      req.flush({ detail: 'E-mail ou senha incorretos' }, { status: 401, statusText: 'Unauthorized' });
+      const req = httpMock.expectOne(LOGIN_URL);
+      req.flush(
+        { detail: 'E-mail ou senha incorretos' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
 
       expect(captured?.status).toBe(401);
       expect(captured?.message).toBe('E-mail ou senha incorretos');
@@ -211,7 +252,9 @@ describe('AuthService', () => {
 
     it('resetPassword propaga erro de rede', () => {
       let captured: { status?: number } | undefined;
-      service.resetPassword('token', 'novaSenha1', 'novaSenha1').subscribe({ error: (err) => (captured = err) });
+      service
+        .resetPassword('token', 'novaSenha1', 'novaSenha1')
+        .subscribe({ error: (err) => (captured = err) });
       const req = httpMock.expectOne('http://localhost:8000/api/v1/auth/reset-password');
       req.flush({}, { status: 400, statusText: 'Bad Request' });
 

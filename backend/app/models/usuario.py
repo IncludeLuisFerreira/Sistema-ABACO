@@ -14,6 +14,9 @@ class Usuario(Base):
     senha_hash: Mapped[str | None] = mapped_column("senhahash", Text, nullable=True)
     cargo: Mapped[int | None] = mapped_column(Integer, nullable=True)
     endereco: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_version: Mapped[int] = mapped_column(
+        "tokenversion", Integer, nullable=False, default=0, server_default="0"
+    )
     primeiro_acesso: Mapped[bool] = mapped_column(
         "primeiroacesso", Boolean, nullable=False, default=True, server_default=true()
     )

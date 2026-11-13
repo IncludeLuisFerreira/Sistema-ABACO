@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { AuthService, decodePayload, getStoredToken } from '../../../../core/services/auth.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 // REFACTOR: getPedidoStatusLabel/getPedidoStatusClass importados sem uso
@@ -34,12 +34,7 @@ export class PedidoListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // REFACTOR: decodifica JWT manualmente; usar AuthService.getRoleFromToken()
-    const token = getStoredToken();
-    if (token) {
-      const payload = decodePayload(token);
-      this.currentUserCargo = payload.cargo ?? null;
-    }
+    this.currentUserCargo = this.authService.getCargo();
     this.loadPedidos();
   }
 

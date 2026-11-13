@@ -1,30 +1,29 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { clearStoredToken, decodePayload, getStoredToken, isFirstAccessPending, isTokenExpired } from '../services/auth.service';
+import { clearStoredSession, getStoredSession, isSessionExpired } from '../services/auth.service';
 
 export function roleGuard(allowedCargos: number[]): CanActivateFn {
   return (_route, state) => {
     const router = inject(Router);
-    // REFACTOR: duplica a verificação de token/expirado já feita no authGuard
-    const token = getStoredToken();
+    // REFACTOR: duplica a verificação de sessão/expirada já feita no authGuard
+    const session = getStoredSession();
 
-    if (!token) {
+    if (!session) {
       return router.parseUrl('/login');
     }
 
-    if (isTokenExpired(token)) {
-      clearStoredToken();
+    if (isSessionExpired(session)) {
+      clearStoredSession();
       return router.parseUrl('/login');
     }
 
     const targetUrl = state?.url ?? '';
-    if (isFirstAccessPending(token) && !targetUrl.startsWith('/alterar-senha')) {
+    if (session.primeiroAcesso && !targetUrl.startsWith('/alterar-senha')) {
       return router.parseUrl('/alterar-senha');
     }
 
-    const payload = decodePayload(token);
-    const cargo = payload.cargo ?? null;
+    const cargo = session.cargo;
 
     if (cargo === null || !allowedCargos.includes(cargo)) {
       return router.parseUrl('/acesso-negado');
