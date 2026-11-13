@@ -55,4 +55,22 @@ describe('EstoqueService', () => {
 
     expect(erro).toBeTruthy();
   });
+
+  it('getAlertas atualiza o contador de alertas', () => {
+    service.getAlertas().subscribe();
+
+    const req = httpMock.expectOne('/api/v1/estoque/alertas');
+    req.flush([item, { ...item, idItemEstoque: 2 }]);
+
+    expect(service.alertasCount()).toBe(2);
+  });
+
+  it('loadAlertasCount zera o contador quando a consulta falha', () => {
+    service.loadAlertasCount();
+
+    const req = httpMock.expectOne('/api/v1/estoque/alertas');
+    req.flush({}, { status: 500, statusText: 'Server Error' });
+
+    expect(service.alertasCount()).toBe(0);
+  });
 });

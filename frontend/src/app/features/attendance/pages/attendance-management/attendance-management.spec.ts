@@ -24,6 +24,8 @@ const turma: Turma = {
   professor: { idUsuario: 2, nome: 'Professor Teste' },
 };
 
+const turma2: Turma = { ...turma, idTurma: 2 };
+
 const matricula: Matricula = {
   idMatricula: 10,
   idAluno: 1,
@@ -34,6 +36,13 @@ const matricula: Matricula = {
   turma: { idTurma: 1, capacidade: 30, curso: null },
 };
 
+const matricula2: Matricula = {
+  ...matricula,
+  idMatricula: 11,
+  idTurma: 2,
+  aluno: { idAluno: 2, nome: 'Aluno B', telefone: null },
+};
+
 const presenca: Presenca = {
   idPresenca: 1,
   idMatricula: 10,
@@ -42,26 +51,34 @@ const presenca: Presenca = {
   matricula: null,
 };
 
+const presenca2: Presenca = { ...presenca, idPresenca: 2, idMatricula: 11 };
+
 describe('AttendanceManagementComponent - carregamento', () => {
   let component: AttendanceManagementComponent;
   let matriculas$: Subject<Matricula[]>;
-  let presencas$: Subject<Presenca[]>;
+  let presencasRequests: Subject<Presenca[]>[];
 
   beforeEach(async () => {
     matriculas$ = new Subject<Matricula[]>();
-    presencas$ = new Subject<Presenca[]>();
+    presencasRequests = [];
 
     await TestBed.configureTestingModule({
       imports: [AttendanceManagementComponent],
       providers: [
-        { provide: TurmaService, useValue: { list: vi.fn().mockReturnValue(of([turma])) } },
+        { provide: TurmaService, useValue: { list: vi.fn().mockReturnValue(of([turma, turma2])) } },
         {
           provide: MatriculaService,
           useValue: { list: vi.fn().mockReturnValue(matriculas$.asObservable()) },
         },
         {
           provide: PresencaService,
-          useValue: { listByTurma: vi.fn().mockReturnValue(presencas$.asObservable()) },
+          useValue: {
+            listByTurma: vi.fn().mockImplementation(() => {
+              const presencas$ = new Subject<Presenca[]>();
+              presencasRequests.push(presencas$);
+              return presencas$.asObservable();
+            }),
+          },
         },
         {
           provide: NotificationService,
@@ -78,16 +95,30 @@ describe('AttendanceManagementComponent - carregamento', () => {
 
   afterEach(() => {
     matriculas$.complete();
-    presencas$.complete();
+    presencasRequests.forEach((presencas$) => presencas$.complete());
   });
 
   it('monta a lista de alunos quando as presenças chegam antes das matrículas', () => {
-    presencas$.next([presenca]);
+    presencasRequests[0].next([presenca]);
 
     expect(component.students).toEqual([]);
 
     matriculas$.next([matricula]);
 
     expect(component.students).toEqual([{ idMatricula: 10, nomeAluno: 'Aluno A', presente: true }]);
+  });
+
+  it('ignora a resposta de presenças da turma anterior', () => {
+    component.onTurmaChange({ target: { value: '2' } } as unknown as Event);
+    matriculas$.next([matricula, matricula2]);
+
+    presencasRequests[0].next([presenca]);
+    expect(component.presencasExistentes).toEqual([]);
+    expect(component.students).toEqual([
+      { idMatricula: 11, nomeAluno: 'Aluno B', presente: false },
+    ]);
+
+    presencasRequests[1].next([presenca2]);
+    expect(component.students).toEqual([{ idMatricula: 11, nomeAluno: 'Aluno B', presente: true }]);
   });
 });

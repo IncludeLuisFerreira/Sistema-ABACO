@@ -21,11 +21,6 @@ export class EstoqueService {
     );
   }
 
-  refresh(): void {
-    this.reload();
-    this.loadAlertasCount();
-  }
-
   list(): Observable<Estoque[]> {
     return this.http.get<Estoque[]>(this.baseUrl).pipe(
       tap((items) => this.estoqueSubject.next(items)),
@@ -37,44 +32,34 @@ export class EstoqueService {
   }
 
   create(payload: EstoqueCreatePayload): Observable<Estoque> {
-    return this.http.post<Estoque>(this.baseUrl, payload).pipe(
-      tap(() => this.reload()),
-    );
+    return this.http.post<Estoque>(this.baseUrl, payload);
   }
 
   update(estoqueId: number, payload: EstoqueUpdatePayload): Observable<Estoque> {
-    return this.http.put<Estoque>(`${this.baseUrl}/${estoqueId}`, payload).pipe(
-      tap(() => this.reload()),
-    );
+    return this.http.put<Estoque>(`${this.baseUrl}/${estoqueId}`, payload);
   }
 
   delete(estoqueId: number): Observable<{ detail: string }> {
-    return this.http.delete<{ detail: string }>(`${this.baseUrl}/${estoqueId}`).pipe(
-      tap(() => this.reload()),
-    );
+    return this.http.delete<{ detail: string }>(`${this.baseUrl}/${estoqueId}`);
   }
 
   baixa(estoqueId: number, payload: BaixaPayload): Observable<Estoque> {
-    return this.http.put<Estoque>(`${this.baseUrl}/${estoqueId}/baixa`, payload).pipe(
-      tap(() => this.refresh()),
-    );
+    return this.http.put<Estoque>(`${this.baseUrl}/${estoqueId}/baixa`, payload);
   }
 
   getAlertas(): Observable<EstoqueAlerta[]> {
-    return this.http.get<EstoqueAlerta[]>(`${this.baseUrl}/alertas`);
+    return this.http.get<EstoqueAlerta[]>(`${this.baseUrl}/alertas`).pipe(
+      tap((items) => this.alertasCount.set(items.length)),
+    );
   }
 
   loadAlertasCount(): void {
     this.getAlertas().subscribe({
-      next: (items) => this.alertasCount.set(items.length),
-      error: () => this.alertasCount.set(0),
+      error: () => this.resetAlertasCount(),
     });
   }
 
-  private reload(): void {
-    this.loadAll().subscribe({
-      // A chamada principal (create/update/delete/baixa) ja informa o erro ao usuario.
-      error: () => undefined,
-    });
+  resetAlertasCount(): void {
+    this.alertasCount.set(0);
   }
 }

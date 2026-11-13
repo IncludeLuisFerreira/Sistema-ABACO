@@ -32,6 +32,9 @@ export class GradesManagementComponent implements OnInit {
   saving = false;
   localFeedback: string | null = null;
 
+  private matriculasRequestId = 0;
+  private notasRequestId = 0;
+
   constructor(
     private readonly turmaService: TurmaService,
     private readonly matriculaService: MatriculaService,
@@ -51,6 +54,9 @@ export class GradesManagementComponent implements OnInit {
     this.selectedTurma = this.turmas.find((t) => t.idTurma === turmaId) ?? null;
     this.students = [];
     this.notasExistentes = [];
+    this.loadingNotas = false;
+    this.matriculasRequestId++;
+    this.notasRequestId++;
 
     if (this.selectedTurma) {
       this.loadMatriculas();
@@ -62,6 +68,10 @@ export class GradesManagementComponent implements OnInit {
   onProvaChange(prova: number): void {
     this.prova = prova;
     this.localFeedback = null;
+    this.notasExistentes = [];
+    this.buildStudentList();
+    this.loadingNotas = false;
+    this.notasRequestId++;
 
     if (this.selectedTurma) {
       this.loadNotas();
@@ -129,14 +139,24 @@ export class GradesManagementComponent implements OnInit {
   }
 
   private loadMatriculas(): void {
+    const requestId = ++this.matriculasRequestId;
+
     this.matriculaService.list().subscribe({
       next: (matriculas) => {
+        if (requestId !== this.matriculasRequestId) {
+          return;
+        }
+
         this.matriculas = matriculas;
         // Reconstroi a lista mesmo que as notas ja tenham chegado antes das matriculas.
         this.buildStudentList();
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.matriculasRequestId) {
+          return;
+        }
+
         this.notifications.error('Erro ao carregar matrículas.');
       },
     });
@@ -147,15 +167,27 @@ export class GradesManagementComponent implements OnInit {
       return;
     }
 
+    const turmaId = this.selectedTurma.idTurma;
+    const prova = this.prova;
+    const requestId = ++this.notasRequestId;
+
     this.loadingNotas = true;
-    this.notaService.listByTurma(this.selectedTurma.idTurma, this.prova).subscribe({
+    this.notaService.listByTurma(turmaId, prova).subscribe({
       next: (notas) => {
+        if (requestId !== this.notasRequestId) {
+          return;
+        }
+
         this.notasExistentes = notas;
         this.buildStudentList();
         this.loadingNotas = false;
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.notasRequestId) {
+          return;
+        }
+
         this.notasExistentes = [];
         this.buildStudentList();
         this.loadingNotas = false;

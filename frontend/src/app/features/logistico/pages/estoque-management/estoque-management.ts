@@ -239,26 +239,36 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
 
   private loadEstoque(): void {
     this.loadingList = true;
-    this.estoqueService.loadAll().subscribe({
-      next: () => {
-        this.loadingList = false;
-        this.changeDetectorRef.detectChanges();
-      },
-      error: () => {
-        this.loadingList = false;
-        this.notifications.error('Erro ao carregar estoque. Tente novamente.');
-        this.changeDetectorRef.detectChanges();
-      },
-    });
+    this.subscriptions.push(
+      this.estoqueService.loadAll().subscribe({
+        next: () => {
+          this.loadingList = false;
+          this.changeDetectorRef.detectChanges();
+        },
+        error: () => {
+          this.loadingList = false;
+          this.notifications.error('Erro ao carregar estoque. Tente novamente.');
+          this.changeDetectorRef.detectChanges();
+        },
+      }),
+    );
   }
 
   private loadAlertas(): void {
-    this.estoqueService.getAlertas().subscribe({
-      next: (alertas) => {
-        this.alertaEstoqueIds = new Set(alertas.map((a) => a.idItemEstoque));
-        this.changeDetectorRef.detectChanges();
-      },
-    });
+    this.subscriptions.push(
+      this.estoqueService.getAlertas().subscribe({
+        next: (alertas) => {
+          this.alertaEstoqueIds = new Set(alertas.map((a) => a.idItemEstoque));
+          this.changeDetectorRef.detectChanges();
+        },
+        error: () => {
+          this.alertaEstoqueIds = new Set();
+          this.estoqueService.resetAlertasCount();
+          this.notifications.error('Erro ao carregar alertas do estoque.');
+          this.changeDetectorRef.detectChanges();
+        },
+      }),
+    );
   }
 
   private applyFiltersAndPagination(): void {

@@ -24,6 +24,8 @@ const turma: Turma = {
   professor: { idUsuario: 2, nome: 'Professor Teste' },
 };
 
+const turma2: Turma = { ...turma, idTurma: 2 };
+
 const matricula: Matricula = {
   idMatricula: 10,
   idAluno: 1,
@@ -34,6 +36,13 @@ const matricula: Matricula = {
   turma: { idTurma: 1, capacidade: 30, curso: null },
 };
 
+const matricula2: Matricula = {
+  ...matricula,
+  idMatricula: 11,
+  idTurma: 2,
+  aluno: { idAluno: 2, nome: 'Aluno B', telefone: null },
+};
+
 const nota: Nota = {
   idNota: 1,
   idMatricula: 10,
@@ -42,19 +51,21 @@ const nota: Nota = {
   matricula: null,
 };
 
+const nota2: Nota = { ...nota, idNota: 2, idMatricula: 11, nota: 9 };
+
 describe('GradesManagementComponent - carregamento', () => {
   let component: GradesManagementComponent;
   let matriculas$: Subject<Matricula[]>;
-  let notas$: Subject<Nota[]>;
+  let notasRequests: Subject<Nota[]>[];
 
   beforeEach(async () => {
     matriculas$ = new Subject<Matricula[]>();
-    notas$ = new Subject<Nota[]>();
+    notasRequests = [];
 
     await TestBed.configureTestingModule({
       imports: [GradesManagementComponent],
       providers: [
-        { provide: TurmaService, useValue: { list: vi.fn().mockReturnValue(of([turma])) } },
+        { provide: TurmaService, useValue: { list: vi.fn().mockReturnValue(of([turma, turma2])) } },
         {
           provide: MatriculaService,
           useValue: { list: vi.fn().mockReturnValue(matriculas$.asObservable()) },
@@ -62,7 +73,11 @@ describe('GradesManagementComponent - carregamento', () => {
         {
           provide: NotaService,
           useValue: {
-            listByTurma: vi.fn().mockReturnValue(notas$.asObservable()),
+            listByTurma: vi.fn().mockImplementation(() => {
+              const notas$ = new Subject<Nota[]>();
+              notasRequests.push(notas$);
+              return notas$.asObservable();
+            }),
             getMediaTurma: vi.fn().mockReturnValue(of({ idTurma: 1, medias: [] })),
           },
         },
@@ -80,16 +95,28 @@ describe('GradesManagementComponent - carregamento', () => {
 
   afterEach(() => {
     matriculas$.complete();
-    notas$.complete();
+    notasRequests.forEach((notas$) => notas$.complete());
   });
 
   it('monta a lista de alunos quando as notas chegam antes das matrículas', () => {
-    notas$.next([nota]);
+    notasRequests[0].next([nota]);
 
     expect(component.students).toEqual([]);
 
     matriculas$.next([matricula]);
 
     expect(component.students).toEqual([{ idMatricula: 10, nomeAluno: 'Aluno A', nota: 8 }]);
+  });
+
+  it('ignora a resposta de notas da turma anterior', () => {
+    component.onTurmaChange({ target: { value: '2' } } as unknown as Event);
+    matriculas$.next([matricula, matricula2]);
+
+    notasRequests[0].next([nota]);
+    expect(component.notasExistentes).toEqual([]);
+    expect(component.students).toEqual([{ idMatricula: 11, nomeAluno: 'Aluno B', nota: null }]);
+
+    notasRequests[1].next([nota2]);
+    expect(component.students).toEqual([{ idMatricula: 11, nomeAluno: 'Aluno B', nota: 9 }]);
   });
 });

@@ -8,10 +8,14 @@ import { EstoqueManagementComponent } from './estoque-management';
 
 describe('EstoqueManagementComponent - carregamento', () => {
   let loadAll: ReturnType<typeof vi.fn>;
+  let getAlertas: ReturnType<typeof vi.fn>;
+  let resetAlertasCount: ReturnType<typeof vi.fn>;
   let notificationError: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     loadAll = vi.fn().mockReturnValue(throwError(() => new Error('falha de rede')));
+    getAlertas = vi.fn().mockReturnValue(of([]));
+    resetAlertasCount = vi.fn();
     notificationError = vi.fn();
 
     await TestBed.configureTestingModule({
@@ -22,7 +26,8 @@ describe('EstoqueManagementComponent - carregamento', () => {
           useValue: {
             estoque$: of([]),
             loadAll,
-            getAlertas: vi.fn().mockReturnValue(of([])),
+            getAlertas,
+            resetAlertasCount,
           },
         },
         { provide: DialogService, useValue: { confirm: vi.fn() } },
@@ -42,5 +47,17 @@ describe('EstoqueManagementComponent - carregamento', () => {
     expect(loadAll).toHaveBeenCalled();
     expect(component.loadingList).toBe(false);
     expect(notificationError).toHaveBeenCalledWith('Erro ao carregar estoque. Tente novamente.');
+  });
+
+  it('limpa os alertas e notifica erro quando o carregamento de alertas falha', () => {
+    getAlertas.mockReturnValue(throwError(() => new Error('falha de rede')));
+    const component = TestBed.createComponent(EstoqueManagementComponent).componentInstance;
+    component.alertaEstoqueIds = new Set([1]);
+
+    component.ngOnInit();
+
+    expect(component.alertaEstoqueIds.size).toBe(0);
+    expect(resetAlertasCount).toHaveBeenCalled();
+    expect(notificationError).toHaveBeenCalledWith('Erro ao carregar alertas do estoque.');
   });
 });

@@ -31,6 +31,8 @@ export class AttendanceManagementComponent implements OnInit {
   saving = false;
   localFeedback: string | null = null;
 
+  private presencasRequestId = 0;
+
   readonly diasNome: Record<number, string> = {
     0: 'Domingo', 1: 'Segunda', 2: 'Terça', 3: 'Quarta',
     4: 'Quinta', 5: 'Sexta', 6: 'Sábado',
@@ -98,6 +100,8 @@ export class AttendanceManagementComponent implements OnInit {
     this.selectedTurma = this.turmas.find((t) => t.idTurma === turmaId) ?? null;
     this.students = [];
     this.presencasExistentes = [];
+    this.loadingPresencas = false;
+    this.presencasRequestId++;
 
     if (this.selectedTurma && this.dataAula) {
       this.loadPresencas();
@@ -108,6 +112,8 @@ export class AttendanceManagementComponent implements OnInit {
   onDataAulaChange(dataAula: string): void {
     this.dataAula = dataAula;
     this.localFeedback = null;
+    this.loadingPresencas = false;
+    this.presencasRequestId++;
 
     if (!this.dataAula || !this.selectedTurma) {
       this.students = [];
@@ -128,6 +134,8 @@ export class AttendanceManagementComponent implements OnInit {
       return;
     }
 
+    this.presencasExistentes = [];
+    this.buildStudentList();
     this.loadPresencas();
   }
 
@@ -216,15 +224,27 @@ export class AttendanceManagementComponent implements OnInit {
       return;
     }
 
+    const turmaId = this.selectedTurma.idTurma;
+    const dataAula = this.dataAula;
+    const requestId = ++this.presencasRequestId;
+
     this.loadingPresencas = true;
-    this.presencaService.listByTurma(this.selectedTurma.idTurma, this.dataAula).subscribe({
+    this.presencaService.listByTurma(turmaId, dataAula).subscribe({
       next: (presencas) => {
+        if (requestId !== this.presencasRequestId) {
+          return;
+        }
+
         this.presencasExistentes = presencas;
         this.buildStudentList();
         this.loadingPresencas = false;
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.presencasRequestId) {
+          return;
+        }
+
         this.presencasExistentes = [];
         this.buildStudentList();
         this.loadingPresencas = false;
