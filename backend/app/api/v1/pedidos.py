@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.authorization import require_diretor_para_aprovacao
+from app.core.authorization import enforce_turma_access, require_diretor_para_aprovacao
 from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoResponseSchema, PedidoUpdateSchema
@@ -24,15 +24,26 @@ from app.services.pedido_service import (
 router = APIRouter(prefix="/api/v1/pedidos", tags=["pedidos"])
 
 
+def _solicitante_filter(current_user: dict) -> int | None:
+    """Professor (cargo 2) só enxerga os próprios pedidos; diretoria e admin veem todos."""
+    if int(current_user.get("cargo", 0) or 0) == 2:
+        return int(current_user.get("sub", 0) or 0)
+    return None
+
+
 @router.get("")
-def read_pedidos(_current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
-    return [PedidoResponseSchema.model_validate(pedido) for pedido in list_pedidos(db)]
+def read_pedidos(current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+    solicitante_id = _solicitante_filter(current_user)
+    return [
+        PedidoResponseSchema.model_validate(pedido)
+        for pedido in list_pedidos(db, solicitante_id)
+    ]
 
 
 @router.get("/{pedido_id}")
-def read_pedido(pedido_id: int, _current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+def read_pedido(pedido_id: int, current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
     try:
-        pedido = get_pedido_by_id(db, pedido_id)
+        pedido = get_pedido_by_id(db, pedido_id, _solicitante_filter(current_user))
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     return PedidoResponseSchema.model_validate(pedido)
@@ -40,6 +51,13 @@ def read_pedido(pedido_id: int, _current_user: dict = Depends(verify_cargo(1, 2,
 
 @router.post("")
 def create_pedidos(payload: PedidoCreateSchema, current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+    try:
+        enforce_turma_access(db, payload.idTurma, current_user)
+    except HTTPException as exc:
+        # Preserva o contrato do endpoint: turma inexistente continua 400.
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Turma informada não existe") from exc
+        raise
     usuario_id = int(current_user.get("sub", 0))
     try:
         pedido = create_pedido(db, payload, usuario_id)

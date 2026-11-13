@@ -78,12 +78,19 @@ def create_pedido(db: Session, payload: PedidoCreateSchema, usuario_id: int) -> 
     return pedido
 
 
-def list_pedidos(db: Session) -> list[Pedido]:
-    return db.query(Pedido).order_by(Pedido.id_pedido.desc()).all()
+def list_pedidos(db: Session, solicitante_id: int | None = None) -> list[Pedido]:
+    query = db.query(Pedido)
+    if solicitante_id is not None:
+        query = query.filter(Pedido.id_usuario == solicitante_id)
+    return query.order_by(Pedido.id_pedido.desc()).all()
 
 
-def get_pedido_by_id(db: Session, pedido_id: int) -> Pedido:
-    pedido = db.query(Pedido).filter(Pedido.id_pedido == pedido_id).first()
+def get_pedido_by_id(db: Session, pedido_id: int, solicitante_id: int | None = None) -> Pedido:
+    query = db.query(Pedido).filter(Pedido.id_pedido == pedido_id)
+    if solicitante_id is not None:
+        # Pedido de terceiro é tratado como inexistente para não revelar a existência.
+        query = query.filter(Pedido.id_usuario == solicitante_id)
+    pedido = query.first()
     if not pedido:
         raise PedidoNotFoundError
     return pedido

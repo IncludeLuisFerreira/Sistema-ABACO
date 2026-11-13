@@ -53,6 +53,19 @@ class TestListPedidos:
         results = list_pedidos(db_session)
         assert len(results) >= 1
 
+    def test_filtra_por_solicitante(self, db_session: Session, turma, usuario, usuario_professor):
+        payload = PedidoCreateSchema(
+            idTurma=turma.id_turma,
+            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+        )
+        pedido_usuario = create_pedido(db_session, payload, usuario.id_usuario)
+        pedido_professor = create_pedido(db_session, payload, usuario_professor.id_usuario)
+
+        results = list_pedidos(db_session, usuario.id_usuario)
+
+        assert [pedido.id_pedido for pedido in results] == [pedido_usuario.id_pedido]
+        assert pedido_professor.id_pedido not in [pedido.id_pedido for pedido in results]
+
 
 class TestGetPedidoById:
     def test_finds_existing(self, db_session: Session, turma, usuario):
@@ -67,6 +80,22 @@ class TestGetPedidoById:
     def test_raises_for_nonexistent(self, db_session: Session):
         with pytest.raises(PedidoNotFoundError):
             get_pedido_by_id(db_session, 9999)
+
+    def test_raises_for_pedido_de_outro_solicitante(
+        self, db_session: Session, turma, usuario, usuario_professor
+    ):
+        payload = PedidoCreateSchema(
+            idTurma=turma.id_turma,
+            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+        )
+        pedido = create_pedido(db_session, payload, usuario_professor.id_usuario)
+
+        with pytest.raises(PedidoNotFoundError):
+            get_pedido_by_id(db_session, pedido.id_pedido, usuario.id_usuario)
+
+        assert get_pedido_by_id(
+            db_session, pedido.id_pedido, usuario_professor.id_usuario
+        ).id_pedido == pedido.id_pedido
 
 
 class TestDeletePedido:
