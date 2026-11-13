@@ -1,6 +1,7 @@
 import math
 import time
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 import bcrypt
 import jwt
@@ -21,19 +22,40 @@ def hash_password(password: str) -> str:
 
 
 def create_access_token(
-    *, subject: str, cargo: int, primeiro_acesso: bool = False, expires_delta: timedelta | None = None
+    *,
+    subject: str,
+    cargo: int,
+    primeiro_acesso: bool = False,
+    expires_delta: timedelta | None = None,
+    token_version: int | None = None,
 ) -> str:
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
-    # TODO: JWT sem jti/iat; não há revogação de token nem logout real
-    payload = {"sub": subject, "cargo": cargo, "primeiro_acesso": bool(primeiro_acesso), "exp": expire}
+    now = datetime.now(timezone.utc)
+    expire = now + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
+    payload = {
+        "sub": subject,
+        "cargo": cargo,
+        "primeiro_acesso": bool(primeiro_acesso),
+        "iat": now,
+        "jti": uuid4().hex,
+        "exp": expire,
+    }
+    if token_version is not None:
+        payload["ver"] = int(token_version)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
 def create_reset_token(*, email: str, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.reset_token_expire_minutes))
-    payload = {"sub": email, "type": "password_reset", "exp": expire}
+    now = datetime.now(timezone.utc)
+    expire = now + (expires_delta or timedelta(minutes=settings.reset_token_expire_minutes))
+    payload = {
+        "sub": email,
+        "type": "password_reset",
+        "iat": now,
+        "jti": uuid4().hex,
+        "exp": expire,
+    }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
@@ -65,10 +87,17 @@ def decode_reset_token(token: str) -> dict:
 
 def create_first_access_token(*, email: str, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + (
+    now = datetime.now(timezone.utc)
+    expire = now + (
         expires_delta or timedelta(minutes=settings.first_access_token_expire_minutes)
     )
-    payload = {"sub": email, "type": "first_access", "exp": expire}
+    payload = {
+        "sub": email,
+        "type": "first_access",
+        "iat": now,
+        "jti": uuid4().hex,
+        "exp": expire,
+    }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 

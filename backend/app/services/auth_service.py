@@ -54,6 +54,7 @@ def build_login_response(usuario: Usuario) -> dict:
         subject=str(usuario.id_usuario),
         cargo=int(usuario.cargo or 0),
         primeiro_acesso=primeiro_acesso,
+        token_version=int(usuario.token_version or 0),
     )
     return {
         "access_token": token,
@@ -66,6 +67,15 @@ def build_login_response(usuario: Usuario) -> dict:
             "primeiro_acesso": primeiro_acesso,
         },
     }
+
+
+def revoke_user_sessions(db: Session, usuario_id: int) -> None:
+    """Invalida todos os access tokens emitidos para o usuario."""
+    usuario = db.query(Usuario).filter(Usuario.id_usuario == usuario_id).first()
+    if not usuario:
+        return
+    usuario.token_version = int(usuario.token_version or 0) + 1
+    db.commit()
 
 
 def process_forgot_password(db: Session, email: str) -> str:
@@ -95,6 +105,7 @@ def process_reset_password(db: Session, token: str, nova_senha: str, confirmar_s
         raise InvalidResetTokenError
 
     usuario.senha_hash = hash_password(nova_senha)
+    usuario.token_version = int(usuario.token_version or 0) + 1
     db.commit()
 
 
@@ -117,6 +128,7 @@ def process_first_access_password(db: Session, token: str, nova_senha: str, conf
 
     usuario.senha_hash = hash_password(nova_senha)
     usuario.primeiro_acesso = False
+    usuario.token_version = int(usuario.token_version or 0) + 1
     db.commit()
 
 
@@ -135,6 +147,7 @@ def change_password(
 
     usuario.senha_hash = hash_password(nova_senha)
     usuario.primeiro_acesso = False
+    usuario.token_version = int(usuario.token_version or 0) + 1
     db.commit()
     db.refresh(usuario)
     return usuario

@@ -30,7 +30,7 @@ function setup(approveError?: { status: number; error: { detail: string } }) {
   TestBed.configureTestingModule({
     providers: [
       { provide: PedidoService, useValue: pedidoService },
-      { provide: AuthService, useValue: { getRoleFromToken: () => 'DIRECTOR' } },
+      { provide: AuthService, useValue: { getRoleFromToken: () => 'DIRECTOR', getCargo: () => 1 } },
       { provide: DialogService, useValue: { confirm: () => of(true) } },
       {
         provide: NotificationService,

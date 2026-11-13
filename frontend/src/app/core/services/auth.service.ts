@@ -32,6 +32,17 @@ export interface JwtPayload {
   exp?: number;
 }
 
+export interface StoredSession {
+  userId: number | null;
+  cargo: number | null;
+  role: AppRole;
+  primeiroAcesso: boolean;
+  expiresAt: number;
+}
+
+const SESSION_STORAGE_KEY = 'abaco_session';
+const SESSION_ROLES: AppRole[] = ['DIRECTOR', 'ADMIN', 'TEACHER', 'GUEST'];
+
 export function decodePayload(token: string): JwtPayload {
   const parts = token.split('.');
   if (parts.length !== 3) {
@@ -56,17 +67,38 @@ export function isTokenExpired(token: string): boolean {
   return payload.exp < now;
 }
 
-export function isFirstAccessPending(token: string | null): boolean {
-  if (!token) return false;
-  return decodePayload(token).primeiro_acesso === true;
+export function isSessionExpired(session: StoredSession): boolean {
+  return session.expiresAt <= Math.floor(Date.now() / 1000);
 }
 
-export function getStoredToken(): string | null {
-  return localStorage.getItem('abaco_token');
+export function getStoredSession(): StoredSession | null {
+  const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<StoredSession>;
+    if (
+      typeof parsed.expiresAt !== 'number' ||
+      typeof parsed.primeiroAcesso !== 'boolean' ||
+      !parsed.role ||
+      !SESSION_ROLES.includes(parsed.role)
+    ) {
+      return null;
+    }
+    return {
+      userId: typeof parsed.userId === 'number' ? parsed.userId : null,
+      cargo: typeof parsed.cargo === 'number' ? parsed.cargo : null,
+      role: parsed.role,
+      primeiroAcesso: parsed.primeiroAcesso,
+      expiresAt: parsed.expiresAt,
+    };
+  } catch {
+    return null;
+  }
 }
 
-export function clearStoredToken(): void {
-  localStorage.removeItem('abaco_token');
+export function clearStoredSession(): void {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
 }
 
 export function mapCargoToRole(cargo: number | null | undefined): LoginResponse['role'] {
@@ -78,22 +110,22 @@ export function mapCargoToRole(cargo: number | null | undefined): LoginResponse[
 }
 
 interface AuthState {
-  token: string | null;
   userId: number | null;
   role: AppRole | null;
+  expiresAt: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   // REFACTOR: auth usa URL absoluta; os demais serviços usam '/api' relativo
   private readonly loginUrl = `${environment.apiUrl}/api/v1/auth/login`;
+  private readonly logoutUrl = `${environment.apiUrl}/api/v1/auth/logout`;
   private readonly forgotPasswordUrl = `${environment.apiUrl}/api/v1/auth/forgot-password`;
   private readonly resetPasswordUrl = `${environment.apiUrl}/api/v1/auth/reset-password`;
   private readonly firstAccessUrl = `${environment.apiUrl}/api/v1/auth/first-access`;
   private readonly changePasswordUrl = `${environment.apiUrl}/api/v1/auth/change-password`;
-  private readonly TOKEN_KEY = 'abaco_token';
 
-  readonly authState = signal<AuthState>({ token: null, userId: null, role: null });
+  readonly authState = signal<AuthState>({ userId: null, role: null, expiresAt: null });
 
   private tokenExpiryTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly router = inject(Router);
@@ -103,28 +135,33 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginApiResponse>(this.loginUrl, { email, senha: password }).pipe(
-      map((response) => ({
-        token: response.access_token,
-        role: mapCargoToRole(response.usuario.cargo),
-        primeiroAcesso: response.usuario.primeiro_acesso === true,
-      })),
-      tap((res) => {
-        // FIXME: JWT em localStorage é vulnerável a XSS; usar cookie HttpOnly
-        localStorage.setItem(this.TOKEN_KEY, res.token);
-        const payload = decodePayload(res.token);
-        this.authState.set({
-          token: res.token,
-          userId: payload.sub ? Number(payload.sub) : null,
-          role: res.role,
-        });
-        this.scheduleAutoLogout(res.token);
-      }),
-      catchError((error) => {
-        const message = error?.error?.detail || error?.message || 'Credenciais inválidas';
-        return throwError(() => ({ status: error?.status, message }));
-      })
-    );
+    return this.http
+      .post<LoginApiResponse>(this.loginUrl, { email, senha: password }, { withCredentials: true })
+      .pipe(
+        map((response) => {
+          const payload = decodePayload(response.access_token);
+          const role = mapCargoToRole(response.usuario.cargo);
+          const session: StoredSession = {
+            userId: response.usuario.idUsuario,
+            cargo: response.usuario.cargo ?? null,
+            role,
+            primeiroAcesso: response.usuario.primeiro_acesso === true,
+            expiresAt: payload.exp ?? Math.floor(Date.now() / 1000) + 3600,
+          };
+          return {
+            token: response.access_token,
+            role,
+            primeiroAcesso: session.primeiroAcesso,
+            session,
+          };
+        }),
+        tap(({ session }) => this.persistSession(session)),
+        map(({ token, role, primeiroAcesso }) => ({ token, role, primeiroAcesso })),
+        catchError((error) => {
+          const message = error?.error?.detail || error?.message || 'Credenciais inválidas';
+          return throwError(() => ({ status: error?.status, message }));
+        }),
+      );
   }
 
   forgotPassword(email: string): Observable<{ message: string }> {
@@ -132,91 +169,120 @@ export class AuthService {
       catchError((error) => {
         const message = error?.error?.detail || error?.message || 'Erro ao processar solicitação';
         return throwError(() => ({ status: error?.status, message }));
-      })
+      }),
     );
   }
 
-  resetPassword(token: string, nova_senha: string, confirmar_senha: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(this.resetPasswordUrl, { token, nova_senha, confirmar_senha }).pipe(
-      catchError((error) => {
-        const message = error?.error?.detail || error?.message || 'Erro ao redefinir senha';
-        return throwError(() => ({ status: error?.status, message }));
-      })
-    );
+  resetPassword(
+    token: string,
+    nova_senha: string,
+    confirmar_senha: string,
+  ): Observable<{ message: string }> {
+    return this.http
+      .post<{ message: string }>(this.resetPasswordUrl, { token, nova_senha, confirmar_senha })
+      .pipe(
+        catchError((error) => {
+          const message = error?.error?.detail || error?.message || 'Erro ao redefinir senha';
+          return throwError(() => ({ status: error?.status, message }));
+        }),
+      );
   }
 
-  firstAccess(token: string, nova_senha: string, confirmar_senha: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(this.firstAccessUrl, { token, nova_senha, confirmar_senha }).pipe(
-      catchError((error) => {
-        const message = error?.error?.detail || error?.message || 'Erro ao definir senha';
-        return throwError(() => ({ status: error?.status, message }));
-      })
-    );
+  firstAccess(
+    token: string,
+    nova_senha: string,
+    confirmar_senha: string,
+  ): Observable<{ message: string }> {
+    return this.http
+      .post<{ message: string }>(this.firstAccessUrl, { token, nova_senha, confirmar_senha })
+      .pipe(
+        catchError((error) => {
+          const message = error?.error?.detail || error?.message || 'Erro ao definir senha';
+          return throwError(() => ({ status: error?.status, message }));
+        }),
+      );
   }
 
-  changePassword(senha_atual: string, nova_senha: string, confirmar_senha: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(this.changePasswordUrl, { senha_atual, nova_senha, confirmar_senha }).pipe(
-      catchError((error) => {
-        const message = error?.error?.detail || error?.message || 'Erro ao alterar senha';
-        return throwError(() => ({ status: error?.status, message }));
-      })
-    );
+  changePassword(
+    senha_atual: string,
+    nova_senha: string,
+    confirmar_senha: string,
+  ): Observable<{ message: string }> {
+    return this.http
+      .post<{
+        message: string;
+      }>(this.changePasswordUrl, { senha_atual, nova_senha, confirmar_senha })
+      .pipe(
+        catchError((error) => {
+          const message = error?.error?.detail || error?.message || 'Erro ao alterar senha';
+          return throwError(() => ({ status: error?.status, message }));
+        }),
+      );
   }
 
   isFirstAccessPending(): boolean {
-    return isFirstAccessPending(this.getToken());
+    return getStoredSession()?.primeiroAcesso === true;
   }
 
   logout(): void {
     this.clearAutoLogout();
-    clearStoredToken();
-    this.authState.set({ token: null, userId: null, role: null });
+    this.revokeServerSession();
+    this.clearSessionState();
   }
 
   logoutAndRedirect(): void {
-    this.logout();
+    this.clearAutoLogout();
+    this.clearSessionState();
     this.router.navigate(['/login']);
   }
 
   isAuthenticated(): boolean {
-    const token = getStoredToken();
-    if (!token) return false;
-    return !isTokenExpired(token);
+    const session = getStoredSession();
+    if (!session) return false;
+    return !isSessionExpired(session);
   }
 
-  // REFACTOR: hasRole/getUserId/setToken sem uso real na aplicação
   hasRole(allowedRoles: AppRole[]): boolean {
-    const role = this.getRoleFromToken();
-    return allowedRoles.includes(role);
+    return allowedRoles.includes(this.getRoleFromToken());
   }
 
   getUserId(): number | null {
-    return this.authState().userId;
+    return this.authState().userId ?? getStoredSession()?.userId ?? null;
   }
 
-  setToken(token: string) {
-    localStorage.setItem(this.TOKEN_KEY, token);
-  }
-
-  getToken(): string | null {
-    return getStoredToken();
+  getCargo(): number | null {
+    return getStoredSession()?.cargo ?? null;
   }
 
   getRoleFromToken(): LoginResponse['role'] {
-    const token = this.getToken();
-    if (!token) return 'GUEST';
-
-    const payload = decodePayload(token);
-    return mapCargoToRole(payload.cargo);
+    return getStoredSession()?.role ?? 'GUEST';
   }
 
-  private scheduleAutoLogout(token: string): void {
-    this.clearAutoLogout();
-    const payload = decodePayload(token);
-    if (!payload.exp) return;
+  private persistSession(session: StoredSession): void {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    this.authState.set({
+      userId: session.userId,
+      role: session.role,
+      expiresAt: session.expiresAt,
+    });
+    this.scheduleAutoLogout(session.expiresAt);
+  }
 
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    const remainingMs = (payload.exp - nowSeconds) * 1000;
+  private revokeServerSession(): void {
+    // Requisição best-effort: o logout local nunca depende da rede.
+    this.http.post(this.logoutUrl, {}, { withCredentials: true }).subscribe({
+      error: () => undefined,
+    });
+  }
+
+  private clearSessionState(): void {
+    clearStoredSession();
+    this.authState.set({ userId: null, role: null, expiresAt: null });
+  }
+
+  private scheduleAutoLogout(expiresAt: number): void {
+    this.clearAutoLogout();
+    const remainingMs = (expiresAt - Math.floor(Date.now() / 1000)) * 1000;
     if (remainingMs <= 0) {
       this.logoutAndRedirect();
       return;
@@ -235,20 +301,19 @@ export class AuthService {
   }
 
   private restoreSession(): void {
-    const token = getStoredToken();
-    if (!token) return;
+    const session = getStoredSession();
+    if (!session) return;
 
-    if (isTokenExpired(token)) {
-      clearStoredToken();
+    if (isSessionExpired(session)) {
+      clearStoredSession();
       return;
     }
 
-    const payload = decodePayload(token);
     this.authState.set({
-      token,
-      userId: payload.sub ? Number(payload.sub) : null,
-      role: mapCargoToRole(payload.cargo ?? null),
+      userId: session.userId,
+      role: session.role,
+      expiresAt: session.expiresAt,
     });
-    this.scheduleAutoLogout(token);
+    this.scheduleAutoLogout(session.expiresAt);
   }
 }
