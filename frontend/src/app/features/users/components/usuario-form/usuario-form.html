@@ -17,12 +17,12 @@
 
     <label>
       <span>E-mail *</span>
-      <input formControlName="email" type="email" placeholder="nome@abaco.org.br" autocomplete="email" />
+      <input formControlName="email" type="email" placeholder="nome@abaco.org.br ou nome@gmail.com" autocomplete="email" />
       <small class="error" *ngIf="form.controls.email.errors?.['required'] && form.controls.email.touched">E-mail e obrigatorio.</small>
       <small class="error" *ngIf="form.controls.email.errors?.['email'] && form.controls.email.touched">Informe um e-mail valido.</small>
     </label>
 
-    <small class="error" *ngIf="form.controls.email.errors?.['institutionalEmail'] && form.controls.email.touched">Use um e-mail do dominio @abaco.org.br.</small>
+    <small class="error" *ngIf="form.controls.email.errors?.['institutionalEmail'] && form.controls.email.touched">Use um e-mail do dominio @abaco.org.br ou @gmail.com.</small>
     <small class="error" *ngIf="form.controls.email.errors?.['emailTaken'] && form.controls.email.touched">Este e-mail ja esta cadastrado.</small>
     <label>
       <span>Telefone</span>

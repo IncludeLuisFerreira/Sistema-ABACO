@@ -18,11 +18,31 @@ class TestUsuarioCreateSchemaValidation:
 		with pytest.raises(ValidationError) as exc:
 			UsuarioCreateSchema(
 				nome="Novo Usuario",
-				email="pessoa@gmail.com",
+				email="pessoa@hotmail.com",
 				senha="senha123",
 				cargo=2,
 			)
 		assert "abaco.org.br" in str(exc.value)
+		assert "gmail.com" in str(exc.value)
+
+	@pytest.mark.parametrize("email", ["pessoa@gmail.com", "pessoa@abaco.org.br"])
+	def test_email_de_dominio_permitido_aceito(self, email):
+		payload = UsuarioCreateSchema(
+			nome="Novo Usuario",
+			email=email,
+			senha="senha123",
+			cargo=2,
+		)
+		assert payload.email == email
+
+	def test_email_gmail_normalizado_para_minusculo(self):
+		payload = UsuarioCreateSchema(
+			nome="Novo Usuario",
+			email="Novo.Usuario@GMAIL.com",
+			senha="senha123",
+			cargo=2,
+		)
+		assert payload.email == "novo.usuario@gmail.com"
 
 	def test_email_normalizado_para_minusculo(self):
 		payload = UsuarioCreateSchema(
