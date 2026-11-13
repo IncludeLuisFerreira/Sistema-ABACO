@@ -1,8 +1,8 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
-export const ALLOWED_EMAIL_DOMAIN = 'abaco.org.br';
+export const ALLOWED_EMAIL_DOMAINS = ['abaco.org.br', 'gmail.com'];
 
-/** Exige e-mail válido do domínio institucional @abaco.org.br. */
+/** Exige e-mail válido de um domínio permitido (@abaco.org.br ou @gmail.com). */
 export function institutionalEmailValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const email = String(control.value ?? '').trim().toLowerCase();
@@ -16,7 +16,7 @@ export function institutionalEmailValidator(): ValidatorFn {
     }
 
     const domain = email.slice(at + 1);
-    if (domain !== ALLOWED_EMAIL_DOMAIN) {
+    if (!ALLOWED_EMAIL_DOMAINS.includes(domain)) {
       return { institutionalEmail: true };
     }
 
