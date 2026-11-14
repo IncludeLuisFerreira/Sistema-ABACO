@@ -24,9 +24,31 @@ class TestLoginRequest:
             LoginRequest(email="nao-email", senha="abc")
 
 
+class TestLoginRequest:
+    def test_valid(self):
+        s = LoginRequest(email="teste@abaco.org.br", senha="abc123")
+        assert s.email == "teste@abaco.org.br"
+
+    def test_normalizes_email_case_and_whitespace(self):
+        s = LoginRequest(email="  Teste@Abaco.org.BR  ", senha="abc123")
+        assert s.email == "teste@abaco.org.br"
+
+    def test_empty_email_rejected(self):
+        with pytest.raises(ValidationError):
+            LoginRequest(email="", senha="abc")
+
+    def test_invalid_email_rejected(self):
+        with pytest.raises(ValidationError):
+            LoginRequest(email="nao-email", senha="abc")
+
+
 class TestForgotPasswordRequest:
     def test_valid(self):
         s = ForgotPasswordRequest(email="teste@abaco.org.br")
+        assert s.email == "teste@abaco.org.br"
+
+    def test_normalizes_email_case_and_whitespace(self):
+        s = ForgotPasswordRequest(email="  Teste@Abaco.org.BR  ")
         assert s.email == "teste@abaco.org.br"
 
     def test_invalid_email_rejected(self):
