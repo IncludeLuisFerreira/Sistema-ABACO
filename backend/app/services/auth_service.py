@@ -1,4 +1,5 @@
 from jwt import PyJWTError
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -9,6 +10,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.core.validators import normalize_email
 from app.models.usuario import Usuario
 
 
@@ -37,7 +39,8 @@ class InvalidCurrentPasswordError(Exception):
 
 
 def authenticate_user(db: Session, email: str, senha: str) -> Usuario:
-    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    normalized_email = normalize_email(email)
+    usuario = db.query(Usuario).filter(func.lower(Usuario.email) == normalized_email).first()
 
     if not usuario or not usuario.senha_hash:
         raise InvalidCredentialsError
@@ -69,11 +72,12 @@ def build_login_response(usuario: Usuario) -> dict:
 
 
 def process_forgot_password(db: Session, email: str) -> str:
-    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    normalized_email = normalize_email(email)
+    usuario = db.query(Usuario).filter(func.lower(Usuario.email) == normalized_email).first()
     if not usuario:
         raise EmailNotFoundError
 
-    token = create_reset_token(email=email)
+    token = create_reset_token(email=usuario.email)
     return token
 
 
