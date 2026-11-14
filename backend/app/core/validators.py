@@ -35,8 +35,12 @@ def normalize_nome(value: str) -> str:
 	return cleaned
 
 
+def normalize_email(value: str) -> str:
+	return value.strip().lower()
+
+
 def normalize_email_institucional(value: str) -> str:
-	email = value.strip().lower()
+	email = normalize_email(value)
 	domain = email.rsplit("@", 1)[-1]
 	if domain not in ALLOWED_EMAIL_DOMAINS:
 		raise ValueError(EMAIL_DOMAIN_MSG)

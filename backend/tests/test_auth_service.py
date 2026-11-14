@@ -25,6 +25,17 @@ class TestAuthenticateUser:
         result = authenticate_user(db_session, "teste@abaco.org.br", "senha123")
         assert result.id_usuario == usuario.id_usuario
 
+    def test_normalizes_email_case_and_whitespace(self, db_session: Session, usuario):
+        result = authenticate_user(db_session, "  Teste@Abaco.org.BR  ", "senha123")
+        assert result.id_usuario == usuario.id_usuario
+
+    def test_finds_user_stored_with_uppercase_email(self, db_session: Session, usuario):
+        usuario.email = "Teste@Abaco.org.BR"
+        db_session.commit()
+
+        result = authenticate_user(db_session, "teste@abaco.org.br", "senha123")
+        assert result.id_usuario == usuario.id_usuario
+
     def test_invalid_email(self, db_session: Session):
         with pytest.raises(InvalidCredentialsError):
             authenticate_user(db_session, "naoexiste@abaco.org.br", "senha123")
@@ -51,6 +62,11 @@ class TestBuildLoginResponse:
 class TestProcessForgotPassword:
     def test_generates_token_for_existing_user(self, db_session: Session, usuario):
         token = process_forgot_password(db_session, "teste@abaco.org.br")
+        assert token is not None
+        assert len(token) > 0
+
+    def test_generates_token_with_mixed_case_and_whitespace_email(self, db_session: Session, usuario):
+        token = process_forgot_password(db_session, "  Teste@Abaco.org.BR  ")
         assert token is not None
         assert len(token) > 0
 
