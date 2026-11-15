@@ -76,8 +76,14 @@ HTTP → app/api/v1/<recurso>.py (router)
 
 ## Autenticação e autorização
 
-- `POST /api/v1/auth/login` retorna access token. Payload: `sub` (id do usuário), `cargo`,
-  `primeiro_acesso`, `exp`. Algoritmo HS256, segredo em `JWT_SECRET`/`SECRET_KEY`.
+- `POST /api/v1/auth/login` retorna access token e define os cookies `abaco_session` (HttpOnly) e
+  `abaco_csrf` (double-submit). Payload do JWT: `sub` (id do usuário), `cargo`,
+  `primeiro_acesso`, `iat`, `jti`, `ver`, `exp`. Algoritmo HS256, segredo em `JWT_SECRET`/`SECRET_KEY`.
+  Detalhes em `docs/security/session-strategy.md`.
+- O frontend usa o cookie de sessão; não persiste o JWT no `localStorage`. Requisições de escrita
+  autenticadas por cookie exigem o header `X-CSRF-Token`.
+- `POST /api/v1/auth/logout` incrementa `usuario.tokenversion` e revoga os tokens emitidos. Troca,
+  redefinição e primeiro acesso de senha também incrementam a versão.
 - Token expira em 120 min por padrão (`ACCESS_TOKEN_EXPIRE_MINUTES`).
 - Reset de senha usa token com `type=password_reset` (30 min). Primeiro acesso usa token com
   validade maior (1440 min) e obriga troca de senha.

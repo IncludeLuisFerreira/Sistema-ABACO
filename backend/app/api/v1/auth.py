@@ -1,9 +1,15 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.dependencies import AUTH_ERROR_HEADERS, get_current_user
+from app.core.session import (
+    CSRF_COOKIE_NAME,
+    SESSION_COOKIE_NAME,
+    generate_csrf_token,
+)
 from app.db.database import get_db
 from app.schemas.auth_schema import (
     ChangePasswordRequest,
@@ -28,6 +34,7 @@ from app.services.auth_service import (
     process_first_access_password,
     process_forgot_password,
     process_reset_password,
+    revoke_user_sessions,
 )
 from app.core.limiter import limiter
 from app.email import EmailDeliveryError, send_reset_email
@@ -36,10 +43,41 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
 
 
+def _set_session_cookies(response: Response, token: str) -> None:
+    settings = get_settings()
+    max_age = settings.access_token_expire_minutes * 60
+    common = {
+        "max_age": max_age,
+        "path": "/",
+        "secure": settings.effective_session_cookie_secure,
+        "samesite": settings.session_cookie_samesite,
+    }
+    response.set_cookie(SESSION_COOKIE_NAME, token, httponly=True, **common)
+    response.set_cookie(CSRF_COOKIE_NAME, generate_csrf_token(), httponly=False, **common)
+    response.headers["Cache-Control"] = "no-store"
+
+
+def _clear_session_cookies(response: Response) -> None:
+    settings = get_settings()
+    common = {
+        "path": "/",
+        "secure": settings.effective_session_cookie_secure,
+        "samesite": settings.session_cookie_samesite,
+    }
+    response.delete_cookie(SESSION_COOKIE_NAME, **common)
+    response.delete_cookie(CSRF_COOKIE_NAME, **common)
+    response.headers["Cache-Control"] = "no-store"
+
+
 @router.post("/login", response_model=TokenResponse)
 # HACK: rate limit hardcoded ignora settings.rate_limit_auth
 @limiter.limit("5/minute")
-def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    payload: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
     try:
         usuario = authenticate_user(db, payload.email, payload.senha)
     except InvalidCredentialsError:
@@ -49,9 +87,22 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
             headers=AUTH_ERROR_HEADERS,
         )
 
-    response = build_login_response(usuario)
+    body = build_login_response(usuario)
     # REFACTOR: build_login_response já retorna dict pronto; rewrap no router acopla
-    response["usuario"] = UsuarioResponse(**response["usuario"])
+    body["usuario"] = UsuarioResponse(**body["usuario"])
+    _set_session_cookies(response, body["access_token"])
+    return body
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    response: Response,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    revoke_user_sessions(db, int(current_user.get("sub") or 0))
+    _clear_session_cookies(response)
+    response.status_code = status.HTTP_204_NO_CONTENT
     return response
 
 

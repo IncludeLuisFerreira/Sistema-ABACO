@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from fastapi import HTTPException
+from starlette.requests import Request
 
 from app.core.dependencies import get_current_user, verify_cargo
 from app.core.security import create_access_token
@@ -15,34 +16,61 @@ def _expired_token(cargo: int = 1) -> str:
     return create_access_token(subject="1", cargo=cargo, expires_delta=timedelta(seconds=-10))
 
 
+def _request(method: str = "GET", cookies: dict[str, str] | None = None) -> Request:
+    headers: list[tuple[bytes, bytes]] = []
+    if cookies:
+        cookie_header = "; ".join(f"{key}={value}" for key, value in cookies.items())
+        headers.append((b"cookie", cookie_header.encode("utf-8")))
+    return Request(
+        {
+            "type": "http",
+            "method": method,
+            "path": "/",
+            "query_string": b"",
+            "headers": headers,
+            "scheme": "http",
+            "server": ("testserver", 80),
+            "client": ("testclient", 50000),
+        }
+    )
+
+
 class TestVerifyCargoUnit:
     def test_permite_cargo_autorizado(self, db_session, usuario):
-        payload = verify_cargo(1, 3)(authorization=_bearer(create_access_token(subject=str(usuario.id_usuario), cargo=1)), db=db_session)
+        payload = verify_cargo(1, 3)(
+            request=_request(),
+            authorization=_bearer(create_access_token(subject=str(usuario.id_usuario), cargo=1)),
+            db=db_session,
+        )
         assert payload["cargo"] == 1
 
     def test_nega_cargo_nao_autorizado(self, db_session, usuario_professor):
         with pytest.raises(HTTPException) as exc:
-            verify_cargo(1)(authorization=_bearer(create_access_token(subject=str(usuario_professor.id_usuario), cargo=2)), db=db_session)
+            verify_cargo(1)(
+                request=_request(),
+                authorization=_bearer(create_access_token(subject=str(usuario_professor.id_usuario), cargo=2)),
+                db=db_session,
+            )
         assert exc.value.status_code == 403
 
     def test_nega_sem_header(self):
         with pytest.raises(HTTPException) as exc:
-            verify_cargo(1)(authorization=None)
+            verify_cargo(1)(request=_request(), authorization=None, db=None)
         assert exc.value.status_code == 401
 
     def test_nega_formato_de_token_invalido(self):
         with pytest.raises(HTTPException) as exc:
-            verify_cargo(1)(authorization="Token abc")
+            verify_cargo(1)(request=_request(), authorization="Token abc", db=None)
         assert exc.value.status_code == 401
 
     def test_nega_token_expirado(self):
         with pytest.raises(HTTPException) as exc:
-            verify_cargo(1)(authorization=_bearer(_expired_token()))
+            verify_cargo(1)(request=_request(), authorization=_bearer(_expired_token()), db=None)
         assert exc.value.status_code == 401
 
     def test_nega_token_malformado(self):
         with pytest.raises(HTTPException) as exc:
-            verify_cargo(1)(authorization=_bearer("token.invalido.123"))
+            verify_cargo(1)(request=_request(), authorization=_bearer("token.invalido.123"), db=None)
         assert exc.value.status_code == 401
 
 
@@ -53,7 +81,7 @@ class TestGetCurrentUserUnit:
         usuario_primeiro_acesso.primeiro_acesso = False
         db_session.commit()
 
-        payload = get_current_user(authorization=_bearer(token), db=db_session)
+        payload = get_current_user(request=_request(), authorization=_bearer(token), db=db_session)
         assert payload["cargo"] == 3
         assert payload["primeiro_acesso"] is False
 
@@ -63,21 +91,29 @@ class TestGetCurrentUserUnit:
         db_session.commit()
 
         with pytest.raises(HTTPException) as exc:
-            get_current_user(authorization=_bearer(token), db=db_session)
+            get_current_user(request=_request(), authorization=_bearer(token), db=db_session)
         assert exc.value.status_code == 401
 
     def test_invalid_subject_is_rejected(self, db_session):
         with pytest.raises(HTTPException) as exc:
-            get_current_user(authorization=_bearer(create_access_token(subject="invalido", cargo=1)), db=db_session)
+            get_current_user(
+                request=_request(),
+                authorization=_bearer(create_access_token(subject="invalido", cargo=1)),
+                db=db_session,
+            )
         assert exc.value.status_code == 401
 
     def test_retorna_payload_com_token_valido(self, db_session, usuario_professor):
-        payload = get_current_user(authorization=_bearer(create_access_token(subject=str(usuario_professor.id_usuario), cargo=2)), db=db_session)
+        payload = get_current_user(
+            request=_request(),
+            authorization=_bearer(create_access_token(subject=str(usuario_professor.id_usuario), cargo=2)),
+            db=db_session,
+        )
         assert payload["sub"] == str(usuario_professor.id_usuario)
 
     def test_nega_sem_token(self):
         with pytest.raises(HTTPException) as exc:
-            get_current_user(authorization=None)
+            get_current_user(request=_request(), authorization=None, db=None)
         assert exc.value.status_code == 401
 
 

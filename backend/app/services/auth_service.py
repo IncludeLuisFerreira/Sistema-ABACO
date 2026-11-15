@@ -69,6 +69,7 @@ def build_login_response(usuario: Usuario) -> dict:
         subject=str(usuario.id_usuario),
         cargo=int(usuario.cargo or 0),
         primeiro_acesso=primeiro_acesso,
+        token_version=int(usuario.token_version or 0),
     )
     return {
         "access_token": token,
@@ -81,6 +82,15 @@ def build_login_response(usuario: Usuario) -> dict:
             "primeiro_acesso": primeiro_acesso,
         },
     }
+
+
+def revoke_user_sessions(db: Session, usuario_id: int) -> None:
+    """Invalida todos os access tokens emitidos para o usuario."""
+    usuario = db.query(Usuario).filter(Usuario.id_usuario == usuario_id).first()
+    if not usuario:
+        return
+    usuario.token_version = int(usuario.token_version or 0) + 1
+    db.commit()
 
 
 def process_forgot_password(db: Session, email: str) -> str:
@@ -107,7 +117,15 @@ def _consume_password_token(db: Session, payload: dict, nova_senha: str, *, firs
     updated = db.query(Usuario).filter(
         Usuario.id_usuario == usuario.id_usuario,
         Usuario.senha_hash == usuario.senha_hash,
-    ).update({Usuario.senha_hash: hash_password(nova_senha), Usuario.primeiro_acesso: False}, synchronize_session=False)
+    ).update(
+        {
+            Usuario.senha_hash: hash_password(nova_senha),
+            Usuario.primeiro_acesso: False,
+            # Consumir o link tambem revoga as sessoes emitidas antes da troca.
+            Usuario.token_version: int(usuario.token_version or 0) + 1,
+        },
+        synchronize_session=False,
+    )
     if updated != 1:
         db.rollback()
         return False
@@ -156,6 +174,7 @@ def change_password(
 
     usuario.senha_hash = hash_password(nova_senha)
     usuario.primeiro_acesso = False
+    usuario.token_version = int(usuario.token_version or 0) + 1
     db.commit()
     db.refresh(usuario)
     return usuario

@@ -1,11 +1,24 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
-import { getStoredToken } from '../services/auth.service';
-import { fakeExpiredJwt, fakeJwt } from '../testing/fake-jwt';
+import { getStoredSession } from '../services/auth.service';
 import { authGuard } from './auth.guard';
 
-const TOKEN_KEY = 'abaco_token';
+const SESSION_KEY = 'abaco_session';
+
+function storeSession(overrides: Record<string, unknown> = {}): void {
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      userId: 1,
+      cargo: 1,
+      role: 'DIRECTOR',
+      primeiroAcesso: false,
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      ...overrides,
+    }),
+  );
+}
 
 describe('authGuard (autenticação, não autorização)', () => {
   beforeEach(() => {
@@ -20,17 +33,24 @@ describe('authGuard (autenticação, não autorização)', () => {
   const run = () => TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
 
   it('permite usuário autenticado (mesmo GUEST — autenticação ≠ autorização)', () => {
-    localStorage.setItem(TOKEN_KEY, fakeJwt({ cargo: null }));
+    storeSession({ cargo: null, role: 'GUEST' });
     expect(run()).toBe(true);
   });
 
-  it('redireciona para /login sem token', () => {
+  it('redireciona para /login sem sessão', () => {
     expect(run()).toBe('/login');
   });
 
-  it('redireciona para /login com token expirado e limpa o storage', () => {
-    localStorage.setItem(TOKEN_KEY, fakeExpiredJwt({ cargo: 1 }));
+  it('redireciona para /login com sessão expirada e limpa o storage', () => {
+    storeSession({ expiresAt: Math.floor(Date.now() / 1000) - 60 });
     expect(run()).toBe('/login');
-    expect(getStoredToken()).toBeNull();
+    expect(getStoredSession()).toBeNull();
+  });
+
+  it('redireciona para troca de senha quando o primeiro acesso está pendente', () => {
+    storeSession({ primeiroAcesso: true });
+    expect(
+      TestBed.runInInjectionContext(() => authGuard({} as never, { url: '/admin' } as never)),
+    ).toBe('/alterar-senha');
   });
 });

@@ -117,6 +117,7 @@ class TestChangePasswordEndpoint:
         assert response.status_code == 400
 
     def test_requires_authentication(self):
+        client.cookies.clear()
         response = client.post(
             "/api/v1/auth/change-password",
             json={"senha_atual": SENHA_INICIAL, "nova_senha": SENHA_NOVA, "confirmar_senha": SENHA_NOVA},
