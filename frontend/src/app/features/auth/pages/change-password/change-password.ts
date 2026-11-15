@@ -6,6 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PasswordField } from '../../../../shared/components/password-field/password-field';
 import { PrimaryButton } from '../../../../shared/components/primary-button/primary-button';
+import { PASSWORD_CONFIRMATION_VALIDATORS, PASSWORD_VALIDATORS } from '../../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-change-password',
@@ -24,8 +25,8 @@ export class ChangePassword {
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
     this.form = this.fb.group({
       senha_atual: ['', [Validators.required]],
-      nova_senha: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
-      confirmar_senha: ['', [Validators.required, Validators.minLength(8)]],
+      nova_senha: ['', PASSWORD_VALIDATORS],
+      confirmar_senha: ['', PASSWORD_CONFIRMATION_VALIDATORS],
     });
   }
 
