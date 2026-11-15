@@ -11,7 +11,7 @@ class TestDecodeAccessToken:
         assert decode_access_token(token)["cargo"] == 2
 
     def test_rejects_reset_token(self):
-        token = create_reset_token(email="maria@abaco.org.br")
+        token = create_reset_token(email="maria@abaco.org.br", password_hash="hash-de-teste")
         with pytest.raises(HTTPException) as exc:
             decode_access_token(token)
         assert exc.value.status_code == 401
@@ -19,13 +19,13 @@ class TestDecodeAccessToken:
 
 class TestResetTokenNaoAcessaRotas:
     def test_reset_token_rejeitado_em_matriculas_me(self, api_client):
-        token = create_reset_token(email="maria@abaco.org.br")
+        token = create_reset_token(email="maria@abaco.org.br", password_hash="hash-de-teste")
         headers = {"Authorization": f"Bearer {token}"}
         response = api_client.get("/api/v1/matriculas/me", headers=headers)
         assert response.status_code == 401
 
     def test_reset_token_rejeitado_em_turma_por_id(self, api_client):
-        token = create_reset_token(email="maria@abaco.org.br")
+        token = create_reset_token(email="maria@abaco.org.br", password_hash="hash-de-teste")
         headers = {"Authorization": f"Bearer {token}"}
         response = api_client.get("/api/v1/turmas/1", headers=headers)
         assert response.status_code == 401

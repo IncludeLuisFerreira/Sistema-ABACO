@@ -37,11 +37,8 @@ class TestTurmasEndpoints:
         ids = [turma["idTurma"] for turma in response.json()]
         assert seeded["turma"]["idTurma"] in ids
 
-    def test_me_de_outro_professor_sem_turmas(self, seeded):
-        from app.core.security import create_access_token
-
-        token = create_access_token(subject="9999", cargo=2)
-        headers = {"Authorization": f"Bearer {token}"}
+    def test_me_de_outro_professor_sem_turmas(self, seeded, outro_professor, professor_headers_factory):
+        headers = professor_headers_factory(outro_professor)
         response = seeded["client"].get("/api/v1/turmas/me", headers=headers)
         assert response.status_code == 200
         assert response.json() == []
