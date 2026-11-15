@@ -1,6 +1,6 @@
 from fastapi import Depends, Header, HTTPException, Request, status
-from sqlalchemy.orm import Session
 import jwt
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.session import (
@@ -12,10 +12,12 @@ from app.core.session import (
 )
 from app.db.database import get_db
 from app.models.usuario import Usuario
+from app.services.auth_service import InvalidCredentialsError, get_authenticated_user
 
 
 AUTH_ERROR_HEADERS = {"WWW-Authenticate": "Bearer"}
 INVALID_TOKEN_DETAIL = "Token de acesso inválido ou expirado. Faça login novamente."
+USER_NOT_FOUND_DETAIL = "Usuário não encontrado. Faça login novamente."
 
 
 def _unauthorized(detail: str, *, with_headers: bool = True) -> HTTPException:
@@ -54,10 +56,11 @@ def _enforce_csrf(request: Request) -> None:
 
 
 def _validate_revocable_token(payload: dict, db: Session) -> None:
-	"""Valida versao/cargo no banco apenas para tokens emitidos com o claim `ver`.
+	"""Valida a versao da sessao no banco apenas para tokens emitidos com o claim `ver`.
 
 	Tokens legados (sem `ver`) continuam validos ate expirar; apos esse periodo todo
-	token novo passa pela checagem de revogacao.
+	token novo passa pela checagem de revogacao. O cargo NAO invalida o token: as
+	permissoes sao lidas do banco a cada request (ver `_resolve_current_user`).
 	"""
 	if "ver" not in payload:
 		return
@@ -65,16 +68,11 @@ def _validate_revocable_token(payload: dict, db: Session) -> None:
 	try:
 		usuario_id = int(payload.get("sub", ""))
 		token_version = int(payload.get("ver"))
-		cargo = int(payload.get("cargo", 0) or 0)
 	except (TypeError, ValueError) as exc:
 		raise _unauthorized(INVALID_TOKEN_DETAIL) from exc
 
 	usuario = db.get(Usuario, usuario_id) if db is not None else None
-	if (
-		usuario is None
-		or int(usuario.token_version or 0) != token_version
-		or int(usuario.cargo or 0) != cargo
-	):
+	if usuario is None or int(usuario.token_version or 0) != token_version:
 		raise _unauthorized(INVALID_TOKEN_DETAIL)
 
 
@@ -99,6 +97,15 @@ def _resolve_current_user(request: Request, authorization: str | None, db: Sessi
 	if source == "cookie":
 		_enforce_csrf(request)
 	_validate_revocable_token(payload, db)
+
+	try:
+		usuario = get_authenticated_user(db, payload.get("sub"))
+	except InvalidCredentialsError as exc:
+		raise _unauthorized(USER_NOT_FOUND_DETAIL) from exc
+
+	# Cargo e primeiro acesso vem sempre do banco: mudanca de cargo vale no proximo request.
+	payload["cargo"] = int(usuario.cargo or 0)
+	payload["primeiro_acesso"] = bool(usuario.primeiro_acesso)
 	return payload
 
 

@@ -39,13 +39,13 @@ def _database():
     Base.metadata.drop_all(bind=engine)
 
 
-def _create_usuario(email: str, primeiro_acesso: bool = True) -> Usuario:
+def _create_usuario(email: str, primeiro_acesso: bool = True, cargo: int = 2) -> Usuario:
     db = TestingSessionLocal()
     usuario = Usuario(
         nome="Usuario Teste",
         email=email,
         senha_hash=hash_password(SENHA_INICIAL),
-        cargo=2,
+        cargo=cargo,
         primeiro_acesso=primeiro_acesso,
     )
     db.add(usuario)
@@ -128,8 +128,8 @@ class TestChangePasswordEndpoint:
 
 class TestFirstAccessEndpoint:
     def test_defines_password_with_valid_token(self):
-        _create_usuario("token@abaco.org.br", primeiro_acesso=True)
-        token = create_first_access_token(email="token@abaco.org.br")
+        usuario = _create_usuario("token@abaco.org.br", primeiro_acesso=True)
+        token = create_first_access_token(email=usuario.email, password_hash=usuario.senha_hash)
 
         response = client.post(
             "/api/v1/auth/first-access",
@@ -149,6 +149,20 @@ class TestFirstAccessEndpoint:
 
         assert response.status_code == 400
 
+    def test_reusing_first_access_link_returns_400(self):
+        usuario = _create_usuario("reuso@abaco.org.br")
+        token = create_first_access_token(email=usuario.email, password_hash=usuario.senha_hash)
+        response = client.post("/api/v1/auth/first-access", json={
+            "token": token, "nova_senha": SENHA_NOVA, "confirmar_senha": SENHA_NOVA,
+        })
+        assert response.status_code == 200
+
+        response = client.post("/api/v1/auth/first-access", json={
+            "token": token, "nova_senha": "outraSenha2", "confirmar_senha": "outraSenha2",
+        })
+        assert response.status_code == 400
+        assert verify_password(SENHA_NOVA, _get_usuario(usuario.email).senha_hash)
+
 
 class TestCreateUsuarioSendsFirstAccessEmail:
     def test_sends_email_to_new_user(self, monkeypatch):
@@ -157,7 +171,8 @@ class TestCreateUsuarioSendsFirstAccessEmail:
             "app.api.v1.usuarios.send_first_access_email",
             lambda email, token: sent.update({"email": email, "token": token}),
         )
-        token = create_access_token(subject="1", cargo=1)
+        diretor = _create_usuario("diretor@abaco.org.br", primeiro_acesso=False, cargo=1)
+        token = create_access_token(subject=str(diretor.id_usuario), cargo=1)
 
         response = client.post(
             "/api/v1/usuarios",
@@ -185,7 +200,8 @@ class TestCreateUsuarioSendsFirstAccessEmail:
             raise EmailDeliveryError("falha simulada no envio")
 
         monkeypatch.setattr("app.api.v1.usuarios.send_first_access_email", failing_send)
-        token = create_access_token(subject="1", cargo=1)
+        diretor = _create_usuario("diretor@abaco.org.br", primeiro_acesso=False, cargo=1)
+        token = create_access_token(subject=str(diretor.id_usuario), cargo=1)
 
         response = client.post(
             "/api/v1/usuarios",

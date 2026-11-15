@@ -1,3 +1,4 @@
+import hmac
 import math
 import time
 from datetime import datetime, timedelta, timezone
@@ -45,7 +46,17 @@ def create_access_token(
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
-def create_reset_token(*, email: str, expires_delta: timedelta | None = None) -> str:
+def password_version(password_hash: str | None) -> str:
+    settings = get_settings()
+    # Não exponha o hash bcrypt em um JWT, cujo payload é público.
+    return hmac.new(
+        settings.secret_key.encode("utf-8"),
+        ("password-link:" + (password_hash or "")).encode("utf-8"),
+        "sha256",
+    ).hexdigest()
+
+
+def create_reset_token(*, email: str, password_hash: str | None, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
     now = datetime.now(timezone.utc)
     expire = now + (expires_delta or timedelta(minutes=settings.reset_token_expire_minutes))
@@ -55,6 +66,7 @@ def create_reset_token(*, email: str, expires_delta: timedelta | None = None) ->
         "iat": now,
         "jti": uuid4().hex,
         "exp": expire,
+        "password_version": password_version(password_hash),
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
@@ -85,7 +97,7 @@ def decode_reset_token(token: str) -> dict:
     return _decode_typed_token(token, "password_reset")
 
 
-def create_first_access_token(*, email: str, expires_delta: timedelta | None = None) -> str:
+def create_first_access_token(*, email: str, password_hash: str | None, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
     now = datetime.now(timezone.utc)
     expire = now + (
@@ -97,6 +109,7 @@ def create_first_access_token(*, email: str, expires_delta: timedelta | None = N
         "iat": now,
         "jti": uuid4().hex,
         "exp": expire,
+        "password_version": password_version(password_hash),
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 

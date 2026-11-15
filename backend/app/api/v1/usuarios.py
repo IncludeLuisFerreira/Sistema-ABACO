@@ -78,7 +78,7 @@ def create_usuarios(payload: UsuarioCreateSchema, _current_user: dict = Depends(
 
 	# O envio do e-mail não deve impedir a criação do usuário.
 	try:
-		token = create_first_access_token(email=usuario.email)
+		token = create_first_access_token(email=usuario.email, password_hash=usuario.senha_hash)
 		send_first_access_email(usuario.email, token)
 	except EmailDeliveryError:
 		logger.warning("Falha ao enviar e-mail de primeiro acesso para %s", usuario.email)

@@ -1,4 +1,4 @@
-from app.core.security import create_reset_token
+from app.services.auth_service import process_forgot_password
 
 
 class TestAuthEndpoints:
@@ -56,8 +56,8 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 500
 
-    def test_reset_password_sucesso_e_login_com_nova_senha(self, seeded, api_client):
-        token = create_reset_token(email="prof@abaco.org.br")
+    def test_reset_password_sucesso_e_login_com_nova_senha(self, seeded, api_client, db_session):
+        token = process_forgot_password(db_session, "prof@abaco.org.br")
         response = api_client.post(
             "/api/v1/auth/reset-password",
             json={"token": token, "nova_senha": "novaSenha1", "confirmar_senha": "novaSenha1"},
@@ -69,6 +69,13 @@ class TestAuthEndpoints:
             json={"email": "prof@abaco.org.br", "senha": "novaSenha1"},
         )
         assert login.status_code == 200
+        assert login.json()["usuario"]["primeiro_acesso"] is False
+
+        repeated = api_client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "nova_senha": "outraSenha2", "confirmar_senha": "outraSenha2"},
+        )
+        assert repeated.status_code == 400
 
     def test_reset_password_token_invalido_retorna_400(self, seeded, api_client):
         response = api_client.post(
@@ -77,16 +84,16 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 400
 
-    def test_reset_password_senhas_divergentes_retorna_422(self, seeded, api_client):
-        token = create_reset_token(email="prof@abaco.org.br")
+    def test_reset_password_senhas_divergentes_retorna_422(self, seeded, api_client, db_session):
+        token = process_forgot_password(db_session, "prof@abaco.org.br")
         response = api_client.post(
             "/api/v1/auth/reset-password",
             json={"token": token, "nova_senha": "novaSenha1", "confirmar_senha": "outraSenha1"},
         )
         assert response.status_code == 422
 
-    def test_reset_password_sem_numero_retorna_422(self, seeded, api_client):
-        token = create_reset_token(email="prof@abaco.org.br")
+    def test_reset_password_sem_numero_retorna_422(self, seeded, api_client, db_session):
+        token = process_forgot_password(db_session, "prof@abaco.org.br")
         response = api_client.post(
             "/api/v1/auth/reset-password",
             json={"token": token, "nova_senha": "somenteletras", "confirmar_senha": "somenteletras"},
