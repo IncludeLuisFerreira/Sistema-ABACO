@@ -53,14 +53,20 @@
 
 .users-management__layout {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  /* minmax(0, 1fr): sem isso a coluna da tabela assume o min-content e empurra
+     o formulário para fora da tela. */
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 1rem;
   align-items: start;
 }
 
+.users-management__layout > * {
+  min-width: 0;
+}
+
 @media (max-width: 980px) {
   .users-management__layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
