@@ -24,7 +24,7 @@ class TestCreateAccessToken:
 
 class TestFirstAccessToken:
     def test_roundtrip(self):
-        token = create_first_access_token(email="novo@abaco.org.br")
+        token = create_first_access_token(email="novo@abaco.org.br", password_hash="hash-de-teste")
         payload = decode_first_access_token(token)
         assert payload["sub"] == "novo@abaco.org.br"
         assert payload["type"] == "first_access"
@@ -32,7 +32,7 @@ class TestFirstAccessToken:
     def test_rejects_other_token_type(self):
         from app.core.security import create_reset_token
 
-        reset_token = create_reset_token(email="novo@abaco.org.br")
+        reset_token = create_reset_token(email="novo@abaco.org.br", password_hash="hash-de-teste")
         with pytest.raises(jwt.PyJWTError):
             decode_first_access_token(reset_token)
 

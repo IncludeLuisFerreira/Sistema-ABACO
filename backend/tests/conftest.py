@@ -182,25 +182,38 @@ def _headers_for_cargo(cargo: int, subject: str = "1") -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
-def director_headers() -> dict:
-    return _headers_for_cargo(1)
+def _persisted_headers(db_session: Session, cargo: int) -> dict:
+    usuario = Usuario(
+        nome="Usuario autenticado de teste",
+        email=f"auth.cargo{cargo}@abaco.org.br",
+        cargo=cargo,
+        primeiro_acesso=False,
+    )
+    db_session.add(usuario)
+    db_session.commit()
+    db_session.refresh(usuario)
+    return _headers_for_cargo(cargo, str(usuario.id_usuario))
 
 
 @pytest.fixture
-def professor_headers() -> dict:
-    return _headers_for_cargo(2, subject="2")
+def director_headers(db_session) -> dict:
+    return _persisted_headers(db_session, 1)
 
 
 @pytest.fixture
-def admin_headers() -> dict:
-    return _headers_for_cargo(3, subject="3")
+def professor_headers(db_session) -> dict:
+    return _persisted_headers(db_session, 2)
 
 
 @pytest.fixture
-def guest_headers() -> dict:
+def admin_headers(db_session) -> dict:
+    return _persisted_headers(db_session, 3)
+
+
+@pytest.fixture
+def guest_headers(db_session) -> dict:
     """Token válido, porém sem cargo reconhecido — deve ser tratado como sem privilégios."""
-    return _headers_for_cargo(0, subject="9")
+    return _persisted_headers(db_session, 0)
 
 
 def _create_usuario(client, headers, nome: str, email: str, cargo: int) -> dict:
@@ -279,6 +292,5 @@ def professor_headers_factory():
 
 
 @pytest.fixture
-def diretor_headers() -> dict:
-    token = create_access_token(subject="999", cargo=1)
-    return {"Authorization": f"Bearer {token}"}
+def diretor_headers(director_headers) -> dict:
+    return director_headers
