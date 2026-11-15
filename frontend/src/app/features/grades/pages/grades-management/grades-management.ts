@@ -30,6 +30,7 @@ export class GradesManagementComponent implements OnInit {
   loadingTurmas = false;
   loadingNotas = false;
   saving = false;
+  loadFailed = false;
   localFeedback: string | null = null;
 
   private matriculasRequestId = 0;
@@ -55,6 +56,8 @@ export class GradesManagementComponent implements OnInit {
     this.students = [];
     this.notasExistentes = [];
     this.loadingNotas = false;
+    this.loadFailed = false;
+    this.localFeedback = null;
     this.matriculasRequestId++;
     this.notasRequestId++;
 
@@ -71,6 +74,7 @@ export class GradesManagementComponent implements OnInit {
     this.notasExistentes = [];
     this.buildStudentList();
     this.loadingNotas = false;
+    this.loadFailed = false;
     this.notasRequestId++;
 
     if (this.selectedTurma) {
@@ -88,7 +92,8 @@ export class GradesManagementComponent implements OnInit {
   }
 
   onSave(): void {
-    if (!this.selectedTurma || this.students.length === 0) {
+    // Nunca salva sobre uma lista montada sem as notas reais: sobrescreveria as notas por null.
+    if (!this.selectedTurma || this.students.length === 0 || this.loadingNotas || this.loadFailed) {
       return;
     }
 
@@ -172,6 +177,8 @@ export class GradesManagementComponent implements OnInit {
     const requestId = ++this.notasRequestId;
 
     this.loadingNotas = true;
+    this.loadFailed = false;
+    this.localFeedback = null;
     this.notaService.listByTurma(turmaId, prova).subscribe({
       next: (notas) => {
         if (requestId !== this.notasRequestId) {
@@ -181,6 +188,7 @@ export class GradesManagementComponent implements OnInit {
         this.notasExistentes = notas;
         this.buildStudentList();
         this.loadingNotas = false;
+        this.loadFailed = false;
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
@@ -191,6 +199,8 @@ export class GradesManagementComponent implements OnInit {
         this.notasExistentes = [];
         this.buildStudentList();
         this.loadingNotas = false;
+        this.loadFailed = true;
+        this.localFeedback = 'Não foi possível carregar as notas. Recarregue a tela antes de salvar.';
         this.notifications.error('Erro ao carregar notas.');
         this.changeDetectorRef.detectChanges();
       },

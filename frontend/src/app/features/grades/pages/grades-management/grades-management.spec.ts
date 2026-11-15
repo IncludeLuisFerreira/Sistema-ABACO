@@ -57,10 +57,12 @@ describe('GradesManagementComponent - carregamento', () => {
   let component: GradesManagementComponent;
   let matriculas$: Subject<Matricula[]>;
   let notasRequests: Subject<Nota[]>[];
+  let notaCreate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     matriculas$ = new Subject<Matricula[]>();
     notasRequests = [];
+    notaCreate = vi.fn().mockReturnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [GradesManagementComponent],
@@ -78,6 +80,7 @@ describe('GradesManagementComponent - carregamento', () => {
               notasRequests.push(notas$);
               return notas$.asObservable();
             }),
+            create: notaCreate,
             getMediaTurma: vi.fn().mockReturnValue(of({ idTurma: 1, medias: [] })),
           },
         },
@@ -118,5 +121,50 @@ describe('GradesManagementComponent - carregamento', () => {
 
     notasRequests[1].next([nota2]);
     expect(component.students).toEqual([{ idMatricula: 11, nomeAluno: 'Aluno B', nota: 9 }]);
+  });
+
+  it('nao salva enquanto as notas estao carregando (lista ja montada com nota null)', () => {
+    matriculas$.next([matricula]);
+
+    expect(component.students).toEqual([{ idMatricula: 10, nomeAluno: 'Aluno A', nota: null }]);
+    expect(component.loadingNotas).toBe(true);
+
+    component.onSave();
+
+    expect(notaCreate).not.toHaveBeenCalled();
+  });
+
+  it('nao salva quando o carregamento das notas falha e avisa de forma persistente', () => {
+    matriculas$.next([matricula]);
+    notasRequests[0].error(new Error('500'));
+
+    expect(component.loadFailed).toBe(true);
+    expect(component.localFeedback).toContain('Não foi possível carregar as notas');
+
+    component.onSave();
+
+    expect(notaCreate).not.toHaveBeenCalled();
+  });
+
+  it('limpa o estado de falha quando um novo carregamento da certo', () => {
+    matriculas$.next([matricula]);
+    notasRequests[0].error(new Error('500'));
+    expect(component.loadFailed).toBe(true);
+
+    component.onProvaChange(2);
+    expect(component.loadFailed).toBe(false);
+
+    notasRequests[1].error(new Error('500'));
+    expect(component.loadFailed).toBe(true);
+
+    component.onTurmaChange({ target: { value: '1' } } as unknown as Event);
+    notasRequests[notasRequests.length - 1].next([nota]);
+
+    expect(component.loadFailed).toBe(false);
+    expect(component.localFeedback).toBeNull();
+    expect(component.students).toEqual([{ idMatricula: 10, nomeAluno: 'Aluno A', nota: 8 }]);
+
+    component.onSave();
+    expect(notaCreate).toHaveBeenCalled();
   });
 });

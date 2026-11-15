@@ -8,7 +8,7 @@
       type="button"
       class="save-btn"
       (click)="onSave()"
-      [disabled]="saving || !selectedTurma || !dataAula || students.length === 0"
+      [disabled]="saving || !selectedTurma || !dataAula || students.length === 0 || loadingPresencas || loadFailed"
     >
       <span *ngIf="saving" class="spinner" aria-hidden="true"></span>
       {{ saving ? 'Salvando...' : 'Salvar presencas' }}
