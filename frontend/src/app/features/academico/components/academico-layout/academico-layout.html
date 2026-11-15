@@ -14,10 +14,10 @@
   <!-- Sidebar -->
   <nav class="academico-nav" [class.academico-nav--open]="menuOpen">
     <button class="academico-nav__close" (click)="menuOpen = false" aria-label="Fechar menu">&times;</button>
-    <div class="academico-nav__brand">
+    <a class="academico-nav__brand" routerLink="/academico" (click)="menuOpen = false">
       <img src="/Logo_ABACO.png" alt="ABACO" class="academico-nav__logo" />
       <span class="academico-nav__title">SGA ABACO</span>
-    </div>
+    </a>
 
     <ul class="academico-nav__links">
       <li>

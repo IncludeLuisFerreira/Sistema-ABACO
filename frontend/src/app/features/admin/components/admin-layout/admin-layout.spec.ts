@@ -37,4 +37,11 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).not.toContain('Usuarios');
   });
+
+  it('logo da sidebar leva para a página inicial', async () => {
+    await setup('ADMIN');
+    const brand = (fixture.nativeElement as HTMLElement).querySelector('.admin-nav__brand');
+    expect(brand?.tagName).toBe('A');
+    expect(brand?.getAttribute('href')).toBe('/admin/home');
+  });
 });
