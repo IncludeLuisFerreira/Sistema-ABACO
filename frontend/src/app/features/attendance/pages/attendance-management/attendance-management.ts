@@ -29,7 +29,11 @@ export class AttendanceManagementComponent implements OnInit {
   loadingTurmas = false;
   loadingPresencas = false;
   saving = false;
+  loadFailed = false;
   localFeedback: string | null = null;
+
+  private matriculasRequestId = 0;
+  private presencasRequestId = 0;
 
   readonly diasNome: Record<number, string> = {
     0: 'Domingo', 1: 'Segunda', 2: 'Terça', 3: 'Quarta',
@@ -98,7 +102,16 @@ export class AttendanceManagementComponent implements OnInit {
     this.selectedTurma = this.turmas.find((t) => t.idTurma === turmaId) ?? null;
     this.students = [];
     this.presencasExistentes = [];
+    this.loadingPresencas = false;
+    this.loadFailed = false;
+    this.localFeedback = null;
+    this.presencasRequestId++;
 
+    // Recarrega matriculas em cada troca para se recuperar de uma falha anterior
+    // (a carga inicial pode ter falhado antes de o usuario escolher a turma).
+    if (this.selectedTurma) {
+      this.loadMatriculas();
+    }
     if (this.selectedTurma && this.dataAula) {
       this.loadPresencas();
     }
@@ -108,6 +121,9 @@ export class AttendanceManagementComponent implements OnInit {
   onDataAulaChange(dataAula: string): void {
     this.dataAula = dataAula;
     this.localFeedback = null;
+    this.loadingPresencas = false;
+    this.loadFailed = false;
+    this.presencasRequestId++;
 
     if (!this.dataAula || !this.selectedTurma) {
       this.students = [];
@@ -128,6 +144,8 @@ export class AttendanceManagementComponent implements OnInit {
       return;
     }
 
+    this.presencasExistentes = [];
+    this.buildStudentList();
     this.loadPresencas();
   }
 
@@ -140,7 +158,14 @@ export class AttendanceManagementComponent implements OnInit {
   }
 
   onSave(): void {
-    if (!this.selectedTurma || !this.dataAula || this.students.length === 0) {
+    // Nunca salva sobre uma lista montada sem as presencas reais: marcaria todos como ausentes.
+    if (
+      !this.selectedTurma ||
+      !this.dataAula ||
+      this.students.length === 0 ||
+      this.loadingPresencas ||
+      this.loadFailed
+    ) {
       return;
     }
 
@@ -198,12 +223,24 @@ export class AttendanceManagementComponent implements OnInit {
   }
 
   private loadMatriculas(): void {
+    const requestId = ++this.matriculasRequestId;
+
     this.matriculaService.list().subscribe({
       next: (matriculas) => {
+        if (requestId !== this.matriculasRequestId) {
+          return;
+        }
+
         this.matriculas = matriculas;
+        // Reconstroi a lista mesmo que as presencas ja tenham chegado antes das matriculas.
+        this.buildStudentList();
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.matriculasRequestId) {
+          return;
+        }
+
         this.notifications.error('Erro ao carregar matrículas.');
       },
     });
@@ -214,18 +251,35 @@ export class AttendanceManagementComponent implements OnInit {
       return;
     }
 
+    const turmaId = this.selectedTurma.idTurma;
+    const dataAula = this.dataAula;
+    const requestId = ++this.presencasRequestId;
+
     this.loadingPresencas = true;
-    this.presencaService.listByTurma(this.selectedTurma.idTurma, this.dataAula).subscribe({
+    this.loadFailed = false;
+    this.localFeedback = null;
+    this.presencaService.listByTurma(turmaId, dataAula).subscribe({
       next: (presencas) => {
+        if (requestId !== this.presencasRequestId) {
+          return;
+        }
+
         this.presencasExistentes = presencas;
         this.buildStudentList();
         this.loadingPresencas = false;
+        this.loadFailed = false;
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.presencasRequestId) {
+          return;
+        }
+
         this.presencasExistentes = [];
         this.buildStudentList();
         this.loadingPresencas = false;
+        this.loadFailed = true;
+        this.localFeedback = 'Não foi possível carregar as presenças. Recarregue a tela antes de salvar.';
         this.notifications.error('Erro ao carregar presenças.');
         this.changeDetectorRef.detectChanges();
       },
