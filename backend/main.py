@@ -242,17 +242,34 @@ app.include_router(turmas_router)
 app.include_router(usuarios_router)
 
 
-@app.get("/api/health")
-def health_check():
-    db_ok = False
+def _database_readiness():
+    """Readiness: 200 só com banco acessível; 503 quando desconectado."""
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            db_ok = True
-    # FIXME: engole Exception e sempre retorna HTTP 200, mesmo com banco fora
+        return {"status": "ok", "database": "connected"}
     except Exception:
-        db_ok = False
-    return {"status": "ok", "database": "connected" if db_ok else "disconnected"}
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "database": "disconnected"},
+        )
+
+
+@app.get("/api/health/live")
+def health_live():
+    """Liveness: processo no ar, sem depender do banco."""
+    return {"status": "ok"}
+
+
+@app.get("/api/health/ready")
+def health_ready():
+    return _database_readiness()
+
+
+@app.get("/api/health")
+def health_check():
+    """Compatível com clientes existentes; equivale ao readiness."""
+    return _database_readiness()
 
 
 @app.get("/")

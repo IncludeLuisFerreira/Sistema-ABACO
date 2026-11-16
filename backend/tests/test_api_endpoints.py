@@ -37,10 +37,43 @@ MANAGER_LIST_ENDPOINTS = [
 
 
 class TestHealthCheck:
-    def test_returns_ok(self, api_client):
-        response = api_client.get("/api/health")
+    def test_live_sempre_ok(self, api_client):
+        response = api_client.get("/api/health/live")
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
+
+    def test_ready_e_health_retornam_ok_com_banco(self, api_client, monkeypatch):
+        class _Conn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def execute(self, _statement):
+                return None
+
+        monkeypatch.setattr("main.engine.connect", lambda: _Conn())
+
+        for path in ("/api/health/ready", "/api/health"):
+            response = api_client.get(path)
+            assert response.status_code == 200
+            body = response.json()
+            assert body["status"] == "ok"
+            assert body["database"] == "connected"
+
+    def test_ready_e_health_retornam_503_sem_banco(self, api_client, monkeypatch):
+        def _fail_connect():
+            raise OSError("database unavailable")
+
+        monkeypatch.setattr("main.engine.connect", _fail_connect)
+
+        for path in ("/api/health/ready", "/api/health"):
+            response = api_client.get(path)
+            assert response.status_code == 503
+            body = response.json()
+            assert body["status"] == "error"
+            assert body["database"] == "disconnected"
 
     def test_root_returns_ok(self, api_client):
         response = api_client.get("/")
