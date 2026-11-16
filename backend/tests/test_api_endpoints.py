@@ -42,6 +42,20 @@ class TestHealthCheck:
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
+    def test_live_nao_consulta_o_banco(self, api_client, monkeypatch):
+        calls = []
+
+        def _fail_connect():
+            calls.append(True)
+            raise OSError("database unavailable")
+
+        monkeypatch.setattr("main.engine.connect", _fail_connect)
+
+        response = api_client.get("/api/health/live")
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
+        assert calls == []
+
     def test_ready_e_health_retornam_ok_com_banco(self, api_client, monkeypatch):
         class _Conn:
             def __enter__(self):
@@ -67,6 +81,26 @@ class TestHealthCheck:
             raise OSError("database unavailable")
 
         monkeypatch.setattr("main.engine.connect", _fail_connect)
+
+        for path in ("/api/health/ready", "/api/health"):
+            response = api_client.get(path)
+            assert response.status_code == 503
+            body = response.json()
+            assert body["status"] == "error"
+            assert body["database"] == "disconnected"
+
+    def test_ready_e_health_retornam_503_quando_query_falha(self, api_client, monkeypatch):
+        class _Conn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def execute(self, _statement):
+                raise OSError("query timeout")
+
+        monkeypatch.setattr("main.engine.connect", lambda: _Conn())
 
         for path in ("/api/health/ready", "/api/health"):
             response = api_client.get(path)
