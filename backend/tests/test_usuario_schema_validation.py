@@ -14,19 +14,11 @@ class TestUsuarioCreateSchemaValidation:
 				cargo=2,
 			)
 
-	def test_email_dominio_externo_rejeitado(self):
-		with pytest.raises(ValidationError) as exc:
-			UsuarioCreateSchema(
-				nome="Novo Usuario",
-				email="pessoa@hotmail.com",
-				senha="senha123",
-				cargo=2,
-			)
-		assert "abaco.org.br" in str(exc.value)
-		assert "gmail.com" in str(exc.value)
-
-	@pytest.mark.parametrize("email", ["pessoa@gmail.com", "pessoa@abaco.org.br"])
-	def test_email_de_dominio_permitido_aceito(self, email):
+	@pytest.mark.parametrize(
+		"email",
+		["pessoa@gmail.com", "pessoa@abaco.org.br", "fulano@empresa.com.br", "alguem@outlook.com"],
+	)
+	def test_email_de_qualquer_dominio_aceito(self, email):
 		payload = UsuarioCreateSchema(
 			nome="Novo Usuario",
 			email=email,
