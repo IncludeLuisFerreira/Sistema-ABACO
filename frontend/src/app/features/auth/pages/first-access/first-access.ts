@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PasswordField } from '../../../../shared/components/password-field/password-field';
 import { PrimaryButton } from '../../../../shared/components/primary-button/primary-button';
+import { PASSWORD_CONFIRMATION_VALIDATORS, PASSWORD_VALIDATORS } from '../../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-first-access',
@@ -24,8 +25,8 @@ export class FirstAccess implements OnInit {
 
   constructor(private fb: FormBuilder, private auth: AuthService, private route: ActivatedRoute, private router: Router) {
     this.form = this.fb.group({
-      nova_senha: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
-      confirmar_senha: ['', [Validators.required, Validators.minLength(8)]],
+      nova_senha: ['', PASSWORD_VALIDATORS],
+      confirmar_senha: ['', PASSWORD_CONFIRMATION_VALIDATORS],
     });
   }
 
@@ -37,7 +38,10 @@ export class FirstAccess implements OnInit {
   }
 
   onSubmit() {
-    if (this.form.invalid || !this.token) return;
+    if (this.form.invalid || !this.token) {
+      this.form.markAllAsTouched();
+      return;
+    }
     this.error = null;
     this.success = null;
 

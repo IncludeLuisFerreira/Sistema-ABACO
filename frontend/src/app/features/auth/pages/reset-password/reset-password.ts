@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PasswordField } from '../../../../shared/components/password-field/password-field';
 import { PrimaryButton } from '../../../../shared/components/primary-button/primary-button';
+import { PASSWORD_CONFIRMATION_VALIDATORS, PASSWORD_VALIDATORS } from '../../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-reset-password',
@@ -26,8 +27,8 @@ export class ResetPassword implements OnInit, OnDestroy {
 
   constructor(private fb: FormBuilder, private auth: AuthService, private route: ActivatedRoute, private router: Router) {
     this.form = this.fb.nonNullable.group({
-      nova_senha: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
-      confirmar_senha: ['', [Validators.required, Validators.minLength(8)]],
+      nova_senha: ['', PASSWORD_VALIDATORS],
+      confirmar_senha: ['', PASSWORD_CONFIRMATION_VALIDATORS],
     });
   }
 
