@@ -1,20 +1,23 @@
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+MatriculaStatus = Literal[0, 1, 2]
 
 
 class MatriculaCreateSchema(BaseModel):
     idAluno: int
     idTurma: int
     dataMatricula: date | None = None
-    status: int | None = 0
+    status: MatriculaStatus | None = 0
 
 
 class MatriculaUpdateSchema(BaseModel):
     idAluno: int | None = None
     idTurma: int | None = None
     dataMatricula: date | None = None
-    status: int | None = None
+    status: MatriculaStatus | None = None
 
 
 class MatriculaAlunoInfo(BaseModel):

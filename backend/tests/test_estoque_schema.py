@@ -30,10 +30,10 @@ class TestEstoqueBaixaSchema:
 
 
 class TestEstoqueCreateSchema:
-    def test_negative_quantidade_disponivel_allowed(self):
-        schema = EstoqueCreateSchema(nomeItem="Item", quantidadeDisponivel=-5)
-        assert schema.quantidadeDisponivel == -5
+    def test_negative_quantidade_disponivel_rejected(self):
+        with pytest.raises(ValidationError):
+            EstoqueCreateSchema(nomeItem="Item", quantidadeDisponivel=-5)
 
-    def test_negative_estoque_minimo_allowed(self):
-        schema = EstoqueCreateSchema(nomeItem="Item", estoqueMinimo=-5)
-        assert schema.estoqueMinimo == -5
+    def test_negative_estoque_minimo_rejected(self):
+        with pytest.raises(ValidationError):
+            EstoqueCreateSchema(nomeItem="Item", estoqueMinimo=-5)
