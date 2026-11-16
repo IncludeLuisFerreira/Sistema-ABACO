@@ -54,7 +54,7 @@ services:
     networks:
       - sga_network
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; r = urllib.request.urlopen('http://localhost:8000/api/health'); assert r.status == 200; assert b'ok' in r.read()\""]
+      test: ["CMD-SHELL", "python -c \"import json, urllib.request; r = urllib.request.urlopen('http://localhost:8000/api/health/ready', timeout=4); body = json.load(r); assert r.status == 200; assert body['database'] == 'connected'\""]
       interval: 10s
       timeout: 5s
       retries: 5
