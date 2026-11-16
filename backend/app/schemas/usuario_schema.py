@@ -6,7 +6,7 @@ from app.core.validators import normalize_email_institucional, normalize_nome, n
 class UsuarioCreateSchema(BaseModel):
 	nome: str = Field(min_length=1)
 	email: EmailStr
-	# FIXME: política de senha fraca (min_length=1) difere do reset (8+ com letra/número)
+	# Senha provisória do cadastro: política forte fica no reset/primeiro acesso.
 	senha: str = Field(min_length=1)
 	cargo: int = Field(ge=1, le=3)
 	telefone: str | None = None

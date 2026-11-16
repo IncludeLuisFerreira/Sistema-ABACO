@@ -2,18 +2,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class EstoqueCreateSchema(BaseModel):
-    # FIXME: nomeItem sem min_length; quantidades podem ser negativas
     nomeItem: str
-    quantidadeDisponivel: int | None = None
+    quantidadeDisponivel: int | None = Field(default=None, ge=0)
     unidade: str | None = None
-    estoqueMinimo: int | None = None
+    estoqueMinimo: int | None = Field(default=None, ge=0)
 
 
 class EstoqueUpdateSchema(BaseModel):
     nomeItem: str | None = None
-    quantidadeDisponivel: int | None = None
+    quantidadeDisponivel: int | None = Field(default=None, ge=0)
     unidade: str | None = None
-    estoqueMinimo: int | None = None
+    estoqueMinimo: int | None = Field(default=None, ge=0)
 
 
 class EstoqueResponseSchema(BaseModel):
