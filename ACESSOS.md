@@ -4,12 +4,17 @@
 
 | Cargo | Email | Senha |
 |-------|-------|-------|
-| **Diretora** | admin@abaco.org.br | admin123 |
-| **Admin** | admin2@abaco.org.br | admin123 |
-| **Professora** | maria@abaco.org.br | prof12345 |
-| **Professor** | joao@abaco.org.br | prof12345 |
-| **Professora** | ana@abaco.org.br | prof12345 |
-| **Professor** | paulo@abaco.org.br | prof12345 |
+| **Diretora** | admin@abaco.org.br | `ADMIN_SEED_PASSWORD` (padrão `admin123`) |
+| **Admin** | admin2@abaco.org.br | `SEED_ADMIN_PASSWORD` (padrão `admin123`) |
+| **Professora** | maria@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+| **Professor** | joao@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+| **Professora** | ana@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+| **Professor** | paulo@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+
+> As senhas vêm do `.env` (veja `.env.example`). Sem `SEED_ADMIN_PASSWORD`/`SEED_PROFESSOR_PASSWORD`,
+> `admin2` e os professores não são criados — e sem professor não há turmas, matrículas nem pedidos
+> de teste. O primeiro diretor (`admin@abaco.org.br`) depende de `ADMIN_SEED_EMAIL`/`ADMIN_SEED_PASSWORD`.
+> O seed é idempotente e pode ser rodado avulso: `docker compose exec backend python -m app.db.seed`.
 
 > Para criar um Administrativo (cargo 3), a Diretora pode cadastrar via `/admin/usuarios`.
 
