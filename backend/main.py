@@ -23,6 +23,7 @@ from app.api.v1.usuarios import router as usuarios_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.db.database import SessionLocal, engine
+from app.schemas.health_schema import HealthResponse, LivenessResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -242,31 +243,49 @@ app.include_router(turmas_router)
 app.include_router(usuarios_router)
 
 
-def _database_readiness():
+_DB_ERROR_LOGGED = False
+
+
+def _database_readiness() -> dict[str, str] | JSONResponse:
     """Readiness: 200 só com banco acessível; 503 quando desconectado."""
+    global _DB_ERROR_LOGGED
     try:
         with engine.connect() as conn:
+            if engine.dialect.name == "postgresql":
+                conn.execute(text("SET LOCAL statement_timeout = '3000ms'"))
             conn.execute(text("SELECT 1"))
+        _DB_ERROR_LOGGED = False
         return {"status": "ok", "database": "connected"}
     except Exception:
+        if not _DB_ERROR_LOGGED:
+            logger.warning("Health check: banco de dados indisponível", exc_info=True)
+            _DB_ERROR_LOGGED = True
         return JSONResponse(
             status_code=503,
             content={"status": "error", "database": "disconnected"},
         )
 
 
-@app.get("/api/health/live")
+@app.get("/api/health/live", response_model=LivenessResponse)
 def health_live():
     """Liveness: processo no ar, sem depender do banco."""
     return {"status": "ok"}
 
 
-@app.get("/api/health/ready")
+@app.get(
+    "/api/health/ready",
+    response_model=HealthResponse,
+    responses={503: {"model": HealthResponse}},
+)
 def health_ready():
     return _database_readiness()
 
 
-@app.get("/api/health")
+@app.get(
+    "/api/health",
+    response_model=HealthResponse,
+    responses={503: {"model": HealthResponse}},
+)
 def health_check():
     """Compatível com clientes existentes; equivale ao readiness."""
     return _database_readiness()
