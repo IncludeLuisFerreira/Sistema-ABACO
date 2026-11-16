@@ -96,10 +96,11 @@ def get_chart_logistica(db: Session) -> dict:
     else:
         primeiro_dia_proximo_mes = hoje.replace(month=hoje.month + 1, day=1)
 
+    consumo_expr = func.abs(func.sum(MovimentacaoEstoque.quantidade))
     consumo = (
         db.query(
             Estoque.nome_item.label("item"),
-            func.sum(MovimentacaoEstoque.quantidade).label("quantidade"),
+            consumo_expr.label("quantidade"),
         )
         .select_from(MovimentacaoEstoque)
         .join(
@@ -112,7 +113,7 @@ def get_chart_logistica(db: Session) -> dict:
             MovimentacaoEstoque.data_movimentacao < primeiro_dia_proximo_mes,
         )
         .group_by(Estoque.nome_item)
-        .order_by(func.sum(MovimentacaoEstoque.quantidade).desc())
+        .order_by(consumo_expr.desc())
         .all()
     )
 
