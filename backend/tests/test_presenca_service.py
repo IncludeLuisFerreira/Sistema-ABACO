@@ -1,9 +1,15 @@
 from datetime import date
 
+import pytest
 from sqlalchemy.orm import Session
 
+from app.models.presenca import Presenca
 from app.schemas.presenca_schema import PresencaBatchSchema, PresencaItemSchema
-from app.services.presenca_service import create_or_update_presencas, list_presencas_by_turma
+from app.services.presenca_service import (
+    InvalidMatriculasError,
+    create_or_update_presencas,
+    list_presencas_by_turma,
+)
 
 
 class TestCreateOrUpdatePresencas:
@@ -29,14 +35,42 @@ class TestCreateOrUpdatePresencas:
         results = create_or_update_presencas(db_session, payload)
         assert results[0].presente is False
 
-    def test_ignores_matriculas_not_in_turma(self, db_session: Session, turma):
+    def test_raises_para_matricula_fora_da_turma(self, db_session: Session, turma):
         payload = PresencaBatchSchema(
             idTurma=turma.id_turma,
             dataAula=date(2026, 6, 21),
             presencas=[PresencaItemSchema(idMatricula=9999, presente=True)],
         )
-        results = create_or_update_presencas(db_session, payload)
-        assert len(results) == 0
+        with pytest.raises(InvalidMatriculasError) as exc:
+            create_or_update_presencas(db_session, payload)
+        assert exc.value.ids_invalidos == [9999]
+
+    def test_batch_misto_nao_grava_nada(self, db_session: Session, turma, matricula_ativa):
+        payload = PresencaBatchSchema(
+            idTurma=turma.id_turma,
+            dataAula=date(2026, 6, 21),
+            presencas=[
+                PresencaItemSchema(idMatricula=matricula_ativa.id_matricula, presente=True),
+                PresencaItemSchema(idMatricula=9999, presente=True),
+            ],
+        )
+        with pytest.raises(InvalidMatriculasError):
+            create_or_update_presencas(db_session, payload)
+        assert db_session.query(Presenca).count() == 0
+
+    def test_ids_invalidos_repetidos_nao_duplicam(self, db_session: Session, turma):
+        payload = PresencaBatchSchema(
+            idTurma=turma.id_turma,
+            dataAula=date(2026, 6, 21),
+            presencas=[
+                PresencaItemSchema(idMatricula=9999, presente=True),
+                PresencaItemSchema(idMatricula=9999, presente=False),
+                PresencaItemSchema(idMatricula=8888, presente=True),
+            ],
+        )
+        with pytest.raises(InvalidMatriculasError) as exc:
+            create_or_update_presencas(db_session, payload)
+        assert exc.value.ids_invalidos == [9999, 8888]
 
 
 class TestListPresencasByTurma:
