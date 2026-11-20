@@ -19,6 +19,19 @@ class TestCreateAluno:
         assert result.nome == "Novo Aluno"
         assert result.id_aluno is not None
 
+    def test_integrity_error_vira_erro_de_dominio(self, db_session: Session, monkeypatch):
+        from sqlalchemy.exc import IntegrityError
+
+        from app.services.aluno_service import AlunoIntegrityError
+
+        def commit_falha():
+            raise IntegrityError("INSERT", {}, Exception("violacao de integridade"))
+
+        monkeypatch.setattr(db_session, "commit", commit_falha)
+
+        with pytest.raises(AlunoIntegrityError):
+            create_aluno(db_session, AlunoCreateSchema(nome="Aluno Duplicado"))
+
 
 class TestListAlunos:
     def test_lists_all(self, db_session: Session, aluno):
