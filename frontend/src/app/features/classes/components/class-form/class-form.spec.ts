@@ -42,6 +42,12 @@ describe('ClassFormComponent', () => {
     component.diasAulaArray.patchValue([false, true, false, true, false, false, false]);
   }
 
+  function preencherDias(dias: number[]): void {
+    component.diasAulaArray.patchValue(
+      component.diasSemana.map((dia) => dias.includes(dia.value)),
+    );
+  }
+
   function capturarEnvios(): ClassFormSubmit[] {
     const envios: ClassFormSubmit[] = [];
     component.save.subscribe((payload) => envios.push(payload));
@@ -151,6 +157,56 @@ describe('ClassFormComponent', () => {
     expect(component.avaliacoesArray.length).toBe(1);
   });
 
+  it('gera aviso quando os dias se sobrepõem parcialmente', () => {
+    fixture.componentRef.setInput('allTurmas', [turmaExistente]);
+    fixture.detectChanges();
+    component.form.patchValue({
+      idCurso: 1,
+      idProfessor: 2,
+      capacidade: 20,
+      dataInicio: '2026-04-01',
+      dataFim: '2026-05-01',
+    });
+    preencherDias([1, 3, 5]);
+
+    component.updateContexto();
+    expect(component.conflitoLabel).toContain('já tem');
+  });
+
+  it('não gera aviso quando os dias não têm interseção', () => {
+    fixture.componentRef.setInput('allTurmas', [turmaExistente]);
+    fixture.detectChanges();
+    component.form.patchValue({
+      idCurso: 1,
+      idProfessor: 2,
+      capacidade: 20,
+      dataInicio: '2026-04-01',
+      dataFim: '2026-05-01',
+    });
+    preencherDias([2, 4]);
+
+    component.updateContexto();
+    expect(component.conflitoLabel).toBeNull();
+  });
+
+  it('recalcula o conflito quando os dias mudam', () => {
+    fixture.componentRef.setInput('allTurmas', [turmaExistente]);
+    fixture.detectChanges();
+    component.form.patchValue({
+      idCurso: 1,
+      idProfessor: 2,
+      capacidade: 20,
+      dataInicio: '2026-04-01',
+      dataFim: '2026-05-01',
+    });
+    preencherDias([1, 3]);
+
+    expect(component.conflitoLabel).toContain('já tem');
+
+    preencherDias([2, 4]);
+    expect(component.conflitoLabel).toBeNull();
+  });
+
   it('recalcula o conflito quando as datas mudam', () => {
     fixture.componentRef.setInput('allTurmas', [turmaExistente]);
     fixture.detectChanges();
@@ -161,14 +217,12 @@ describe('ClassFormComponent', () => {
       dataInicio: '2026-04-01',
       dataFim: '2026-05-01',
     });
-    component.diasAulaArray.patchValue([false, true, false, true, false, false, false]);
+    preencherDias([1, 3]);
 
-    component.updateContexto();
     expect(component.conflitoLabel).toContain('já tem');
 
     component.form.controls.dataInicio.setValue('2026-08-01');
     component.form.controls.dataFim.setValue('2026-09-01');
-    component.updateContexto();
 
     expect(component.conflitoLabel).toBeNull();
   });
