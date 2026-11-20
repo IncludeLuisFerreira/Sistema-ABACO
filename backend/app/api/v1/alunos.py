@@ -6,6 +6,7 @@ from app.db.database import get_db
 from app.schemas.aluno_schema import AlunoCreateSchema, AlunoResponseSchema, AlunoUpdateSchema
 from app.services.aluno_service import (
     AlunoHasDependenciesError,
+    AlunoIntegrityError,
     AlunoNotFoundError,
     create_aluno,
     delete_aluno,
@@ -35,7 +36,10 @@ def read_aluno(aluno_id: int, _current_user: dict = Depends(verify_cargo(1, 3)),
 
 @router.post("")
 def create_alunos(payload: AlunoCreateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
-    aluno = create_aluno(db, payload)
+    try:
+        aluno = create_aluno(db, payload)
+    except AlunoIntegrityError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Não foi possível criar o aluno") from exc
     return AlunoResponseSchema.model_validate(aluno)
 
 
