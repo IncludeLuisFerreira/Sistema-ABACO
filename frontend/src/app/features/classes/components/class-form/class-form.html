@@ -9,7 +9,7 @@
 
     <label>
       <span>Curso *</span>
-      <select formControlName="idCurso" (change)="onCursoChange()">
+      <select formControlName="idCurso">
         <option [value]="0" disabled>Selecione um curso</option>
         <option *ngFor="let curso of cursos" [value]="curso.idCurso">{{ curso.nomeCurso }}</option>
       </select>
@@ -19,7 +19,7 @@
 
     <label>
       <span>Professor *</span>
-      <select formControlName="idProfessor" (change)="onProfessorChange()">
+      <select formControlName="idProfessor">
         <option [value]="0" disabled>Selecione um professor</option>
         <option *ngFor="let prof of professores" [value]="prof.idUsuario">{{ prof.nome }}</option>
       </select>
@@ -35,13 +35,13 @@
 
     <label>
       <span>Data de inicio *</span>
-      <input formControlName="dataInicio" type="date" (change)="updateContexto()" />
+      <input formControlName="dataInicio" type="date" />
       <small class="error" *ngIf="form.controls.dataInicio.invalid && form.controls.dataInicio.touched">Data de inicio é obrigatória.</small>
     </label>
 
     <label>
       <span>Data de fim *</span>
-      <input formControlName="dataFim" type="date" (change)="updateContexto()" />
+      <input formControlName="dataFim" type="date" />
       <small class="error" *ngIf="form.controls.dataFim.invalid && form.controls.dataFim.touched">Data de fim é obrigatória.</small>
       <small class="error" *ngIf="form.hasError('dateRange') && (form.controls.dataInicio.touched || form.controls.dataFim.touched)">
         Data de fim deve ser maior ou igual à data de inicio.
@@ -77,7 +77,7 @@
       <legend>Dias de aula *</legend>
       <div class="dias-aula__grid">
         <label *ngFor="let dia of diasSemana; let i = index" class="dia-checkbox">
-          <input type="checkbox" [formControl]="diasAulaControls[i]" (change)="updateContexto()" />
+          <input type="checkbox" [formControl]="diasAulaControls[i]" />
           <span>{{ dia.label }}</span>
         </label>
       </div>
