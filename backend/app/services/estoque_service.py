@@ -50,18 +50,23 @@ def _is_unique_violation(exc: IntegrityError) -> bool:
     return "unique" in message or "uq_estoque_nomeitem_lower" in message
 
 
+def _normalizar_nome_item(value: str) -> str:
+    return " ".join(value.split())
+
+
 def create_estoque(db: Session, payload: EstoqueCreateSchema, background_tasks: BackgroundTasks | None = None) -> Estoque:
+    nome_item = _normalizar_nome_item(payload.nomeItem)
     existing = db.query(Estoque).filter(
-        func.lower(Estoque.nome_item) == func.lower(payload.nomeItem.strip())
+        func.lower(Estoque.nome_item) == nome_item.lower()
     ).first()
 
     if existing:
         raise EstoqueAlreadyExistsError(
-            f"Item '{payload.nomeItem}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
+            f"Item '{nome_item}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
         )
 
     estoque = Estoque(
-        nome_item=payload.nomeItem.strip(),
+        nome_item=nome_item,
         quantidade_disponivel=payload.quantidadeDisponivel,
         unidade=payload.unidade,
         estoque_minimo=payload.estoqueMinimo,
@@ -71,9 +76,11 @@ def create_estoque(db: Session, payload: EstoqueCreateSchema, background_tasks: 
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        raise EstoqueAlreadyExistsError(
-            f"Item '{payload.nomeItem}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
-        ) from exc
+        if _is_unique_violation(exc):
+            raise EstoqueAlreadyExistsError(
+                f"Item '{nome_item}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
+            ) from exc
+        raise
     db.refresh(estoque)
     notificar_estoque_baixo(db, itens_recem_baixos({}, [estoque]), background_tasks)
     return estoque
@@ -84,6 +91,7 @@ def list_estoque(db: Session) -> list[Estoque]:
 
 
 def search_estoque_by_name(db: Session, term: str) -> list[Estoque]:
+    term = _normalizar_nome_item(term)
     return db.query(Estoque).filter(
         Estoque.nome_item.ilike(f"%{term}%")
     ).order_by(Estoque.nome_item).all()
@@ -101,7 +109,7 @@ def update_estoque(db: Session, estoque_id: int, payload: EstoqueUpdateSchema, b
     anteriores = {estoque.id_item_estoque: snapshot_estoque(estoque)}
 
     if payload.nomeItem is not None:
-        estoque.nome_item = payload.nomeItem
+        estoque.nome_item = _normalizar_nome_item(payload.nomeItem)
     if payload.quantidadeDisponivel is not None:
         estoque.quantidade_disponivel = payload.quantidadeDisponivel
     if payload.unidade is not None:
