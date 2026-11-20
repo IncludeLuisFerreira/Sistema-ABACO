@@ -13,12 +13,20 @@ class CursoHasDependenciesError(Exception):
     pass
 
 
+class CursoIntegrityError(Exception):
+    pass
+
+
 def create_curso(db: Session, payload: CursoCreateSchema) -> Curso:
     curso = Curso(
         nome_curso=payload.nomeCurso,
     )
     db.add(curso)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise CursoIntegrityError from exc
     db.refresh(curso)
     return curso
 

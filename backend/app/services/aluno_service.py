@@ -13,6 +13,10 @@ class AlunoHasDependenciesError(Exception):
     pass
 
 
+class AlunoIntegrityError(Exception):
+    pass
+
+
 def create_aluno(db: Session, payload: AlunoCreateSchema) -> Aluno:
     aluno = Aluno(
         nome=payload.nome,
@@ -23,8 +27,11 @@ def create_aluno(db: Session, payload: AlunoCreateSchema) -> Aluno:
         numero=payload.numero,
     )
     db.add(aluno)
-    # FIXME: create_aluno sem try/except IntegrityError nem rollback (difere de update/delete)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise AlunoIntegrityError from exc
     db.refresh(aluno)
     return aluno
 
