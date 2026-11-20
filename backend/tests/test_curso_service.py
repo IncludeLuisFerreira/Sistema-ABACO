@@ -19,6 +19,19 @@ class TestCreateCurso:
         assert result.nome_curso == "Curso de Python"
         assert result.id_curso is not None
 
+    def test_integrity_error_vira_erro_de_dominio(self, db_session: Session, monkeypatch):
+        from sqlalchemy.exc import IntegrityError
+
+        from app.services.curso_service import CursoIntegrityError
+
+        def commit_falha():
+            raise IntegrityError("INSERT", {}, Exception("violacao de integridade"))
+
+        monkeypatch.setattr(db_session, "commit", commit_falha)
+
+        with pytest.raises(CursoIntegrityError):
+            create_curso(db_session, CursoCreateSchema(nomeCurso="Curso Duplicado"))
+
 
 class TestListCursos:
     def test_lists_all(self, db_session: Session, curso):
