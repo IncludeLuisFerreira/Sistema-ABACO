@@ -9,19 +9,37 @@ describe('getApiErrorMessage', () => {
     expect(getApiErrorMessage(error, 'fallback')).toBe('Curso informado não existe');
   });
 
-  it('joins FastAPI validation error messages', () => {
+  it('joins and translates FastAPI validation error messages', () => {
+    const error = {
+      error: {
+        detail: [{ msg: 'Input should be a valid integer' }, { msg: 'Field required' }],
+      },
+    };
+
+    expect(getApiErrorMessage(error, 'fallback')).toBe(
+      'Informe um número inteiro válido.; Campo obrigatório.',
+    );
+  });
+
+  it('translates numeric range validation messages', () => {
     const error = {
       error: {
         detail: [
-          { msg: 'Input should be a valid integer' },
-          { msg: 'Field required' },
+          { msg: 'Input should be greater than or equal to 0' },
+          { msg: 'Input should be less than or equal to 10' },
         ],
       },
     };
 
     expect(getApiErrorMessage(error, 'fallback')).toBe(
-      'Input should be a valid integer; Field required',
+      'O valor deve ser maior ou igual a 0.; O valor deve ser menor ou igual a 10.',
     );
+  });
+
+  it('removes the Value error prefix from custom validators', () => {
+    const error = { error: { detail: [{ msg: 'Value error, Status deve ser 0, 1 ou 2' }] } };
+
+    expect(getApiErrorMessage(error, 'fallback')).toBe('Status deve ser 0, 1 ou 2');
   });
 
   it('accepts a single validation detail object', () => {

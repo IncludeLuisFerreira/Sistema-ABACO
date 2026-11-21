@@ -167,4 +167,17 @@ describe('GradesManagementComponent - carregamento', () => {
     component.onSave();
     expect(notaCreate).toHaveBeenCalled();
   });
+
+  it('bloqueia o salvamento quando alguma nota esta fora de 0 a 10', () => {
+    matriculas$.next([matricula]);
+    notasRequests[0].next([]);
+    expect(component.loadingNotas).toBe(false);
+
+    component.onNotaChange({ idMatricula: 10, nota: 11 });
+    component.onSave();
+
+    expect(notaCreate).not.toHaveBeenCalled();
+    expect(component.localFeedback).toContain('entre 0 e 10');
+    expect(component.saving).toBe(false);
+  });
 });
