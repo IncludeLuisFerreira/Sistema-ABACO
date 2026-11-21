@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.email import EmailDeliveryError, send_pedido_aprovado_email
 from app.email.messages import ItemEstoqueBaixo
+from app.models.estoque import Estoque
 from app.models.item_pedido import ItemPedido
 from app.models.pedido import Pedido
 from app.models.usuario import Usuario
@@ -33,6 +34,10 @@ class EstoqueNotFoundForPedidoError(Exception):
     pass
 
 
+class PedidoItemInvalidoError(Exception):
+    pass
+
+
 class InsufficientStockError(Exception):
     pass
 
@@ -53,8 +58,22 @@ def _resolve_turma(db: Session, turma_id: int) -> None:
         raise TurmaNotFoundForPedidoError
 
 
+def _resolve_estoque(db: Session, estoque_id: int) -> Estoque:
+    estoque_item = (
+        db.query(Estoque).filter(Estoque.id_item_estoque == estoque_id).first()
+    )
+    if not estoque_item:
+        raise EstoqueNotFoundForPedidoError(
+            f"Item de estoque {estoque_id} não encontrado"
+        )
+    return estoque_item
+
+
 def create_pedido(db: Session, payload: PedidoCreateSchema, usuario_id: int) -> Pedido:
     _resolve_turma(db, payload.idTurma)
+    # Valida todos os itens antes de gravar qualquer coisa: id inexistente vira 400.
+    for item in payload.itens:
+        _resolve_estoque(db, item.idItemEstoque)
 
     pedido = Pedido(
         id_usuario=usuario_id,
@@ -62,20 +81,26 @@ def create_pedido(db: Session, payload: PedidoCreateSchema, usuario_id: int) -> 
         data_pedido=payload.dataPedido or date.today(),
         status=0,
     )
-    db.add(pedido)
-    db.flush()
 
-    for item in payload.itens:
-        item_pedido = ItemPedido(
-            id_pedido=pedido.id_pedido,
-            nome_item=item.nomeItem,
-            id_item_estoque=item.idItemEstoque,
-            quantidade=item.quantidade,
-            preco_unitario=item.precoUnitario,
-        )
-        db.add(item_pedido)
+    try:
+        db.add(pedido)
+        db.flush()
 
-    db.commit()
+        for item in payload.itens:
+            item_pedido = ItemPedido(
+                id_pedido=pedido.id_pedido,
+                nome_item=item.nomeItem,
+                id_item_estoque=item.idItemEstoque,
+                quantidade=item.quantidade,
+                preco_unitario=item.precoUnitario,
+            )
+            db.add(item_pedido)
+
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise PedidoHasDependenciesError from exc
+
     db.refresh(pedido)
     notificacoes_eventos.notificar_pedido_criado(db, pedido, usuario_id)
     return pedido
@@ -176,7 +201,11 @@ def _aprovar_pedido(
     try:
         itens_baixos = deduzir_por_pedido(db, pedido)
         db.commit()
-    except EstoqueSaldoInsuficienteError as exc:
+    except (
+        EstoqueSaldoInsuficienteError,
+        EstoqueNotFoundForPedidoError,
+        PedidoItemInvalidoError,
+    ) as exc:
         db.rollback()
         raise PedidoInvalidTransitionError(str(exc)) from exc
     except IntegrityError as exc:
@@ -207,11 +236,20 @@ def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema, bac
         raise PedidoInvalidTransitionError("Apenas pedidos com status 'Aprovado' podem ser marcados como comprados")
 
     qtd_map = {item.idItemPedido: item.quantidade for item in payload.itens}
+    itens_por_id = {item.id_item_pedido: item for item in pedido.itens}
 
-    # FIXME: itens desconhecidos e quantidades negativas são ignorados sem erro
-    for item_pedido in pedido.itens:
-        if item_pedido.id_item_pedido in qtd_map:
-            item_pedido.quantidade = qtd_map[item_pedido.id_item_pedido]
+    # A baixa do estoque acontece na aprovação. Alterar a quantidade depois
+    # disso deixaria o saldo e a auditoria inconsistentes.
+    for item_id, quantidade in qtd_map.items():
+        item_pedido = itens_por_id.get(item_id)
+        if item_pedido is None:
+            raise PedidoInvalidTransitionError(
+                f"Item {item_id} não pertence ao pedido"
+            )
+        if item_pedido.quantidade != quantidade:
+            raise PedidoInvalidTransitionError(
+                "A quantidade dos itens não pode ser alterada após a aprovação"
+            )
 
     pedido.status = 2
 
@@ -262,33 +300,14 @@ def update_pedido_status(
 
 
 def entregar_pedido(db: Session, pedido_id: int, background_tasks: BackgroundTasks | None = None) -> Pedido:
-    from app.models.estoque import Estoque
-
     pedido = get_pedido_by_id(db, pedido_id)
 
     if pedido.status != 2:
         raise PedidoCannotBeDeliveredError
 
     pedido.status = 3
-
-    for item_pedido in pedido.itens:
-        if not item_pedido.quantidade or not item_pedido.nome_item:
-            continue
-
-        # FIXME: casa estoque por nome_item (string) em vez de id_item_estoque
-        estoque_item = db.query(Estoque).filter(
-            Estoque.nome_item == item_pedido.nome_item
-        ).first()
-
-        if estoque_item:
-            estoque_item.quantidade_disponivel = (estoque_item.quantidade_disponivel or 0) + item_pedido.quantidade
-        else:
-            novo_item = Estoque(
-                nome_item=item_pedido.nome_item,
-                quantidade_disponivel=item_pedido.quantidade,
-                unidade=None,
-            )
-            db.add(novo_item)
+    # A baixa já foi feita e auditada na aprovação (movimento pedido_aprovado).
+    # Somar o estoque aqui duplicaria a movimentação e zeraria o consumo real.
 
     try:
         db.commit()

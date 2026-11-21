@@ -1,18 +1,28 @@
 import pytest
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.email import EmailDeliveryError
 from app.models.estoque import Estoque
 from app.models.movimentacao_estoque import MovimentacaoEstoque
 from app.models.usuario import Usuario
-from app.schemas.pedido_schema import ItemPedidoCreateSchema, PedidoCreateSchema, PedidoUpdateSchema
+from app.schemas.pedido_schema import (
+    ItemPedidoCompraSchema,
+    ItemPedidoCreateSchema,
+    PedidoCompraSchema,
+    PedidoCreateSchema,
+    PedidoUpdateSchema,
+)
 from app.services import pedido_service
 from app.services.pedido_service import (
+    EstoqueNotFoundForPedidoError,
     PedidoCannotBeDeliveredError,
     PedidoInvalidTransitionError,
     PedidoNotFoundError,
     aprovar_pedido,
+    comprar_pedido,
     create_pedido,
+    entregar_pedido,
     get_pedido_by_id,
     list_pedidos,
     delete_pedido,
@@ -21,42 +31,104 @@ from app.services.pedido_service import (
 
 
 class TestCreatePedido:
-    def test_creates_successfully(self, db_session: Session, turma, usuario):
+    def test_creates_successfully(self, db_session: Session, turma, usuario, estoque_item):
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
-            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                )
+            ],
         )
         result = create_pedido(db_session, payload, usuario.id_usuario)
         assert result.id_pedido is not None
         assert result.status == 0
 
-    def test_creates_multiple_itens(self, db_session: Session, turma, usuario):
+    def test_creates_multiple_itens(self, db_session: Session, turma, usuario, estoque_item):
+        outro = Estoque(
+            nome_item="Papel A4",
+            quantidade_disponivel=20,
+            unidade="un",
+            estoque_minimo=5,
+        )
+        db_session.add(outro)
+        db_session.commit()
+        db_session.refresh(outro)
+
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
             itens=[
-                ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10),
-                ItemPedidoCreateSchema(nomeItem="Papel", quantidade=5),
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                ),
+                ItemPedidoCreateSchema(
+                    nomeItem=outro.nome_item,
+                    quantidade=5,
+                    idItemEstoque=outro.id_item_estoque,
+                ),
             ],
         )
         result = create_pedido(db_session, payload, usuario.id_usuario)
         assert len(result.itens) == 2
 
-
-class TestListPedidos:
-    def test_lists_all(self, db_session: Session, turma, usuario):
+    def test_rejeita_id_item_estoque_inexistente(self, db_session: Session, turma, usuario):
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
-            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem="Fantasma",
+                    quantidade=1,
+                    idItemEstoque=999999,
+                )
+            ],
+        )
+
+        with pytest.raises(EstoqueNotFoundForPedidoError):
+            create_pedido(db_session, payload, usuario.id_usuario)
+
+    @pytest.mark.parametrize("quantidade", [0, -1, None])
+    def test_quantidade_invalida_rejeitada_pelo_schema(self, quantidade):
+        with pytest.raises(ValidationError):
+            ItemPedidoCreateSchema(
+                nomeItem="Caneta",
+                quantidade=quantidade,
+                idItemEstoque=1,
+            )
+
+
+class TestListPedidos:
+    def test_lists_all(self, db_session: Session, turma, usuario, estoque_item):
+        payload = PedidoCreateSchema(
+            idTurma=turma.id_turma,
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                )
+            ],
         )
         create_pedido(db_session, payload, usuario.id_usuario)
 
         results = list_pedidos(db_session)
         assert len(results) >= 1
 
-    def test_filtra_por_solicitante(self, db_session: Session, turma, usuario, usuario_professor):
+    def test_filtra_por_solicitante(
+        self, db_session: Session, turma, usuario, usuario_professor, estoque_item
+    ):
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
-            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                )
+            ],
         )
         pedido_usuario = create_pedido(db_session, payload, usuario.id_usuario)
         pedido_professor = create_pedido(db_session, payload, usuario_professor.id_usuario)
@@ -68,10 +140,16 @@ class TestListPedidos:
 
 
 class TestGetPedidoById:
-    def test_finds_existing(self, db_session: Session, turma, usuario):
+    def test_finds_existing(self, db_session: Session, turma, usuario, estoque_item):
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
-            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                )
+            ],
         )
         pedido = create_pedido(db_session, payload, usuario.id_usuario)
         result = get_pedido_by_id(db_session, pedido.id_pedido)
@@ -82,11 +160,17 @@ class TestGetPedidoById:
             get_pedido_by_id(db_session, 9999)
 
     def test_raises_for_pedido_de_outro_solicitante(
-        self, db_session: Session, turma, usuario, usuario_professor
+        self, db_session: Session, turma, usuario, usuario_professor, estoque_item
     ):
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
-            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                )
+            ],
         )
         pedido = create_pedido(db_session, payload, usuario_professor.id_usuario)
 
@@ -99,10 +183,16 @@ class TestGetPedidoById:
 
 
 class TestDeletePedido:
-    def test_deletes_existing(self, db_session: Session, turma, usuario):
+    def test_deletes_existing(self, db_session: Session, turma, usuario, estoque_item):
         payload = PedidoCreateSchema(
             idTurma=turma.id_turma,
-            itens=[ItemPedidoCreateSchema(nomeItem="Caneta", quantidade=10)],
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=10,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                )
+            ],
         )
         pedido = create_pedido(db_session, payload, usuario.id_usuario)
         delete_pedido(db_session, pedido.id_pedido)
@@ -279,3 +369,114 @@ class TestAprovarPedido:
 
         assert result.status == 1
         assert "Erro inesperado ao enviar e-mail de aprovação" in caplog.text
+
+class TestIntegridadeCicloPedido:
+    def _aprovar(self, db_session, pedido, monkeypatch):
+        monkeypatch.setattr(
+            pedido_service,
+            "send_pedido_aprovado_email",
+            lambda *args, **kwargs: None,
+        )
+        return aprovar_pedido(db_session, pedido.id_pedido)
+
+    def test_compra_com_mesma_quantidade_avanca_status(
+        self, db_session: Session, turma, usuario, estoque_item, monkeypatch
+    ):
+        pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
+        self._aprovar(db_session, pedido, monkeypatch)
+        item = pedido.itens[0]
+
+        result = comprar_pedido(
+            db_session,
+            pedido.id_pedido,
+            PedidoCompraSchema(
+                itens=[ItemPedidoCompraSchema(idItemPedido=item.id_item_pedido, quantidade=5)]
+            ),
+        )
+
+        assert result.status == 2
+        db_session.refresh(estoque_item)
+        assert estoque_item.quantidade_disponivel == 95
+
+    def test_compra_nao_permite_alterar_quantidade_apos_aprovacao(
+        self, db_session: Session, turma, usuario, estoque_item, monkeypatch
+    ):
+        pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
+        self._aprovar(db_session, pedido, monkeypatch)
+        item = pedido.itens[0]
+
+        with pytest.raises(PedidoInvalidTransitionError):
+            comprar_pedido(
+                db_session,
+                pedido.id_pedido,
+                PedidoCompraSchema(
+                    itens=[ItemPedidoCompraSchema(idItemPedido=item.id_item_pedido, quantidade=6)]
+                ),
+            )
+
+        db_session.refresh(pedido)
+        db_session.refresh(item)
+        db_session.refresh(estoque_item)
+        assert pedido.status == 1
+        assert item.quantidade == 5
+        assert estoque_item.quantidade_disponivel == 95
+
+    def test_compra_item_de_outro_pedido_levanta_erro(
+        self, db_session: Session, turma, usuario, estoque_item, monkeypatch
+    ):
+        pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
+        self._aprovar(db_session, pedido, monkeypatch)
+
+        with pytest.raises(PedidoInvalidTransitionError):
+            comprar_pedido(
+                db_session,
+                pedido.id_pedido,
+                PedidoCompraSchema(
+                    itens=[ItemPedidoCompraSchema(idItemPedido=999999, quantidade=5)]
+                ),
+            )
+
+    def test_entrega_nao_soma_estoque_nem_duplica_auditoria(
+        self, db_session: Session, turma, usuario, estoque_item, monkeypatch
+    ):
+        pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
+        self._aprovar(db_session, pedido, monkeypatch)
+        item = pedido.itens[0]
+        comprar_pedido(
+            db_session,
+            pedido.id_pedido,
+            PedidoCompraSchema(
+                itens=[ItemPedidoCompraSchema(idItemPedido=item.id_item_pedido, quantidade=5)]
+            ),
+        )
+
+        result = entregar_pedido(db_session, pedido.id_pedido)
+
+        assert result.status == 3
+        db_session.refresh(estoque_item)
+        assert estoque_item.quantidade_disponivel == 95
+        movimentacoes = (
+            db_session.query(MovimentacaoEstoque)
+            .filter(MovimentacaoEstoque.tipo_movimentacao == "pedido_aprovado")
+            .all()
+        )
+        assert len(movimentacoes) == 1
+        assert movimentacoes[0].quantidade == -5
+
+    @pytest.mark.parametrize("campo", ["quantidade", "id_item_estoque"])
+    def test_aprovar_item_legado_invalido_reverte_tudo(
+        self, db_session: Session, turma, usuario, estoque_item, monkeypatch, campo
+    ):
+        pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
+        item = pedido.itens[0]
+        setattr(item, campo, 0 if campo == "quantidade" else None)
+        db_session.commit()
+
+        with pytest.raises(PedidoInvalidTransitionError):
+            self._aprovar(db_session, pedido, monkeypatch)
+
+        db_session.refresh(pedido)
+        db_session.refresh(estoque_item)
+        assert pedido.status == 0
+        assert estoque_item.quantidade_disponivel == 100
+        assert db_session.query(MovimentacaoEstoque).count() == 0
