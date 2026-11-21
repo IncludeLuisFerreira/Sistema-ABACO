@@ -35,17 +35,20 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if settings.seed_on_startup and not settings.is_production:
-        from app.db.seed import run_seed
-
-        db = SessionLocal()
+        db = None
         try:
+            from app.db.seed import run_seed
+
+            db = SessionLocal()
             counts = run_seed(db)
             logger.info("Seed de dados de teste executado no boot: %s", counts)
         except Exception:
             logger.exception("Seed de dados de teste falhou no boot; startup segue sem seed")
-            db.rollback()
+            if db is not None:
+                db.rollback()
         finally:
-            db.close()
+            if db is not None:
+                db.close()
     yield
 
 

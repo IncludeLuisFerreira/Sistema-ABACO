@@ -154,6 +154,14 @@ def _get_or_create_curso(db: Session, nome: str) -> tuple[Curso, bool]:
     return curso, True
 
 
+def _buscar_usuario(db: Session, email: str) -> Usuario | None:
+    return (
+        db.query(Usuario)
+        .filter(func.lower(Usuario.email) == email.lower())
+        .first()
+    )
+
+
 def _get_or_create_usuario(
     db: Session,
     nome: str,
@@ -162,11 +170,7 @@ def _get_or_create_usuario(
     senha: str,
     telefone: str | None = None,
 ) -> tuple[Usuario, bool]:
-    usuario = (
-        db.query(Usuario)
-        .filter(func.lower(Usuario.email) == email.lower())
-        .first()
-    )
+    usuario = _buscar_usuario(db, email)
     if usuario is not None:
         return usuario, False
     usuario = Usuario(
@@ -285,7 +289,12 @@ def _get_or_create_pedido(
 ) -> tuple[Pedido, bool]:
     pedido = (
         db.query(Pedido)
-        .filter(Pedido.id_usuario == solicitante.id_usuario, Pedido.id_turma == turma.id_turma)
+        .filter(
+            Pedido.id_usuario == solicitante.id_usuario,
+            Pedido.id_turma == turma.id_turma,
+            Pedido.data_pedido == data_pedido,
+            Pedido.status == status,
+        )
         .first()
     )
     if pedido is not None:
@@ -334,21 +343,35 @@ def _run_seed(db: Session, counts: dict[str, int], settings) -> None:
         counts["cursos"] += int(criado)
 
     usuarios: dict[str, Usuario] = {}
-    if settings.admin_seed_email and settings.admin_seed_password:
-        diretor, criado = _get_or_create_usuario(
-            db,
-            nome="Administrador",
-            email=settings.admin_seed_email,
-            cargo=1,
-            senha=settings.admin_seed_password,
-        )
-        usuarios[diretor.email] = diretor
-        counts["usuarios"] += int(criado)
+    if settings.admin_seed_email:
+        diretor = _buscar_usuario(db, settings.admin_seed_email)
+        if diretor is not None:
+            usuarios[settings.admin_seed_email] = diretor
+        elif settings.admin_seed_password:
+            diretor, criado = _get_or_create_usuario(
+                db,
+                nome="Administrador",
+                email=settings.admin_seed_email,
+                cargo=1,
+                senha=settings.admin_seed_password,
+            )
+            usuarios[settings.admin_seed_email] = diretor
+            counts["usuarios"] += int(criado)
+        else:
+            logger.warning(
+                "ADMIN_SEED_PASSWORD ausente; diretor %s nao encontrado no banco e nao sera criado",
+                settings.admin_seed_email,
+            )
     else:
-        logger.warning("ADMIN_SEED_EMAIL/ADMIN_SEED_PASSWORD ausentes; diretor inicial nao sera criado")
+        logger.warning("ADMIN_SEED_EMAIL ausente; diretor inicial nao sera criado")
 
     senhas_ausentes: set[str] = set()
     for nome, email, cargo, telefone, campo_senha in USUARIOS:
+        usuario = _buscar_usuario(db, email)
+        if usuario is not None:
+            usuarios[email] = usuario
+            continue
+
         senha = _senha_do_usuario(settings, campo_senha)
         if senha is None:
             senhas_ausentes.add(campo_senha)
@@ -358,7 +381,10 @@ def _run_seed(db: Session, counts: dict[str, int], settings) -> None:
         counts["usuarios"] += int(criado)
 
     for campo in sorted(senhas_ausentes):
-        logger.warning("%s ausente; usuarios de teste correspondentes serao pulados", campo.upper())
+        logger.warning(
+            "%s ausente; usuarios de teste ainda nao cadastrados serao pulados",
+            campo.upper(),
+        )
 
     alunos: list[Aluno] = []
     for nome, telefone, nascimento in ALUNOS:

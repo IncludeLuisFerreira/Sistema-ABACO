@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from sqlalchemy import func
 
@@ -5,6 +7,7 @@ from app.core.config import get_settings
 from app.models.curso import Curso
 from app.models.estoque import Estoque
 from app.models.item_pedido import ItemPedido
+from app.models.pedido import Pedido
 from app.models.turma import Turma
 from app.models.usuario import Usuario
 
@@ -95,6 +98,10 @@ class _SessaoFalsa:
     def __init__(self):
         self.fechada = False
         self.revertida = False
+        self.commitada = False
+
+    def commit(self):
+        self.commitada = True
 
     def rollback(self):
         self.revertida = True
@@ -181,7 +188,42 @@ def test_startup_nao_quebra_quando_seed_falha(monkeypatch):
     with TestClient(app):
         pass
 
+    assert sessao.revertida is True
     assert sessao.fechada is True
+
+
+def test_startup_nao_quebra_quando_sessionlocal_falha(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import main as main_module
+    from main import app, settings
+
+    def _falha():
+        raise RuntimeError("database indisponivel")
+
+    monkeypatch.setattr(settings, "seed_on_startup", True)
+    monkeypatch.setattr(settings, "environment", "development")
+    monkeypatch.setattr(main_module, "SessionLocal", _falha)
+
+    with TestClient(app):
+        pass
+
+
+def test_run_seed_reverte_e_propaga_erro(monkeypatch):
+    import app.db.seed as seed_module
+
+    sessao = _SessaoFalsa()
+
+    def _falha(_db, _counts, _settings):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(seed_module, "_run_seed", _falha)
+
+    with pytest.raises(RuntimeError):
+        seed_module.run_seed(sessao)
+
+    assert sessao.revertida is True
+    assert sessao.commitada is False
 
 
 def test_run_seed_reaproveita_estoque_com_caixa_diferente(db_session, seed_passwords):
@@ -247,3 +289,62 @@ def test_run_seed_respeita_estoque_com_ids_deslocados(db_session, seed_passwords
         assert estoque_por_id[item.id_item_estoque] == item.nome_item.lower()
         assert not estoque_por_id[item.id_item_estoque].startswith("item avulso")
 
+
+def test_run_seed_cria_dependentes_quando_usuarios_existem_sem_senhas(db_session, monkeypatch):
+    from app.db.seed import USUARIOS, run_seed
+
+    for nome, email, cargo, telefone, _campo_senha in USUARIOS:
+        db_session.add(
+            Usuario(
+                nome=nome,
+                email=email,
+                senha_hash="hash-existente",
+                cargo=cargo,
+                telefone=telefone,
+                primeiro_acesso=False,
+            )
+        )
+    db_session.commit()
+
+    settings = get_settings()
+    for atributo in (
+        "seed_admin_password",
+        "seed_professor_password",
+        "admin_seed_email",
+        "admin_seed_password",
+    ):
+        monkeypatch.setattr(settings, atributo, None)
+
+    counts = run_seed(db_session)
+
+    assert counts["usuarios"] == 0
+    assert counts["turmas"] == 6
+    assert counts["matriculas"] == 12
+    assert counts["pedidos"] == 3
+    assert counts["itens_pedido"] == 5
+
+
+def test_run_seed_nao_reaproveita_pedido_de_outra_data(db_session, seed_passwords):
+    from app.db.seed import run_seed
+
+    run_seed(db_session)
+    maria = db_session.query(Usuario).filter(Usuario.email == "maria@abaco.org.br").one()
+    turma = db_session.query(Turma).filter(Turma.data_inicio == date(2026, 6, 1)).one()
+
+    db_session.query(ItemPedido).delete()
+    db_session.query(Pedido).delete()
+    db_session.commit()
+
+    manual = Pedido(
+        id_usuario=maria.id_usuario,
+        id_turma=turma.id_turma,
+        data_pedido=date(2025, 1, 1),
+        status=0,
+    )
+    db_session.add(manual)
+    db_session.commit()
+
+    counts = run_seed(db_session)
+
+    assert counts["pedidos"] == 3
+    assert db_session.query(ItemPedido).filter(ItemPedido.id_pedido == manual.id_pedido).count() == 0
