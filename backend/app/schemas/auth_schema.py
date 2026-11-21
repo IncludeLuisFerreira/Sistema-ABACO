@@ -1,6 +1,7 @@
 import re
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field, model_validator
 
 from app.core.validators import normalize_email
 
@@ -8,28 +9,23 @@ from app.core.validators import normalize_email
 SENHA_PATTERN = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).+$")
 
 
-class LoginRequest(BaseModel):
-	email: EmailStr
-	senha: str = Field(min_length=1)
+def _normalize_email_input(value: object) -> object:
+    if isinstance(value, str):
+        return normalize_email(value)
+    return value
 
-	@field_validator("email", mode="before")
-	@classmethod
-	def clean_email(cls, value: object) -> object:
-		if isinstance(value, str):
-			return normalize_email(value)
-		return value
+
+NormalizedEmail = Annotated[EmailStr, BeforeValidator(_normalize_email_input)]
+
+
+class LoginRequest(BaseModel):
+    email: NormalizedEmail
+    senha: str = Field(min_length=1)
 
 
 class ForgotPasswordRequest(BaseModel):
-	email: EmailStr
+    email: NormalizedEmail
 
-	@field_validator("email", mode="before")
-	@classmethod
-	def clean_email(cls, value: object) -> object:
-		if isinstance(value, str):
-			return normalize_email(value)
-		return value
-    
 
 class PasswordPairRequest(BaseModel):
     nova_senha: str = Field(min_length=8)
