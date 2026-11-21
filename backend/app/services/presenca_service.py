@@ -11,6 +11,12 @@ class TurmaNotFoundForPresencaError(Exception):
     pass
 
 
+class InvalidMatriculasError(Exception):
+    def __init__(self, ids_invalidos: list[int]) -> None:
+        self.ids_invalidos = ids_invalidos
+        super().__init__(f"Matriculas invalidas na turma: {ids_invalidos}")
+
+
 def create_or_update_presencas(db: Session, payload: PresencaBatchSchema) -> list[Presenca]:
     matriculas = db.query(Matricula).filter(
         Matricula.id_turma == payload.idTurma,
@@ -19,13 +25,18 @@ def create_or_update_presencas(db: Session, payload: PresencaBatchSchema) -> lis
 
     matriculas_por_id = {m.id_matricula for m in matriculas}
 
+    ids_invalidos = list(
+        dict.fromkeys(
+            item.idMatricula for item in payload.presencas
+            if item.idMatricula not in matriculas_por_id
+        )
+    )
+    if ids_invalidos:
+        raise InvalidMatriculasError(ids_invalidos)
+
     criadas: list[Presenca] = []
 
     for item in payload.presencas:
-        # FIXME: matrícula inválida é ignorada em silêncio (nota_service lança erro)
-        if item.idMatricula not in matriculas_por_id:
-            continue
-
         # REFACTOR: N+1 — consulta Presenca por item do batch
         presenca = db.query(Presenca).filter(
             Presenca.id_matricula == item.idMatricula,

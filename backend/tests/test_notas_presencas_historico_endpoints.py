@@ -1,3 +1,6 @@
+from app.api.v1.presencas import _matriculas_invalidas_detail
+
+
 class TestNotasEndpoints:
     def test_create_sucesso(self, seeded, director_headers):
         response = seeded["client"].post(
@@ -133,6 +136,102 @@ class TestPresencasEndpoints:
         )
         assert response.status_code == 200
         assert len(response.json()) == 1
+
+    def test_create_matricula_de_outra_turma_retorna_422(self, seeded, director_headers):
+        client = seeded["client"]
+        outro_aluno = client.post("/api/v1/alunos", json={"nome": "Alheio"}, headers=director_headers).json()
+        outra_turma = client.post(
+            "/api/v1/turmas",
+            json={
+                "capacidade": 5,
+                "dataInicio": "2026-03-01",
+                "dataFim": "2026-06-30",
+                "idCurso": seeded["curso"]["idCurso"],
+                "idProfessor": seeded["professor"]["idUsuario"],
+                "diasAula": "1",
+            },
+            headers=director_headers,
+        ).json()
+        outra_matricula = client.post(
+            "/api/v1/matriculas",
+            json={"idAluno": outro_aluno["idAluno"], "idTurma": outra_turma["idTurma"]},
+            headers=director_headers,
+        ).json()
+        response = client.post(
+            "/api/v1/presencas",
+            json={
+                "idTurma": seeded["turma"]["idTurma"],
+                "dataAula": "2026-01-20",
+                "presencas": [{"idMatricula": outra_matricula["idMatricula"], "presente": True}],
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+        detail = response.json()["detail"]
+        assert str(outra_matricula["idMatricula"]) in detail
+        assert "não pertence" in detail
+
+    def test_create_matricula_inexistente_nao_salva_nada(self, seeded, director_headers):
+        client = seeded["client"]
+        turma_id = seeded["turma"]["idTurma"]
+        response = client.post(
+            "/api/v1/presencas",
+            json={
+                "idTurma": turma_id,
+                "dataAula": "2026-01-21",
+                "presencas": [
+                    {"idMatricula": seeded["matricula"]["idMatricula"], "presente": True},
+                    {"idMatricula": 999999, "presente": True},
+                ],
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+        detail = response.json()["detail"]
+        assert "999999" in detail
+        assert "não pertence" in detail
+        assert client.get(
+            f"/api/v1/presencas/turma/{turma_id}?dataAula=2026-01-21",
+            headers=director_headers,
+        ).json() == []
+
+    def test_create_dois_ids_invalidos_retorna_mensagem_plural(self, seeded, director_headers):
+        response = seeded["client"].post(
+            "/api/v1/presencas",
+            json={
+                "idTurma": seeded["turma"]["idTurma"],
+                "dataAula": "2026-01-22",
+                "presencas": [
+                    {"idMatricula": 111111, "presente": True},
+                    {"idMatricula": 222222, "presente": True},
+                ],
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"] == (
+            "As matrículas 111111 e 222222 não pertencem à turma informada ou não estão ativas."
+        )
+
+
+class TestMensagemMatriculasInvalidas:
+    def test_singular_lista_o_id(self):
+        assert _matriculas_invalidas_detail([999999]) == (
+            "A matrícula 999999 não pertence à turma informada ou não está ativa."
+        )
+
+    def test_plural_com_ate_tres_ids(self):
+        assert _matriculas_invalidas_detail([12, 15]) == (
+            "As matrículas 12 e 15 não pertencem à turma informada ou não estão ativas."
+        )
+        assert _matriculas_invalidas_detail([12, 15, 18]) == (
+            "As matrículas 12, 15 e 18 não pertencem à turma informada ou não estão ativas."
+        )
+
+    def test_plural_acima_de_tres_nao_lista_ids(self):
+        assert _matriculas_invalidas_detail([12, 15, 18, 21, 30]) == (
+            "Algumas matrículas informadas não pertencem à turma ou não estão ativas."
+        )
 
 
 class TestHistoricoEndpoints:
