@@ -145,10 +145,19 @@ class TestPedidosEndpoints:
         assert body["status"] == 0
         assert len(body["itens"]) == 1
 
-    def test_create_turma_inexistente_retorna_400(self, api_client, write_headers):
+    def test_create_turma_inexistente_retorna_400(self, api_client, write_headers, seeded):
         response = api_client.post(
             "/api/v1/pedidos",
-            json={"idTurma": 9999, "itens": [{"nomeItem": "X", "quantidade": 1}]},
+            json={
+                "idTurma": 9999,
+                "itens": [
+                    {
+                        "nomeItem": "X",
+                        "quantidade": 1,
+                        "idItemEstoque": seeded["estoque"]["idItemEstoque"],
+                    }
+                ],
+            },
             headers=write_headers,
         )
         assert response.status_code == 400
@@ -163,14 +172,15 @@ class TestPedidosEndpoints:
         assert client.get(f"/api/v1/pedidos/{created['idPedido']}", headers=write_headers).status_code == 200
         assert client.get("/api/v1/pedidos/9999", headers=write_headers).status_code == 404
 
-    def test_ciclo_completo_aprovar_comprar_entregar(self, seeded, write_headers):
+    def test_ciclo_completo_aprovar_comprar_entregar(self, seeded, write_headers, db_session):
         client = seeded["client"]
+        item_estoque_id = seeded["estoque"]["idItemEstoque"]
         created = client.post(
             "/api/v1/pedidos",
             json={
                 "idTurma": seeded["turma"]["idTurma"],
                 "itens": [
-                    {"nomeItem": "Papel A4", "quantidade": 1, "idItemEstoque": seeded["estoque"]["idItemEstoque"]}
+                    {"nomeItem": "Papel A4", "quantidade": 1, "idItemEstoque": item_estoque_id}
                 ],
             },
             headers=write_headers,
@@ -193,6 +203,89 @@ class TestPedidosEndpoints:
         entregue = client.put(f"/api/v1/pedidos/{pedido_id}/entregar", headers=write_headers)
         assert entregue.status_code == 200
         assert entregue.json()["status"] == 3
+
+        db_session.expire_all()
+        estoque = db_session.get(Estoque, item_estoque_id)
+        assert estoque.quantidade_disponivel == 9
+        movimentacoes = (
+            db_session.query(MovimentacaoEstoque)
+            .filter(MovimentacaoEstoque.tipo_movimentacao == "pedido_aprovado")
+            .all()
+        )
+        assert len(movimentacoes) == 1
+        assert movimentacoes[0].quantidade == -1
+
+    def test_create_item_estoque_inexistente_retorna_400(self, seeded, write_headers):
+        response = seeded["client"].post(
+            "/api/v1/pedidos",
+            json={
+                "idTurma": seeded["turma"]["idTurma"],
+                "itens": [
+                    {"nomeItem": "Fantasma", "quantidade": 1, "idItemEstoque": 999999}
+                ],
+            },
+            headers=write_headers,
+        )
+
+        assert response.status_code == 400
+        assert "não encontrado" in response.json()["detail"]
+
+    @pytest.mark.parametrize("quantidade", [0, -1, None])
+    def test_create_quantidade_invalida_retorna_422(
+        self, seeded, write_headers, quantidade
+    ):
+        response = seeded["client"].post(
+            "/api/v1/pedidos",
+            json={
+                "idTurma": seeded["turma"]["idTurma"],
+                "itens": [
+                    {
+                        "nomeItem": "Papel A4",
+                        "quantidade": quantidade,
+                        "idItemEstoque": seeded["estoque"]["idItemEstoque"],
+                    }
+                ],
+            },
+            headers=write_headers,
+        )
+
+        assert response.status_code == 422
+
+    def test_create_sem_id_estoque_retorna_422(self, seeded, write_headers):
+        response = seeded["client"].post(
+            "/api/v1/pedidos",
+            json={
+                "idTurma": seeded["turma"]["idTurma"],
+                "itens": [{"nomeItem": "Papel A4", "quantidade": 1}],
+            },
+            headers=write_headers,
+        )
+
+        assert response.status_code == 422
+
+    def test_comprar_com_quantidade_diferente_retorna_400_e_preserva_saldo(
+        self, seeded, write_headers, db_session
+    ):
+        client = seeded["client"]
+        item_estoque_id = seeded["estoque"]["idItemEstoque"]
+        pedido = _criar_pedido(seeded, write_headers, quantidade=3)
+        pedido_id = pedido["idPedido"]
+        item_id = pedido["itens"][0]["idItemPedido"]
+
+        assert client.put(
+            f"/api/v1/pedidos/{pedido_id}/aprovar", headers=write_headers
+        ).status_code == 200
+
+        response = client.put(
+            f"/api/v1/pedidos/{pedido_id}/comprar",
+            json={"itens": [{"idItemPedido": item_id, "quantidade": 1000}]},
+            headers=write_headers,
+        )
+
+        assert response.status_code == 400
+        db_session.expire_all()
+        assert db_session.get(Pedido, pedido_id).status == 1
+        assert db_session.get(Estoque, item_estoque_id).quantidade_disponivel == 7
 
     def test_aprovar_duas_vezes_retorna_400(self, seeded, write_headers):
         client = seeded["client"]
@@ -298,7 +391,13 @@ class TestPedidosEndpoints:
             "/api/v1/pedidos",
             json={
                 "idTurma": seeded["turma"]["idTurma"],
-                "itens": [{"nomeItem": "Papel A4", "quantidade": 1}],
+                "itens": [
+                    {
+                        "nomeItem": "Papel A4",
+                        "quantidade": 1,
+                        "idItemEstoque": seeded["estoque"]["idItemEstoque"],
+                    }
+                ],
             },
             headers=write_headers,
         ).json()

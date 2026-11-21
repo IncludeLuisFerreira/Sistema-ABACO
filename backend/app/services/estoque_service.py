@@ -15,6 +15,10 @@ from app.services.notificacao_eventos_service import (
     notificar_estoque_baixo,
     snapshot_estoque,
 )
+from app.services.pedido_service import (
+    EstoqueNotFoundForPedidoError,
+    PedidoItemInvalidoError,
+)
 
 
 class EstoqueNotFoundError(Exception):
@@ -185,8 +189,10 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> list[ItemEstoqueBaixo]:
     ids_alterados: set[int] = set()
 
     for item in itens:
-        if not item.id_item_estoque or not item.quantidade:
-            continue
+        if item.id_item_estoque is None or item.quantidade is None or item.quantidade <= 0:
+            raise PedidoItemInvalidoError(
+                "Itens do pedido precisam ter estoque vinculado e quantidade maior que zero"
+            )
 
         estoque_item = (
             db.query(Estoque)
@@ -196,7 +202,9 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> list[ItemEstoqueBaixo]:
         )
 
         if not estoque_item:
-            continue
+            raise EstoqueNotFoundForPedidoError(
+                f"Item de estoque {item.id_item_estoque} não encontrado"
+            )
 
         # Preserva o estado original do primeiro item com esse estoque e evita
         # duplicar o mesmo item no alerta quando o pedido tem linhas repetidas.
@@ -218,7 +226,7 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> list[ItemEstoqueBaixo]:
             id_item_estoque=item.id_item_estoque,
             quantidade=-item.quantidade,
             tipo_movimentacao="pedido_aprovado",
-            justificativa=f"Pedido #{pedido.id_pedido} - {item.nome_item}",
+            justificativa=f"Pedido #{pedido.id_pedido} - {estoque_item.nome_item or item.nome_item}",
             data_movimentacao=datetime.now(),
         )
         db.add(movimentacao)

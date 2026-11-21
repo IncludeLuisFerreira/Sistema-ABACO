@@ -6,9 +6,11 @@ from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoResponseSchema, PedidoUpdateSchema
 from app.services.pedido_service import (
+    EstoqueNotFoundForPedidoError,
     PedidoCannotBeDeliveredError,
     PedidoHasDependenciesError,
     PedidoInvalidTransitionError,
+    PedidoItemInvalidoError,
     PedidoNotFoundError,
     TurmaNotFoundForPedidoError,
     aprovar_pedido,
@@ -63,6 +65,13 @@ def create_pedidos(payload: PedidoCreateSchema, current_user: dict = Depends(ver
         pedido = create_pedido(db, payload, usuario_id)
     except TurmaNotFoundForPedidoError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Turma informada não existe") from exc
+    except (EstoqueNotFoundForPedidoError, PedidoItemInvalidoError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PedidoHasDependenciesError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Não foi possível criar o pedido",
+        ) from exc
     return PedidoResponseSchema.model_validate(pedido)
 
 

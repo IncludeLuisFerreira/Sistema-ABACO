@@ -1,13 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { Pedido, ItemPedido, getPedidoStatusLabel, getPedidoStatusClass } from '../../../../core/models/pedido.model';
 
 @Component({
   selector: 'app-pedido-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './pedido-table.html',
   styleUrls: ['./pedido-table.scss'],
 })

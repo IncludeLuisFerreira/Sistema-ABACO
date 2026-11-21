@@ -93,7 +93,7 @@ export class PedidoListComponent implements OnInit {
   }
 
   onDeliver(pedido: Pedido): void {
-    this.dialog.confirm({ message: `Entregar pedido #${pedido.idPedido}? Os itens serão adicionados ao estoque.`, confirmLabel: 'Entregar' }).subscribe(shouldDeliver => {
+    this.dialog.confirm({ message: `Entregar pedido #${pedido.idPedido}?`, confirmLabel: 'Entregar' }).subscribe(shouldDeliver => {
       if (!shouldDeliver) {
         return;
       }
