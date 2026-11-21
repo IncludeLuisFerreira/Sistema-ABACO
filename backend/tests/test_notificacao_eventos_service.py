@@ -4,6 +4,7 @@ from starlette.background import BackgroundTasks
 
 from app import email as email_pkg
 from app.email import messages as email_messages
+from app.models.estoque import Estoque
 from app.models.notificacao import Notificacao
 from app.models.usuario import Usuario
 from app.schemas.estoque_schema import EstoqueCreateSchema, EstoqueUpdateSchema
@@ -46,13 +47,24 @@ def _notificacoes(db: Session, usuario_id: int, tipo: str | None = None) -> list
 
 
 def _criar_pedido(db: Session, turma, usuario, estoque_item=None, quantidade: int = 5):
+    if estoque_item is None:
+        estoque_item = Estoque(
+            nome_item="Caneta",
+            quantidade_disponivel=100,
+            unidade="un",
+            estoque_minimo=0,
+        )
+        db.add(estoque_item)
+        db.commit()
+        db.refresh(estoque_item)
+
     payload = PedidoCreateSchema(
         idTurma=turma.id_turma,
         itens=[
             ItemPedidoCreateSchema(
-                nomeItem=estoque_item.nome_item if estoque_item else "Caneta",
+                nomeItem=estoque_item.nome_item,
                 quantidade=quantidade,
-                idItemEstoque=estoque_item.id_item_estoque if estoque_item else None,
+                idItemEstoque=estoque_item.id_item_estoque,
             )
         ],
     )
