@@ -54,11 +54,13 @@
               </button>
             </div>
             <small class="error" *ngIf="itemForm.get('nomeItem')?.invalid && itemForm.get('nomeItem')?.touched">Digite o nome do item.</small>
+            <small class="error" *ngIf="itemForm.get('idItemEstoque')?.invalid && itemForm.get('idItemEstoque')?.touched">Selecione um item do estoque.</small>
           </div>
 
           <label>
             <span>Quantidade</span>
-            <input formControlName="quantidade" type="number" placeholder="Qtd" />
+            <input formControlName="quantidade" type="number" min="1" placeholder="Qtd" />
+            <small class="error" *ngIf="itemForm.get('quantidade')?.invalid && itemForm.get('quantidade')?.touched">Informe uma quantidade maior que zero.</small>
           </label>
 
           <button type="button" class="btn btn--danger btn--sm" (click)="removeItem(i)" [disabled]="itensArray.length <= 1">

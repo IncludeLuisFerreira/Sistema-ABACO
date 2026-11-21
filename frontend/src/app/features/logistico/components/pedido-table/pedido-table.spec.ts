@@ -35,6 +35,36 @@ describe('PedidoTableComponent - aprovação', () => {
     expect(buttonLabels(setup(1, 0))).toContain('Aprovar');
   });
 
+  it('mostra as quantidades aprovadas sem permitir edição no modo compra', () => {
+    const fixture = TestBed.createComponent(PedidoTableComponent);
+    fixture.componentInstance.pedidos = [
+      {
+        ...makePedido(1),
+        itens: [
+          {
+            idItemPedido: 10,
+            idPedido: 1,
+            idItemEstoque: 2,
+            nomeItem: 'Papel A4',
+            quantidade: 3,
+            precoUnitario: null,
+            itemEstoque: { idItemEstoque: 2, nomeItem: 'Papel A4', unidade: 'cx' },
+          },
+        ],
+      },
+    ];
+    fixture.componentInstance.currentUserCargo = 1;
+    fixture.detectChanges();
+
+    const comprar = Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
+      .find((button) => button.textContent?.trim() === 'Comprar');
+    comprar?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.purchase-items input')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.purchase-item-qty')?.textContent).toContain('3');
+  });
+
   it.each([2, 3, null])('oculta o botão Aprovar para o cargo %s', (cargo) => {
     expect(buttonLabels(setup(cargo, 0))).not.toContain('Aprovar');
   });

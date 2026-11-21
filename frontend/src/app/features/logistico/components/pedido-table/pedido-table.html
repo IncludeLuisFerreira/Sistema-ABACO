@@ -38,13 +38,7 @@
               <div class="purchase-items">
                 <div *ngFor="let item of pedido.itens; trackBy: trackById" class="purchase-item">
                   <span class="purchase-item-name">{{ item.nomeItem ?? item.itemEstoque?.nomeItem ?? 'Item #' + item.idItemEstoque }}</span>
-                  <input
-                    type="number"
-                    class="qtd-input"
-                    [(ngModel)]="purchaseQtys[item.idItemPedido]"
-                    min="0"
-                    placeholder="Qtd"
-                  />
+                  <span class="purchase-item-qty">{{ purchaseQtys[item.idItemPedido] }} {{ item.itemEstoque?.unidade ?? '' }}</span>
                 </div>
               </div>
             </ng-template>

@@ -12,7 +12,7 @@ import { TurmaService } from '../../../../core/services/turma.service';
 export interface PedidoFormSubmit {
   idTurma: number;
   dataPedido: string | null;
-  itens: { nomeItem: string; quantidade: number | null; idItemEstoque: number | null }[];
+  itens: { nomeItem: string; quantidade: number; idItemEstoque: number }[];
 }
 
 @Component({
@@ -81,7 +81,7 @@ export class PedidoFormComponent implements OnInit, OnDestroy {
     this.searchInputValues[index] = value;
 
     const group = this.itensArray.at(index);
-    group.patchValue({ nomeItem: value });
+    group.patchValue({ nomeItem: value, idItemEstoque: null });
 
     if (this.searchTerms[index]) {
       this.searchTerms[index].next(value);
@@ -126,8 +126,8 @@ export class PedidoFormComponent implements OnInit, OnDestroy {
       dataPedido: value.dataPedido || null,
       itens: value.itens.map((item) => ({
         nomeItem: item.nomeItem ?? '',
-        quantidade: item.quantidade ?? null,
-        idItemEstoque: item.idItemEstoque ?? null,
+        quantidade: item.quantidade!,
+        idItemEstoque: item.idItemEstoque!,
       })),
     };
 
@@ -141,8 +141,8 @@ export class PedidoFormComponent implements OnInit, OnDestroy {
     this.searchInputValues.push('');
     return this.fb.nonNullable.group({
       nomeItem: ['', [Validators.required]],
-      idItemEstoque: [<number | null>null],
-      quantidade: [<number | null>null],
+      idItemEstoque: [<number | null>null, [Validators.required, Validators.min(1)]],
+      quantidade: [<number | null>null, [Validators.required, Validators.min(1)]],
     });
   }
 
