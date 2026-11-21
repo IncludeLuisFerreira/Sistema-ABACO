@@ -25,11 +25,11 @@ export class AcademicoLayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.notificacoes.pararPolling();
+    this.notificacoes.limpar();
   }
 
   logout(): void {
-    this.notificacoes.pararPolling();
+    this.notificacoes.limpar();
     this.auth.logout();
     this.router.navigate(['/login']);
   }

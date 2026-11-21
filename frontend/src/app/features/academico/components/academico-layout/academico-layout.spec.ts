@@ -20,6 +20,7 @@ function mockNotificacoes() {
     marcarTodas: vi.fn().mockReturnValue(of(null)),
     iniciarPolling: vi.fn(),
     pararPolling: vi.fn(),
+    limpar: vi.fn(),
   };
 }
 
@@ -51,22 +52,22 @@ describe('AcademicoLayoutComponent', () => {
     expect(el.querySelectorAll('app-notificacao-sino')).toHaveLength(2);
   });
 
-  it('inicia o polling de 30 s ao entrar e para ao sair', async () => {
+  it('inicia o polling de 30 s ao entrar e limpa o estado ao sair', async () => {
     await setup();
     expect(notificacoes.iniciarPolling).toHaveBeenCalledWith(30000);
 
     fixture.destroy();
-    expect(notificacoes.pararPolling).toHaveBeenCalled();
+    expect(notificacoes.limpar).toHaveBeenCalled();
   });
 
-  it('para o polling no logout', async () => {
+  it('limpa o estado das notificações no logout', async () => {
     await setup();
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     fixture.componentInstance.logout();
 
-    expect(notificacoes.pararPolling).toHaveBeenCalled();
+    expect(notificacoes.limpar).toHaveBeenCalled();
     expect(auth.logout).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith(['/login']);
   });

@@ -149,4 +149,111 @@ describe('NotificacaoService', () => {
     vi.advanceTimersByTime(3000);
     http.expectNone('/api/v1/notificacoes/contagem');
   });
+
+  it('limpa o estado ao trocar de usuário na mesma SPA', async () => {
+    service.notificacoes.set([notificacao(1, '2026-03-01T10:00:00Z')]);
+    service.naoLidas.set(4);
+    service.erro.set('Falha do usuário A');
+    service.temMais.set(false);
+    service.carregando.set(true);
+
+    service.limpar();
+
+    expect(service.notificacoes()).toEqual([]);
+    expect(service.naoLidas()).toBe(0);
+    expect(service.erro()).toBeNull();
+    expect(service.temMais()).toBe(true);
+    expect(service.carregando()).toBe(false);
+
+    const promise = firstValueFrom(service.carregar());
+    http
+      .expectOne((r) => r.url === '/api/v1/notificacoes')
+      .flush([notificacao(2, '2026-03-01T10:00:00Z')]);
+    await promise;
+
+    expect(service.notificacoes().map((item) => item.idNotificacao)).toEqual([2]);
+  });
+
+  it('ignora respostas em voo iniciadas antes do limpar', () => {
+    service.carregar().subscribe();
+    service.carregarContagem().subscribe();
+
+    service.limpar();
+
+    service.carregar(20).subscribe();
+    http
+      .expectOne((r) => r.url === '/api/v1/notificacoes' && r.params.get('offset') === '0')
+      .flush([notificacao(1, '2026-03-01T10:00:00Z')]);
+    http.expectOne('/api/v1/notificacoes/contagem').flush({ naoLidas: 9 });
+    http
+      .expectOne((r) => r.url === '/api/v1/notificacoes' && r.params.get('offset') === '20')
+      .flush([notificacao(2, '2026-03-01T10:00:00Z')]);
+
+    expect(service.notificacoes().map((item) => item.idNotificacao)).toEqual([2]);
+    expect(service.naoLidas()).toBe(0);
+    expect(service.carregando()).toBe(false);
+  });
+
+  it('não exibe toast de erros em voo iniciados antes do limpar', () => {
+    service.notificacoes.set([notificacao(1, '2026-03-01T10:00:00Z')]);
+    service.marcarLida(1).subscribe();
+    service.carregar().subscribe();
+    service.carregarContagem().subscribe();
+
+    service.limpar();
+
+    const erro = { status: 500, statusText: 'Server Error' };
+    http.expectOne('/api/v1/notificacoes/1/lida').flush({}, erro);
+    http.expectOne((r) => r.url === '/api/v1/notificacoes').flush({}, erro);
+    http.expectOne('/api/v1/notificacoes/contagem').flush({}, erro);
+
+    expect(service.erro()).toBeNull();
+    expect(service.naoLidas()).toBe(0);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('não decrementa a contagem duas vezes no duplo clique na mesma notificação', async () => {
+    service.notificacoes.set([
+      notificacao(5, '2026-03-01T10:00:00Z'),
+      notificacao(6, '2026-02-01T10:00:00Z'),
+    ]);
+    service.naoLidas.set(2);
+
+    const primeira = firstValueFrom(service.marcarLida(5));
+    const segunda = firstValueFrom(service.marcarLida(5));
+    http
+      .expectOne('/api/v1/notificacoes/5/lida')
+      .flush(notificacao(5, '2026-03-01T10:00:00Z', true));
+    await Promise.all([primeira, segunda]);
+
+    expect(service.naoLidas()).toBe(1);
+    expect(service.notificacoes().find((item) => item.idNotificacao === 5)?.lida).toBe(true);
+  });
+
+  it('exibe toast apenas na primeira falha do polling e notifica após recuperar', () => {
+    vi.useFakeTimers();
+    service.iniciarPolling(1000);
+
+    http
+      .expectOne('/api/v1/notificacoes/contagem')
+      .flush({}, { status: 503, statusText: 'Service Unavailable' });
+    expect(toast.error).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1000);
+    http
+      .expectOne('/api/v1/notificacoes/contagem')
+      .flush({}, { status: 503, statusText: 'Service Unavailable' });
+    expect(toast.error).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1000);
+    http.expectOne('/api/v1/notificacoes/contagem').flush({ naoLidas: 2 });
+    expect(service.naoLidas()).toBe(2);
+    expect(service.erro()).toBeNull();
+
+    vi.advanceTimersByTime(1000);
+    http
+      .expectOne('/api/v1/notificacoes/contagem')
+      .flush({}, { status: 503, statusText: 'Service Unavailable' });
+    expect(toast.error).toHaveBeenCalledTimes(2);
+  });
 });

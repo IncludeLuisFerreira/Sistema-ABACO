@@ -38,14 +38,14 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
-    this.notificacoes.pararPolling();
+    this.notificacoes.limpar();
   }
 
   logout(): void {
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
     }
-    this.notificacoes.pararPolling();
+    this.notificacoes.limpar();
     this.auth.logout();
     this.router.navigate(['/login']);
   }

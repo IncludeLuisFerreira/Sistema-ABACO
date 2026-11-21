@@ -33,7 +33,7 @@ describe('NotificacaoSinoComponent', () => {
   };
   let router: { navigateByUrl: ReturnType<typeof vi.fn> };
 
-  async function setup(itens: Notificacao[] = []) {
+  async function setup(itens: Notificacao[] = [], variant: 'sidebar' | 'topbar' = 'topbar') {
     service = {
       notificacoes: signal(itens),
       naoLidas: signal(itens.filter((item) => !item.lida).length),
@@ -55,6 +55,7 @@ describe('NotificacaoSinoComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(NotificacaoSinoComponent);
+    fixture.componentInstance.variant = variant;
     fixture.detectChanges();
   }
 
@@ -116,6 +117,46 @@ describe('NotificacaoSinoComponent', () => {
 
     expect(service.marcarLida).toHaveBeenCalledWith(5);
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin/logistico/pedidos/5');
+  });
+
+  it('fecha o painel antes de navegar por uma notificação com link', async () => {
+    await setup([notificacao(5, false, '/admin/logistico/pedidos/5')]);
+    let abertoNaNavegacao: boolean | undefined;
+    router.navigateByUrl.mockImplementation(() => {
+      abertoNaNavegacao = fixture.componentInstance.aberto;
+      return true;
+    });
+
+    botaoSino().click();
+    fixture.detectChanges();
+    (elemento().querySelector('.notificacao-sino__item') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(abertoNaNavegacao).toBe(false);
+    expect(elemento().querySelector('.notificacao-sino__painel')).toBeNull();
+  });
+
+  it('ancora o painel da sidebar na esquerda para não sair da viewport', async () => {
+    await setup([notificacao(1)], 'sidebar');
+
+    botaoSino().click();
+    fixture.detectChanges();
+
+    const painel = elemento().querySelector('.notificacao-sino__painel') as HTMLElement;
+    const estilo = getComputedStyle(painel);
+    expect(estilo.position).toBe('absolute');
+    expect(estilo.left).toBe('0px');
+    expect(estilo.right).toBe('auto');
+  });
+
+  it('mantém o painel da topbar ancorado à direita', async () => {
+    await setup([notificacao(1)]);
+
+    botaoSino().click();
+    fixture.detectChanges();
+
+    const painel = elemento().querySelector('.notificacao-sino__painel') as HTMLElement;
+    expect(getComputedStyle(painel).right).toBe('0px');
   });
 
   it('marca todas como lidas', async () => {

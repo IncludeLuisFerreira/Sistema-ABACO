@@ -34,6 +34,7 @@ export class NotificacaoSinoComponent {
   }
 
   abrir(notificacao: Notificacao): void {
+    this.aberto = false;
     if (notificacao.lida) {
       if (notificacao.link) {
         this.router.navigateByUrl(notificacao.link);

@@ -87,6 +87,12 @@
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
 }
 
+/* Na sidebar de 240px, ancorar à direita empurraria o painel para fora da viewport. */
+.notificacao-sino--sidebar .notificacao-sino__painel {
+  left: 0;
+  right: auto;
+}
+
 .notificacao-sino__cabecalho {
   display: flex;
   align-items: center;
