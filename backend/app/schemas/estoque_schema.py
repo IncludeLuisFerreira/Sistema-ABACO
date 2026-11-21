@@ -1,18 +1,35 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+def _strip_nome_item(value: str) -> str:
+    nome = value.strip()
+    if not nome:
+        raise ValueError("Nome do item é obrigatório")
+    return nome
 
 
 class EstoqueCreateSchema(BaseModel):
-    nomeItem: str
-    quantidadeDisponivel: int | None = Field(default=None, ge=0)
+    nomeItem: str = Field(min_length=1)
+    quantidadeDisponivel: int | None = Field(default=None, ge=0, strict=True)
     unidade: str | None = None
-    estoqueMinimo: int | None = Field(default=None, ge=0)
+    estoqueMinimo: int | None = Field(default=None, ge=0, strict=True)
+
+    @field_validator("nomeItem")
+    @classmethod
+    def validar_nome_item(cls, value: str) -> str:
+        return _strip_nome_item(value)
 
 
 class EstoqueUpdateSchema(BaseModel):
-    nomeItem: str | None = None
-    quantidadeDisponivel: int | None = Field(default=None, ge=0)
+    nomeItem: str | None = Field(default=None, min_length=1)
+    quantidadeDisponivel: int | None = Field(default=None, ge=0, strict=True)
     unidade: str | None = None
-    estoqueMinimo: int | None = Field(default=None, ge=0)
+    estoqueMinimo: int | None = Field(default=None, ge=0, strict=True)
+
+    @field_validator("nomeItem")
+    @classmethod
+    def validar_nome_item(cls, value: str | None) -> str | None:
+        return None if value is None else _strip_nome_item(value)
 
 
 class EstoqueResponseSchema(BaseModel):
@@ -26,7 +43,7 @@ class EstoqueResponseSchema(BaseModel):
 
 
 class EstoqueBaixaSchema(BaseModel):
-    quantidade: int = Field(..., gt=0, description="Quantidade a ser deduzida do estoque")
+    quantidade: int = Field(..., gt=0, strict=True, description="Quantidade a ser deduzida do estoque")
     justificativa: str = Field(..., min_length=1, description="Justificativa para a baixa")
 
 
