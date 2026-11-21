@@ -1,4 +1,14 @@
 from datetime import date
+from typing import NamedTuple
+
+
+class ItemEstoqueBaixo(NamedTuple):
+    """Cópia dos dados do item no momento da queda, usada após o agendamento do e-mail."""
+
+    nome: str
+    saldo: int
+    minimo: int
+    unidade: str | None
 
 
 def build_reset_message(settings, reset_token: str) -> tuple[str, str, str, str]:
@@ -42,6 +52,28 @@ Data da aprovação: {data_aprovacao.strftime('%d/%m/%Y')}
 
 Itens aprovados:
 {itens_descricao}
+
+Atenciosamente,
+Equipe SGA ABACO
+"""
+    return subject, body
+
+
+def build_estoque_baixo_message(itens: list[ItemEstoqueBaixo]) -> tuple[str, str]:
+    quantidade = len(itens)
+    rotulo = "item" if quantidade == 1 else "itens"
+    subject = f"SGA ABACO - Estoque baixo: {quantidade} {rotulo}"
+
+    linhas = [
+        f"- {item.nome}: saldo {item.saldo}, mínimo {item.minimo}, unidade {item.unidade or 'não informada'}"
+        for item in itens
+    ]
+    body = f"""\
+Olá,
+
+Os seguintes itens de estoque atingiram ou ficaram abaixo do mínimo:
+
+{chr(10).join(linhas)}
 
 Atenciosamente,
 Equipe SGA ABACO

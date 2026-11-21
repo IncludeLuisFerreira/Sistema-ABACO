@@ -85,9 +85,9 @@ def aprovar_pedido_endpoint(
 
 
 @router.put("/{pedido_id}/comprar")
-def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, background_tasks: BackgroundTasks, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     try:
-        pedido = comprar_pedido(db, pedido_id, payload)
+        pedido = comprar_pedido(db, pedido_id, payload, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoInvalidTransitionError:
@@ -117,9 +117,9 @@ def update_pedidos(
 
 
 @router.put("/{pedido_id}/entregar")
-def entregar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+def entregar_pedido_endpoint(pedido_id: int, background_tasks: BackgroundTasks, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     try:
-        pedido = entregar_pedido(db, pedido_id)
+        pedido = entregar_pedido(db, pedido_id, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoCannotBeDeliveredError as exc:

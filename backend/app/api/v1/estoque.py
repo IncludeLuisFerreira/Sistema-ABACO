@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import verify_cargo
@@ -53,18 +53,18 @@ def read_estoque_item(estoque_id: int, _current_user: dict = Depends(verify_carg
 
 
 @router.post("")
-def create_estoque_item(payload: EstoqueCreateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+def create_estoque_item(payload: EstoqueCreateSchema, background_tasks: BackgroundTasks, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     try:
-        item = create_estoque(db, payload)
+        item = create_estoque(db, payload, background_tasks)
     except EstoqueAlreadyExistsError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Item de estoque já cadastrado") from exc
     return EstoqueResponseSchema.model_validate(item)
 
 
 @router.put("/{estoque_id}")
-def update_estoque_item(estoque_id: int, payload: EstoqueUpdateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
+def update_estoque_item(estoque_id: int, payload: EstoqueUpdateSchema, background_tasks: BackgroundTasks, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     try:
-        item = update_estoque(db, estoque_id, payload)
+        item = update_estoque(db, estoque_id, payload, background_tasks)
     except EstoqueNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item de estoque não encontrado") from exc
     except EstoqueAlreadyExistsError as exc:
@@ -90,11 +90,12 @@ def delete_estoque_item(estoque_id: int, _current_user: dict = Depends(verify_ca
 def baixa_estoque_item(
     estoque_id: int,
     payload: EstoqueBaixaSchema,
+    background_tasks: BackgroundTasks,
     _current_user: dict = Depends(verify_cargo(1, 3)),
     db: Session = Depends(get_db),
 ):
     try:
-        item = dar_baixa(db, estoque_id, payload.quantidade, payload.justificativa)
+        item = dar_baixa(db, estoque_id, payload.quantidade, payload.justificativa, background_tasks)
     except EstoqueNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item de estoque não encontrado") from exc
     except EstoqueSaldoInsuficienteError:

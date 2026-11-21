@@ -6,10 +6,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.email import EmailDeliveryError, send_pedido_aprovado_email
+from app.email.messages import ItemEstoqueBaixo
 from app.models.item_pedido import ItemPedido
 from app.models.pedido import Pedido
 from app.models.usuario import Usuario
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoUpdateSchema
+from app.services import notificacao_eventos_service as notificacoes_eventos
 
 
 logger = logging.getLogger(__name__)
@@ -75,6 +77,7 @@ def create_pedido(db: Session, payload: PedidoCreateSchema, usuario_id: int) -> 
 
     db.commit()
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_criado(db, pedido, usuario_id)
     return pedido
 
 
@@ -168,9 +171,10 @@ def _aprovar_pedido(
         raise PedidoInvalidTransitionError("Apenas pedidos com status 'Solicitado' podem ser aprovados")
 
     pedido.status = 1
+    itens_baixos: list[ItemEstoqueBaixo] = []
 
     try:
-        deduzir_por_pedido(db, pedido)
+        itens_baixos = deduzir_por_pedido(db, pedido)
         db.commit()
     except EstoqueSaldoInsuficienteError as exc:
         db.rollback()
@@ -180,6 +184,8 @@ def _aprovar_pedido(
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_aprovado(db, pedido)
+    notificacoes_eventos.notificar_estoque_baixo(db, itens_baixos, background_tasks)
     # O e-mail só é enviado depois do commit e nunca deve desfazer a aprovação.
     _notificar_solicitante_aprovacao(db, pedido, background_tasks)
     return pedido
@@ -194,7 +200,7 @@ def aprovar_pedido(
     return _aprovar_pedido(db, pedido, background_tasks)
 
 
-def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> Pedido:
+def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema, background_tasks: BackgroundTasks | None = None) -> Pedido:
     pedido = get_pedido_by_id(db, pedido_id)
 
     if pedido.status != 1:
@@ -216,6 +222,7 @@ def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> 
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_comprado(db, pedido)
     return pedido
 
 
@@ -250,10 +257,11 @@ def update_pedido_status(
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_comprado(db, pedido)
     return pedido
 
 
-def entregar_pedido(db: Session, pedido_id: int) -> Pedido:
+def entregar_pedido(db: Session, pedido_id: int, background_tasks: BackgroundTasks | None = None) -> Pedido:
     from app.models.estoque import Estoque
 
     pedido = get_pedido_by_id(db, pedido_id)
@@ -289,6 +297,7 @@ def entregar_pedido(db: Session, pedido_id: int) -> Pedido:
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_entregue(db, pedido)
     return pedido
 
 
