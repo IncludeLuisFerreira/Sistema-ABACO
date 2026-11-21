@@ -17,6 +17,7 @@ from app.api.v1.estoque import router as estoque_router
 from app.api.v1.historico import router as historico_router
 from app.api.v1.matriculas import router as matriculas_router
 from app.api.v1.notas import router as notas_router
+from app.api.v1.notificacoes import router as notificacoes_router
 from app.api.v1.pedidos import router as pedidos_router
 from app.api.v1.presencas import router as presencas_router
 from app.api.v1.turmas import router as turmas_router
@@ -69,6 +70,7 @@ app = FastAPI(
         {"name": "matriculas", "description": "Matrícula de alunos em turmas"},
         {"name": "presencas", "description": "Registro e consulta de presenças"},
         {"name": "notas", "description": "Lançamento e consulta de notas e médias"},
+        {"name": "notificacoes", "description": "Inbox persistente de notificações por usuário"},
         {"name": "historico", "description": "Geração de histórico escolar"},
         {"name": "usuarios", "description": "Gestão de usuários (restrito à diretoria e administradores)"},
         {"name": "dashboard", "description": "Indicadores e gráficos administrativos"},
@@ -108,6 +110,7 @@ app.include_router(estoque_router)
 app.include_router(historico_router)
 app.include_router(matriculas_router)
 app.include_router(notas_router)
+app.include_router(notificacoes_router)
 app.include_router(pedidos_router)
 app.include_router(presencas_router)
 app.include_router(turmas_router)

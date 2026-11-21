@@ -5,6 +5,7 @@ from app.models.item_pedido import ItemPedido
 from app.models.matricula import Matricula
 from app.models.movimentacao_estoque import MovimentacaoEstoque
 from app.models.nota import Nota
+from app.models.notificacao import Notificacao
 from app.models.pedido import Pedido
 from app.models.turma import Turma
 from app.models.presenca import Presenca
