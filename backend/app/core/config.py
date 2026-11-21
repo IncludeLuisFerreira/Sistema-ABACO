@@ -22,6 +22,9 @@ class Settings(BaseSettings):
 	database_url: str = Field(default="postgresql+psycopg2://postgres:postgres@database:5432/sga_abacos", alias="DATABASE_URL")
 	admin_seed_email: str | None = Field(default=None, alias="ADMIN_SEED_EMAIL")
 	admin_seed_password: str | None = Field(default=None, alias="ADMIN_SEED_PASSWORD")
+	seed_on_startup: bool = Field(default=False, alias="SEED_ON_STARTUP")
+	seed_admin_password: str | None = Field(default=None, alias="SEED_ADMIN_PASSWORD")
+	seed_professor_password: str | None = Field(default=None, alias="SEED_PROFESSOR_PASSWORD")
 	# O default inseguro só é aceito fora de produção; ver _require_strong_secret_in_production.
 	secret_key: str = Field(
 		default=INSECURE_DEFAULT_SECRET,
