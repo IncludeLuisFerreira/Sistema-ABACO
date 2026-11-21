@@ -63,4 +63,18 @@ import { UsuarioFormComponent } from './usuario-form';
     component.form.controls.telefone.setValue('123');
     expect(component.form.controls.telefone.invalid).toBe(true);
   });
+
+  it('applies the shared password policy when creating a user', () => {
+    const { component } = setup();
+    const senha = component.form.controls.senha;
+
+    senha.setValue('1234567');
+    expect(senha.hasError('minlength')).toBe(true);
+
+    senha.setValue('somenteletras');
+    expect(senha.hasError('passwordComposition')).toBe(true);
+
+    senha.setValue('senha123');
+    expect(senha.valid).toBe(true);
+  });
 });

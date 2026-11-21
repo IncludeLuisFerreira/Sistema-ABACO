@@ -40,6 +40,22 @@ class TestUsuariosEndpoints:
         )
         assert response.status_code == 422
 
+    def test_create_senha_fraca_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo", "email": "senha.fraca@abaco.org.br", "senha": "1234567", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_senha_sem_numero_retorna_422(self, api_client, director_headers):
+        response = api_client.post(
+            "/api/v1/usuarios",
+            json={"nome": "Novo", "email": "senha.sem.numero@abaco.org.br", "senha": "somenteletras", "cargo": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+
     def test_create_telefone_invalido_retorna_422(self, api_client, director_headers):
         response = api_client.post(
             "/api/v1/usuarios",
