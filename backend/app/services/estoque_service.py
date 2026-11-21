@@ -1,13 +1,20 @@
 from datetime import datetime
 
+from fastapi import BackgroundTasks
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.email.messages import ItemEstoqueBaixo
 from app.models.estoque import Estoque
 from app.models.movimentacao_estoque import MovimentacaoEstoque
 from app.models.pedido import Pedido
 from app.schemas.estoque_schema import EstoqueCreateSchema, EstoqueUpdateSchema
+from app.services.notificacao_eventos_service import (
+    itens_recem_baixos,
+    notificar_estoque_baixo,
+    snapshot_estoque,
+)
 
 
 class EstoqueNotFoundError(Exception):
@@ -39,7 +46,7 @@ def _is_unique_violation(exc: IntegrityError) -> bool:
     return "unique" in message or "uq_estoque_nomeitem_lower" in message
 
 
-def create_estoque(db: Session, payload: EstoqueCreateSchema) -> Estoque:
+def create_estoque(db: Session, payload: EstoqueCreateSchema, background_tasks: BackgroundTasks | None = None) -> Estoque:
     existing = db.query(Estoque).filter(
         func.lower(Estoque.nome_item) == func.lower(payload.nomeItem.strip())
     ).first()
@@ -64,6 +71,7 @@ def create_estoque(db: Session, payload: EstoqueCreateSchema) -> Estoque:
             f"Item '{payload.nomeItem}' já existe no estoque. Use o endpoint de atualização para modificar a quantidade."
         ) from exc
     db.refresh(estoque)
+    notificar_estoque_baixo(db, itens_recem_baixos({}, [estoque]), background_tasks)
     return estoque
 
 
@@ -84,8 +92,9 @@ def get_estoque_by_id(db: Session, estoque_id: int) -> Estoque:
     return estoque
 
 
-def update_estoque(db: Session, estoque_id: int, payload: EstoqueUpdateSchema) -> Estoque:
+def update_estoque(db: Session, estoque_id: int, payload: EstoqueUpdateSchema, background_tasks: BackgroundTasks | None = None) -> Estoque:
     estoque = get_estoque_by_id(db, estoque_id)
+    anteriores = {estoque.id_item_estoque: snapshot_estoque(estoque)}
 
     if payload.nomeItem is not None:
         estoque.nome_item = payload.nomeItem
@@ -107,6 +116,7 @@ def update_estoque(db: Session, estoque_id: int, payload: EstoqueUpdateSchema) -
         raise EstoqueHasDependenciesError from exc
 
     db.refresh(estoque)
+    notificar_estoque_baixo(db, itens_recem_baixos(anteriores, [estoque]), background_tasks)
     return estoque
 
 
@@ -121,8 +131,9 @@ def delete_estoque(db: Session, estoque_id: int) -> None:
         raise EstoqueHasDependenciesError from exc
 
 
-def dar_baixa(db: Session, estoque_id: int, quantidade: int, justificativa: str) -> Estoque:
+def dar_baixa(db: Session, estoque_id: int, quantidade: int, justificativa: str, background_tasks: BackgroundTasks | None = None) -> Estoque:
     estoque = get_estoque_by_id(db, estoque_id)
+    anteriores = {estoque.id_item_estoque: snapshot_estoque(estoque)}
 
     saldo_atual = estoque.quantidade_disponivel or 0
     if saldo_atual < quantidade:
@@ -148,6 +159,7 @@ def dar_baixa(db: Session, estoque_id: int, quantidade: int, justificativa: str)
         raise EstoqueHasDependenciesError from exc
 
     db.refresh(estoque)
+    notificar_estoque_baixo(db, itens_recem_baixos(anteriores, [estoque]), background_tasks)
     return estoque
 
 
@@ -163,11 +175,13 @@ def get_alertas(db: Session) -> list[Estoque]:
     )
 
 
-def deduzir_por_pedido(db: Session, pedido: Pedido) -> None:
+def deduzir_por_pedido(db: Session, pedido: Pedido) -> list[ItemEstoqueBaixo]:
     # HACK: with_for_update não funciona em SQLite e o rollback fica a cargo do caller
     from app.models.item_pedido import ItemPedido
 
     itens: list[ItemPedido] = pedido.itens or []
+    anteriores: dict[int, ItemEstoqueBaixo | None] = {}
+    alterados: list[Estoque] = []
 
     for item in itens:
         if not item.id_item_estoque or not item.quantidade:
@@ -182,6 +196,9 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> None:
 
         if not estoque_item:
             continue
+
+        anteriores[estoque_item.id_item_estoque] = snapshot_estoque(estoque_item)
+        alterados.append(estoque_item)
 
         saldo_atual = estoque_item.quantidade_disponivel or 0
         if saldo_atual < item.quantidade:
@@ -200,3 +217,5 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> None:
             data_movimentacao=datetime.now(),
         )
         db.add(movimentacao)
+
+    return itens_recem_baixos(anteriores, alterados)

@@ -3,6 +3,7 @@ from datetime import date
 
 from app.core.config import get_settings
 from app.email import messages
+from app.email.messages import ItemEstoqueBaixo
 from app.email.providers import brevo, console, smtp
 
 
@@ -30,6 +31,12 @@ def send_first_access_email(to_email: str, first_access_token: str) -> None:
     subject, body, _link, _link_label = messages.build_first_access_message(
         settings, first_access_token
     )
+    _send_email(settings, to_email, subject, body)
+
+
+def send_estoque_baixo_email(to_email: str, itens: list[ItemEstoqueBaixo]) -> None:
+    settings = get_settings()
+    subject, body = messages.build_estoque_baixo_message(itens)
     _send_email(settings, to_email, subject, body)
 
 
