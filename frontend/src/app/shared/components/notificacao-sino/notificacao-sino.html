@@ -1,0 +1,80 @@
+<div class="notificacao-sino" [class.notificacao-sino--sidebar]="variant === 'sidebar'">
+  <button
+    type="button"
+    class="notificacao-sino__botao"
+    aria-label="Notificações"
+    [attr.aria-expanded]="aberto"
+    (click)="toggle()"
+  >
+    <span class="notificacao-sino__icone" aria-hidden="true">&#128276;</span>
+    <span class="notificacao-sino__badge" *ngIf="service.naoLidas() > 0" aria-live="polite">
+      {{ service.naoLidas() }}
+    </span>
+  </button>
+
+  <section
+    *ngIf="aberto"
+    class="notificacao-sino__painel"
+    role="region"
+    aria-label="Histórico de notificações"
+  >
+    <header class="notificacao-sino__cabecalho">
+      <h2 class="notificacao-sino__titulo">Notificações</h2>
+      <button
+        type="button"
+        class="notificacao-sino__fechar"
+        aria-label="Fechar notificações"
+        (click)="fechar()"
+      >
+        &times;
+      </button>
+    </header>
+
+    <button
+      type="button"
+      class="notificacao-sino__marcar-todas"
+      *ngIf="service.naoLidas() > 0"
+      (click)="marcarTodas()"
+    >
+      Marcar todas como lidas
+    </button>
+
+    <p class="notificacao-sino__erro" *ngIf="service.erro()" role="alert">
+      {{ service.erro() }}
+    </p>
+
+    <p class="notificacao-sino__carregando" *ngIf="service.carregando()">Carregando…</p>
+
+    <ng-container *ngIf="!service.carregando()">
+      <p class="notificacao-sino__vazio" *ngIf="service.notificacoes().length === 0">
+        Nenhuma notificação.
+      </p>
+
+      <ul class="notificacao-sino__lista" *ngIf="service.notificacoes().length > 0">
+        <li *ngFor="let notificacao of service.notificacoes()">
+          <button
+            type="button"
+            class="notificacao-sino__item"
+            [class.notificacao-sino__item--nao-lida]="!notificacao.lida"
+            (click)="abrir(notificacao)"
+          >
+            <strong class="notificacao-sino__item-titulo">{{ notificacao.titulo }}</strong>
+            <span class="notificacao-sino__item-mensagem">{{ notificacao.mensagem }}</span>
+            <time class="notificacao-sino__item-data">
+              {{ notificacao.criadaEm | date: 'dd/MM/yyyy HH:mm' }}
+            </time>
+          </button>
+        </li>
+      </ul>
+
+      <button
+        type="button"
+        class="notificacao-sino__mais"
+        *ngIf="service.temMais() && service.notificacoes().length > 0"
+        (click)="carregarMais()"
+      >
+        Carregar mais
+      </button>
+    </ng-container>
+  </section>
+</div>

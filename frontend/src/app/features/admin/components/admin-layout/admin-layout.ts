@@ -4,17 +4,20 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 
 import { AuthService } from '../../../../core/services/auth.service';
 import { EstoqueService } from '../../../../core/services/estoque.service';
+import { NotificacaoService } from '../../../../core/services/notificacao.service';
+import { NotificacaoSinoComponent } from '../../../../shared/components/notificacao-sino/notificacao-sino';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NotificacaoSinoComponent],
   templateUrl: './admin-layout.html',
   styleUrls: ['./admin-layout.scss'],
 })
 export class AdminLayoutComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   readonly estoqueService = inject(EstoqueService);
+  readonly notificacoes = inject(NotificacaoService);
   private readonly router = inject(Router);
 
   private pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -27,6 +30,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     this.pollInterval = setInterval(() => {
       this.estoqueService.loadAlertasCount();
     }, 30000);
+    this.notificacoes.iniciarPolling(30000);
   }
 
   ngOnDestroy(): void {
@@ -34,12 +38,14 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
+    this.notificacoes.pararPolling();
   }
 
   logout(): void {
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
     }
+    this.notificacoes.pararPolling();
     this.auth.logout();
     this.router.navigate(['/login']);
   }
