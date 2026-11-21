@@ -6,7 +6,7 @@
 
 **Architecture:** O service valida o batch inteiro antes do loop de persistência e lança `InvalidMatriculasError` com os ids inválidos (sem duplicatas, na ordem do payload). O router traduz a exceção para 422, igual a `notas`. A mensagem exibida ao usuário é montada no router, em português, com plural correto e limite de ids listados.
 
-**Tech Stack:** Python 3.14, FastAPI, SQLAlchemy 2, PostgreSQL 16 (testes em SQLite).
+**Tech Stack:** Python 3.11, FastAPI, SQLAlchemy 2, PostgreSQL 16 (testes em SQLite).
 
 **Spec:** Issue #47 (`gh issue view 47`), achado `BUG-19` da varredura da PR #33 + plano aprovado em conversa.
 
@@ -14,7 +14,7 @@
 
 - Sem migration e sem mudança de schema.
 - Sem alteração no frontend: `attendance-management.ts` já exibe `err.error.detail`.
-- `alembic heads` continua com um único head (`007`).
+- `alembic heads` continua com um único head (`008` após a sincronização com `develop`).
 - Conventional Commits em português, até 72 caracteres na primeira linha.
 - Cobertura dos arquivos alterados em 100%.
 - Sem `print()` / `console.log` no diff.
@@ -74,7 +74,7 @@ Run: `cd backend && python -m pytest tests/test_presenca_service.py -q`
 
 - [x] **Step 1: Escrever teste de contrato**
 
-`test_create_matricula_de_outra_turma_retorna_422` e `test_create_matricula_inexistente_nao_salva_nada` em `TestPresencasEndpoints`, verificando status, frase e ausência de registro salvo.
+`test_create_matricula_de_outra_turma_retorna_422`, `test_create_matricula_inexistente_nao_salva_nada` e `test_create_dois_ids_invalidos_retorna_mensagem_plural` em `TestPresencasEndpoints`, verificando status, frase e ausência de registro salvo.
 
 - [x] **Step 2: Implementar `_matriculas_invalidas_detail`**
 
@@ -93,13 +93,13 @@ Listar mais de três ids transformaria o alerta global em parede de texto; o pro
 - [x] **Step 4: Rodar e ver passar**
 
 Run: `cd backend && python -m pytest tests/test_presenca_service.py tests/test_notas_presencas_historico_endpoints.py tests/test_rbac_presencas.py -q`
-Expected: `25 passed`.
+Expected: `26 passed`.
 
 ### Task 3: Verificação final
 
-- [x] `cd backend && python -m pytest -q` → `592 passed, 1 skipped`
+- [x] `cd backend && python -m pytest -q` → `638 passed, 1 skipped` (após sincronização com `develop`)
 - [x] `cd backend && python -m pytest ... --cov-report=term-missing` → `presencas.py` 100%, `presenca_service.py` 100%
-- [x] `cd backend && alembic heads` → `007 (head)`
+- [x] `cd backend && alembic heads` → `008 (head)`
 - [x] Frontend não alterado → sem `npm test` / `npm run build`
 
 ## Documentação
