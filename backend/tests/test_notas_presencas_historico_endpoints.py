@@ -195,6 +195,24 @@ class TestPresencasEndpoints:
             headers=director_headers,
         ).json() == []
 
+    def test_create_dois_ids_invalidos_retorna_mensagem_plural(self, seeded, director_headers):
+        response = seeded["client"].post(
+            "/api/v1/presencas",
+            json={
+                "idTurma": seeded["turma"]["idTurma"],
+                "dataAula": "2026-01-22",
+                "presencas": [
+                    {"idMatricula": 111111, "presente": True},
+                    {"idMatricula": 222222, "presente": True},
+                ],
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"] == (
+            "As matrículas 111111 e 222222 não pertencem à turma informada ou não estão ativas."
+        )
+
 
 class TestMensagemMatriculasInvalidas:
     def test_singular_lista_o_id(self):
