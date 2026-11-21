@@ -80,7 +80,7 @@ def destinatarios_estoque(db_session: Session):
 
 
 class TestPedidoCriado:
-    def test_notifica_diretores_com_link_do_academico_e_exclui_criador(
+    def test_notifica_diretores_com_link_admin_e_exclui_criador(
         self, db_session: Session, turma, usuario, usuario_professor
     ):
         outro_diretor = _usuario(db_session, "Diretora Extra", 1)
@@ -89,7 +89,7 @@ class TestPedidoCriado:
 
         notificacoes = db_session.query(Notificacao).filter(Notificacao.tipo == "pedido_criado").all()
         assert {item.id_usuario for item in notificacoes} == {usuario.id_usuario, outro_diretor.id_usuario}
-        assert all(item.link == "/academico/pedidos" for item in notificacoes)
+        assert all(item.link == "/admin/logistico/pedidos" for item in notificacoes)
         assert all(str(pedido.id_pedido) in item.mensagem for item in notificacoes)
         assert all("Professor Teste" in item.mensagem for item in notificacoes)
         assert all(str(turma.id_turma) in item.mensagem for item in notificacoes)
@@ -385,6 +385,51 @@ class TestEstoqueBaixo:
         assert all({item.nome for item in itens} == {"Teste Item", "Segundo Item"} for _email, itens in sem_email_estoque)
         notificacao = db_session.query(Notificacao).filter(Notificacao.tipo == "estoque_baixo").first()
         assert "2 itens" in notificacao.titulo
+
+    def test_aprovacao_com_duas_linhas_do_mesmo_item_alerta_uma_vez(
+        self,
+        db_session: Session,
+        turma,
+        usuario_professor,
+        estoque_item,
+        monkeypatch,
+        sem_email_estoque,
+        destinatarios_estoque,
+    ):
+        monkeypatch.setattr(
+            pedido_service, "send_pedido_aprovado_email", lambda *args: None
+        )
+        estoque_item.quantidade_disponivel = 10
+        estoque_item.estoque_minimo = 5
+        db_session.commit()
+
+        payload = PedidoCreateSchema(
+            idTurma=turma.id_turma,
+            itens=[
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=6,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                ),
+                ItemPedidoCreateSchema(
+                    nomeItem=estoque_item.nome_item,
+                    quantidade=4,
+                    idItemEstoque=estoque_item.id_item_estoque,
+                ),
+            ],
+        )
+        pedido = create_pedido(db_session, payload, usuario_professor.id_usuario)
+
+        aprovar_pedido(db_session, pedido.id_pedido)
+
+        notificacoes = (
+            db_session.query(Notificacao)
+            .filter(Notificacao.tipo == "estoque_baixo")
+            .all()
+        )
+        assert len(notificacoes) == 2
+        assert all(notificacao.mensagem.count("Teste Item") == 1 for notificacao in notificacoes)
+        assert len(sem_email_estoque) == 2
 
     def test_mensagem_in_app_lista_ate_cinco_itens_e_trunca(
         self, db_session: Session, sem_email_estoque, destinatarios_estoque

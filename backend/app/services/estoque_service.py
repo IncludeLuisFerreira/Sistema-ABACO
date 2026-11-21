@@ -182,6 +182,7 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> list[ItemEstoqueBaixo]:
     itens: list[ItemPedido] = pedido.itens or []
     anteriores: dict[int, ItemEstoqueBaixo | None] = {}
     alterados: list[Estoque] = []
+    ids_alterados: set[int] = set()
 
     for item in itens:
         if not item.id_item_estoque or not item.quantidade:
@@ -197,8 +198,12 @@ def deduzir_por_pedido(db: Session, pedido: Pedido) -> list[ItemEstoqueBaixo]:
         if not estoque_item:
             continue
 
-        anteriores[estoque_item.id_item_estoque] = snapshot_estoque(estoque_item)
-        alterados.append(estoque_item)
+        # Preserva o estado original do primeiro item com esse estoque e evita
+        # duplicar o mesmo item no alerta quando o pedido tem linhas repetidas.
+        anteriores.setdefault(estoque_item.id_item_estoque, snapshot_estoque(estoque_item))
+        if estoque_item.id_item_estoque not in ids_alterados:
+            alterados.append(estoque_item)
+            ids_alterados.add(estoque_item.id_item_estoque)
 
         saldo_atual = estoque_item.quantidade_disponivel or 0
         if saldo_atual < item.quantidade:

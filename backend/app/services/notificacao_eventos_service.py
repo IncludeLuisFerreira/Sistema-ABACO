@@ -73,16 +73,17 @@ def _notificar(
 
 def notificar_pedido_criado(db: Session, pedido: Pedido, usuario_id: int) -> None:
     autor = db.query(Usuario).filter(Usuario.id_usuario == usuario_id).first()
-    link = link_pedidos_para_cargo(autor.cargo if autor else None)
     nome = (autor.nome if autor else None) or f"Usuário #{usuario_id}"
     turma = pedido.turma
     turma_descricao = f"Turma #{pedido.id_turma}"
     if turma is not None and turma.curso is not None and turma.curso.nome_curso:
         turma_descricao += f" ({turma.curso.nome_curso})"
 
+    # Os destinatários são diretores; o link precisa ser o da área administrativa,
+    # independentemente do cargo de quem criou o pedido.
     _notificar(
         db,
-        _destinatarios_por_cargo(db, (1,), link, excluir_id=usuario_id),
+        _destinatarios_por_cargo(db, (1,), LINK_PEDIDOS_ADMIN, excluir_id=usuario_id),
         "pedido_criado",
         "Novo pedido aguardando aprovação",
         f"Pedido #{pedido.id_pedido} de {nome} - {turma_descricao} aguardando aprovação.",
