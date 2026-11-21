@@ -51,8 +51,8 @@ Pedro, Carla, Lucas, Juliana, Rafael, Beatriz, Gabriel, Mariana, Fernando, Patr�
 | 2 | João Santos | Aprovado | Lápis (40), Tesoura (15) |
 | 3 | Ana Costa | Comprado | Papel sulfite (8 resmas) |
 
-### Matrículas (8)
-Distribuídas entre as 4 turmas.
+### Matrículas (12)
+Distribuídas entre as 6 turmas.
 
 ### Estoque
 | Item | Disponível | Mínimo | Alerta? |
@@ -68,13 +68,13 @@ Distribuídas entre as 4 turmas.
 
 ## Como testar
 
-1. **Diretora**: loga com `admin@abaco.org.br` / `admin123`
+1. **Diretora**: loga com `admin@abaco.org.br` / senha definida em `ADMIN_SEED_PASSWORD`
    - Vê o dashboard na home com KPIs e gráficos
    - Acessa Turmas → vê os cards agrupados por curso
    - Gerencia alunos, matrículas, usuários
    - Aprova pedidos, vê estoque crítico
 
-2. **Professor**: loga com `maria@abaco.org.br` / `prof12345`
+2. **Professor**: loga com `maria@abaco.org.br` / senha definida em `SEED_PROFESSOR_PASSWORD`
    - Vê dashboard do professor
    - Acessa "Minhas Turmas" → vê 2 turmas de Informática
    - Registra presenças e notas

@@ -751,7 +751,7 @@ Com `ADMIN_SEED_*`, `SEED_ADMIN_PASSWORD` e `SEED_PROFESSOR_PASSWORD` preenchido
 o sistema popula automaticamente:
 
 - **5 Cursos**: Informática Básica, Corte e Costura, Administração, Inglês Básico, Espanhol
-- **5 Usuários**: 1 admin (cargo 3) + 4 professores (cargo 2) + admin do .env (cargo 1)
+- **6 Usuários**: 1 admin (cargo 3) + 4 professores (cargo 2) + admin do .env (cargo 1)
 - **12 Alunos**: com dados completos (nome, telefone, endereço)
 - **6 Turmas**: distribuídas entre cursos e professores, com avaliações configuradas
 - **12 Matrículas**: vinculando alunos às turmas
