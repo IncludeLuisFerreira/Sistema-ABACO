@@ -627,6 +627,9 @@ O rebuild completo garante que o banco é recriado, as migrações Alembic são 
 | `JWT_SECRET` | Chave secreta para tokens JWT | (obrigatório) |
 | `ADMIN_SEED_EMAIL` | Email do admin inicial | `admin@abaco.org.br` |
 | `ADMIN_SEED_PASSWORD` | Senha do admin inicial | `admin123` |
+| `SEED_ON_STARTUP` | Roda o seed de dados de teste no boot (default do código `false`; compose e `.env.example` usam `true`; produção nunca roda no boot) | `false` |
+| `SEED_ADMIN_PASSWORD` | Senha do usuário de teste `admin2@abaco.org.br` | (vazio, usuário é pulado) |
+| `SEED_PROFESSOR_PASSWORD` | Senha dos professores de teste | (vazio, usuários são pulados) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do token JWT | `120` |
 | `RESET_TOKEN_EXPIRE_MINUTES` | Expiração do link de recuperação de senha | `30` |
 | `FIRST_ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do link de primeiro acesso | `1440` |
@@ -730,17 +733,25 @@ Ambos devem retornar **200** com apenas as turmas/matrículas vinculadas ao prof
 
 | Perfil | Email | Senha |
 |--------|-------|-------|
-| Diretor(a) | `admin@abaco.org.br` | `admin123` |
-| Administrador(a) | `admin2@abaco.org.br` | `admin123` |
-| Professor(a) | `maria@abaco.org.br` | `prof12345` |
-| Professor(a) | `joao@abaco.org.br` | `prof12345` |
-| Professor(a) | `ana@abaco.org.br` | `prof12345` |
-| Professor(a) | `paulo@abaco.org.br` | `prof12345` |
+| Diretor(a) | `admin@abaco.org.br` | `ADMIN_SEED_PASSWORD` (`admin123`) |
+| Administrador(a) | `admin2@abaco.org.br` | `SEED_ADMIN_PASSWORD` (`admin123`) |
+| Professor(a) | `maria@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
+| Professor(a) | `joao@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
+| Professor(a) | `ana@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
+| Professor(a) | `paulo@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
 
-Ao iniciar com o banco vazio, o sistema popula automaticamente:
+As senhas dos usuários de teste vêm do `.env`: sem `SEED_ADMIN_PASSWORD` e `SEED_PROFESSOR_PASSWORD`
+definidas, `admin2` e os professores **não** são criados (e, sem professor, as turmas, matrículas e
+pedidos dependentes também ficam de fora). O seed roda no boot quando `SEED_ON_STARTUP=true`
+(padrão no `docker-compose.yml` e no `.env.example`; o default do código é `false` e produção nunca
+roda seed no boot); sem ele, rode sob demanda com `docker compose exec backend python -m app.db.seed`.
+O seed é idempotente: bancos parcialmente populados recebem apenas o que falta.
+
+Com `ADMIN_SEED_*`, `SEED_ADMIN_PASSWORD` e `SEED_PROFESSOR_PASSWORD` preenchidos e o banco vazio,
+o sistema popula automaticamente:
 
 - **5 Cursos**: Informática Básica, Corte e Costura, Administração, Inglês Básico, Espanhol
-- **5 Usuários**: 1 admin (cargo 3) + 4 professores (cargo 2) + admin do .env (cargo 1)
+- **6 Usuários**: 1 admin (cargo 3) + 4 professores (cargo 2) + admin do .env (cargo 1)
 - **12 Alunos**: com dados completos (nome, telefone, endereço)
 - **6 Turmas**: distribuídas entre cursos e professores, com avaliações configuradas
 - **12 Matrículas**: vinculando alunos às turmas

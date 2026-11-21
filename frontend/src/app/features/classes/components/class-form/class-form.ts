@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormArray,
@@ -10,6 +11,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import { merge } from 'rxjs';
 
 import { Curso } from '../../../../core/models/curso.model';
 import { Turma } from '../../../../core/models/turma.model';
@@ -50,6 +52,20 @@ function dateRangeValidator(control: AbstractControl): ValidationErrors | null {
   return fim < inicio ? { dateRange: true } : null;
 }
 
+function parseDiasAula(value: string | null | undefined): Set<number> {
+  return new Set(
+    (value ?? '')
+      .split(',')
+      .map((dia) => Number(dia.trim()))
+      .filter((dia) => Number.isInteger(dia) && dia >= 0 && dia <= 6),
+  );
+}
+
+function diasAulaSobrepoem(a: string | null, b: string | null): boolean {
+  const diasA = parseDiasAula(a);
+  return [...parseDiasAula(b)].some((dia) => diasA.has(dia));
+}
+
 @Component({
   selector: 'app-class-form',
   standalone: true,
@@ -59,6 +75,7 @@ function dateRangeValidator(control: AbstractControl): ValidationErrors | null {
 })
 export class ClassFormComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() turma: Turma | null = null;
@@ -98,6 +115,18 @@ export class ClassFormComponent implements OnChanges {
     },
     { validators: [dateRangeValidator] },
   );
+
+  constructor() {
+    merge(
+      this.form.controls.idCurso.valueChanges,
+      this.form.controls.idProfessor.valueChanges,
+      this.form.controls.dataInicio.valueChanges,
+      this.form.controls.dataFim.valueChanges,
+      this.form.controls.diasAula.valueChanges,
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.updateContexto());
+  }
 
   get diasAulaArray(): FormArray {
     return this.form.controls.diasAula as FormArray;
@@ -142,14 +171,6 @@ export class ClassFormComponent implements OnChanges {
     }
   }
 
-  onCursoChange(): void {
-    this.updateContexto();
-  }
-
-  onProfessorChange(): void {
-    this.updateContexto();
-  }
-
   updateContexto(): void {
     const cursoId = this.form.controls.idCurso.value;
     const profId = this.form.controls.idProfessor.value;
@@ -184,11 +205,11 @@ export class ClassFormComponent implements OnChanges {
         if (this.mode === 'edit' && this.turma && t.idTurma === this.turma.idTurma) return false;
         if (!t.dataInicio || !t.dataFim || !t.diasAula) return false;
         const sobrepoe = inicio <= t.dataFim && fim >= t.dataInicio;
-        return sobrepoe && t.diasAula === diasAulaStr;
+        return sobrepoe && diasAulaSobrepoem(t.diasAula, diasAulaStr);
       });
 
       if (conflitos.length > 0) {
-        this.conflitoLabel = `Atenção: o professor já tem ${conflitos.length} ${conflitos.length === 1 ? 'turma' : 'turmas'} no mesmo período e dias`;
+        this.conflitoLabel = `Atenção: o professor já tem ${conflitos.length} ${conflitos.length === 1 ? 'turma' : 'turmas'} no mesmo período e com dias de aula em comum`;
       }
     }
   }

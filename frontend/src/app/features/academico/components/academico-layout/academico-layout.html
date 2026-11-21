@@ -3,6 +3,7 @@
   <div class="mobile-topbar">
     <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
     <span class="mobile-topbar__title">SGA ABACO</span>
+    <app-notificacao-sino />
     <button class="hamburger" (click)="menuOpen = !menuOpen" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'">
       <span></span><span></span><span></span>
     </button>
@@ -66,6 +67,7 @@
     </ul>
 
     <div class="academico-nav__user">
+      <app-notificacao-sino variant="sidebar" />
       <button type="button" class="academico-nav__logout" (click)="logout()">
         Sair
       </button>

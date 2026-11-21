@@ -30,7 +30,7 @@ O cargo vai no payload do JWT (`cargo`) e é checado por `verify_cargo(...)` em
 Todos sob `/api/v1`, registrados em `backend/main.py`:
 
 `auth`, `alunos`, `cursos`, `turmas`, `matriculas`, `presencas`, `notas`, `historico`,
-`usuarios`, `dashboard`, `estoque`, `pedidos`.
+`usuarios`, `dashboard`, `estoque`, `pedidos`, `notificacoes`.
 
 Health check: `GET /api/health` (verifica conexão com o banco).
 
@@ -47,6 +47,7 @@ Tabelas e campos-chave (nomes de coluna no banco são sem prefixo, ex.: `id_turm
 | `matricula` | `id_matricula`, `id_aluno`, `id_turma`, `data_matricula`, `status` |
 | `presenca` | `id_presenca`, `id_matricula`, `data_aula`, `presente` (bool) |
 | `nota` | `id_nota`, `id_matricula`, `prova`, `nota` |
+| `notificacao` | `idnotificacao` (PK), `idusuario` (FK `usuario.idusuario`, CASCADE), `tipo`, `titulo`, `mensagem`, `link` (nullable), `lida`, `criada_em`; índices em `(idusuario, lida)` e `(idusuario, criada_em)` |
 | `estoque` | `id_item_estoque`, `nome_item`, `quantidade_disponivel`, `unidade`, `estoque_minimo` |
 | `pedido` | `id_pedido`, `id_usuario`, `id_turma`, `data_pedido`, `status` |
 | `item_pedido` | `id_item_pedido`, `id_pedido`, `id_item_estoque`, `nome_item`, `quantidade`, `preco_unitario` |
