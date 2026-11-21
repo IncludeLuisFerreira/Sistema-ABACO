@@ -110,12 +110,12 @@ def logout(
 @limiter.limit("3/minute")
 def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     try:
-        token = process_forgot_password(db, payload.email)
+        usuario, token = process_forgot_password(db, payload.email)
     except EmailNotFoundError:
         return {"message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"}
 
     try:
-        send_reset_email(payload.email, token)
+        send_reset_email(usuario.email, token)
     except EmailDeliveryError as error:
         logger.error("Solicitação de recuperação não concluída por falha de envio (%s)", type(error).__name__)
     except Exception:

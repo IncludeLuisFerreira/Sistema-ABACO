@@ -3,7 +3,12 @@ from datetime import timedelta
 import pytest
 from sqlalchemy.orm import Session
 
-from app.core.security import create_first_access_token, create_reset_token, hash_password
+from app.core.security import (
+    create_first_access_token,
+    create_reset_token,
+    decode_reset_token,
+    hash_password,
+)
 from app.services.auth_service import (
     EmailNotFoundError,
     InvalidCredentialsError,
@@ -61,14 +66,27 @@ class TestBuildLoginResponse:
 
 class TestProcessForgotPassword:
     def test_generates_token_for_existing_user(self, db_session: Session, usuario):
-        token = process_forgot_password(db_session, "teste@abaco.org.br")
-        assert token is not None
-        assert len(token) > 0
+        usuario_gravado, token = process_forgot_password(db_session, "teste@abaco.org.br")
+        assert usuario_gravado.id_usuario == usuario.id_usuario
+        assert decode_reset_token(token)["sub"] == usuario.email
 
     def test_generates_token_with_mixed_case_and_whitespace_email(self, db_session: Session, usuario):
-        token = process_forgot_password(db_session, "  Teste@Abaco.org.BR  ")
-        assert token is not None
-        assert len(token) > 0
+        usuario_gravado, token = process_forgot_password(db_session, "  Teste@Abaco.org.BR  ")
+        assert usuario_gravado.id_usuario == usuario.id_usuario
+        assert decode_reset_token(token)["sub"] == usuario.email
+
+        process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
+        assert authenticate_user(db_session, "teste@abaco.org.br", "novaSenha1").id_usuario == usuario.id_usuario
+
+    def test_token_points_to_stored_email_when_case_differs(self, db_session: Session, usuario):
+        usuario.email = "Teste@Abaco.org.BR"
+        db_session.commit()
+
+        _, token = process_forgot_password(db_session, "teste@abaco.org.br")
+        assert decode_reset_token(token)["sub"] == "Teste@Abaco.org.BR"
+
+        process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
+        assert authenticate_user(db_session, "teste@abaco.org.br", "novaSenha1").id_usuario == usuario.id_usuario
 
     def test_raises_for_unknown_email(self, db_session: Session):
         with pytest.raises(EmailNotFoundError):
@@ -77,7 +95,7 @@ class TestProcessForgotPassword:
 
 class TestProcessResetPassword:
     def test_reset_token_cannot_be_reused(self, db_session, usuario):
-        token = process_forgot_password(db_session, usuario.email)
+        _, token = process_forgot_password(db_session, usuario.email)
         process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
 
         with pytest.raises(InvalidResetTokenError):
@@ -86,7 +104,7 @@ class TestProcessResetPassword:
         authenticate_user(db_session, usuario.email, "novaSenha1")
 
     def test_reset_clears_first_access_flag(self, db_session, usuario_primeiro_acesso):
-        token = process_forgot_password(db_session, usuario_primeiro_acesso.email)
+        _, token = process_forgot_password(db_session, usuario_primeiro_acesso.email)
         process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
 
         db_session.refresh(usuario_primeiro_acesso)
@@ -94,13 +112,13 @@ class TestProcessResetPassword:
 
     def test_resets_password_with_valid_token(self, db_session: Session, usuario):
         old_hash = usuario.senha_hash
-        token = process_forgot_password(db_session, "teste@abaco.org.br")
+        _, token = process_forgot_password(db_session, "teste@abaco.org.br")
         process_reset_password(db_session, token, "novaSenha1", "novaSenha1")
         db_session.refresh(usuario)
         assert usuario.senha_hash != old_hash
 
     def test_passwords_dont_match(self, db_session: Session, usuario):
-        token = process_forgot_password(db_session, "teste@abaco.org.br")
+        _, token = process_forgot_password(db_session, "teste@abaco.org.br")
         with pytest.raises(PasswordsDoNotMatchError):
             process_reset_password(db_session, token, "novaSenha1", "diferente")
 
@@ -166,7 +184,7 @@ class TestProcessFirstAccessPassword:
             process_first_access_password(db_session, "token_invalido", "novaSenha1", "novaSenha1")
 
     def test_reset_token_is_rejected(self, db_session: Session, usuario_primeiro_acesso):
-        reset_token = process_forgot_password(db_session, usuario_primeiro_acesso.email)
+        _, reset_token = process_forgot_password(db_session, usuario_primeiro_acesso.email)
         with pytest.raises(InvalidFirstAccessTokenError):
             process_first_access_password(db_session, reset_token, "novaSenha1", "novaSenha1")
 
@@ -174,6 +192,20 @@ class TestProcessFirstAccessPassword:
         token = create_first_access_token(email="naoexiste@abaco.org.br", password_hash=None)
         with pytest.raises(InvalidFirstAccessTokenError):
             process_first_access_password(db_session, token, "novaSenha1", "novaSenha1")
+
+    def test_accepts_user_stored_with_uppercase_email(self, db_session: Session, usuario_primeiro_acesso):
+        usuario_primeiro_acesso.email = "Novo@Abaco.org.BR"
+        db_session.commit()
+        token = create_first_access_token(
+            email=usuario_primeiro_acesso.email,
+            password_hash=usuario_primeiro_acesso.senha_hash,
+        )
+
+        process_first_access_password(db_session, token, "novaSenha1", "novaSenha1")
+
+        db_session.refresh(usuario_primeiro_acesso)
+        assert usuario_primeiro_acesso.primeiro_acesso is False
+        assert authenticate_user(db_session, "novo@abaco.org.br", "novaSenha1")
 
 
 class TestChangePassword:
@@ -204,7 +236,7 @@ class TestChangePassword:
 @pytest.mark.parametrize("password_change", ["reset", "first_access", "change_password"])
 def test_password_changes_invalidate_all_previous_links(db_session, usuario_primeiro_acesso, token_kind, password_change):
     usuario = usuario_primeiro_acesso
-    reset_token = process_forgot_password(db_session, usuario.email)
+    _, reset_token = process_forgot_password(db_session, usuario.email)
     first_token = create_first_access_token(email=usuario.email, password_hash=usuario.senha_hash)
     if password_change == "reset":
         process_reset_password(db_session, reset_token, "novaSenha1", "novaSenha1")
