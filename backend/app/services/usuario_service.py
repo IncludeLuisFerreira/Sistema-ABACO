@@ -1,8 +1,9 @@
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.core.validators import normalize_nome, normalize_telefone_br
+from app.core.validators import normalize_email, normalize_nome, normalize_telefone_br
 from app.models.usuario import Usuario
 from app.schemas.usuario_schema import UsuarioCreateSchema, UsuarioUpdateSchema
 
@@ -24,7 +25,9 @@ class UsuarioHasDependenciesError(Exception):
 
 
 def create_usuario(db: Session, payload: UsuarioCreateSchema) -> Usuario:
-	existing_usuario = db.query(Usuario).filter(Usuario.email == payload.email).first()
+	existing_usuario = (
+		db.query(Usuario).filter(func.lower(Usuario.email) == normalize_email(payload.email)).first()
+	)
 	if existing_usuario:
 		raise UsuarioEmailAlreadyExistsError
 
