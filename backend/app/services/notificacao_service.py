@@ -76,7 +76,13 @@ def notificar_usuarios(
     titulo: str,
     mensagem: str,
 ) -> int:
-    """Grava notificações em transação própria, sem propagar falha ao chamador."""
+    """Grava notificações em transação própria, sem propagar falha ao chamador.
+
+    O link é individual por destinatário. Se o mesmo usuário aparecer mais de uma
+    vez no lote, prevalece o primeiro link: o inbox registra uma notificação por
+    usuário por chamada.
+    """
+    sessao = Session(bind=db.get_bind())
     try:
         links_por_id: dict[int, str | None] = {}
         for usuario_id, link in destinatarios:
@@ -87,7 +93,7 @@ def notificar_usuarios(
         ids = list(links_por_id)
         existentes = {
             row[0]
-            for row in db.query(Usuario.id_usuario).filter(Usuario.id_usuario.in_(ids)).all()
+            for row in sessao.query(Usuario.id_usuario).filter(Usuario.id_usuario.in_(ids)).all()
         }
         for usuario_id in ids:
             if usuario_id not in existentes:
@@ -109,10 +115,12 @@ def notificar_usuarios(
         if not novas:
             return 0
 
-        db.add_all(novas)
-        db.commit()
+        sessao.add_all(novas)
+        sessao.commit()
         return len(novas)
     except Exception as exc:
-        db.rollback()
+        sessao.rollback()
         logger.exception("Falha ao gravar notificações '%s': %s", titulo, exc)
         return 0
+    finally:
+        sessao.close()

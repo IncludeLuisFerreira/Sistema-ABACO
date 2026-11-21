@@ -155,6 +155,66 @@ class TestNotificarUsuarios:
         assert all(item.tipo == "pedido_aprovado" for item in gravadas)
         assert "999999" in caplog.text
 
+    def test_mesmo_usuario_com_dois_links_mantem_o_primeiro(self, db_session: Session):
+        usuario = _usuario(db_session, "um@abaco.org.br")
+
+        quantidade = notificacao_service.notificar_usuarios(
+            db_session,
+            [
+                (usuario.id_usuario, "/pedidos/1"),
+                (usuario.id_usuario, "/pedidos/2"),
+            ],
+            "pedido_aprovado",
+            "Pedido aprovado",
+            "Seu pedido foi aprovado",
+        )
+
+        gravadas = db_session.query(Notificacao).all()
+        assert quantidade == 1
+        assert [(item.id_usuario, item.link) for item in gravadas] == [
+            (usuario.id_usuario, "/pedidos/1")
+        ]
+
+    def test_transacao_propria_nao_commita_nem_reverte_pendencia_do_chamador(
+        self, db_session: Session, monkeypatch
+    ):
+        usuario = _usuario(db_session, "dono@abaco.org.br")
+        nome_original = usuario.nome
+        usuario.nome = "Nome pendente do chamador"
+        chamadas_commit = []
+        chamadas_rollback = []
+        commit_original = db_session.commit
+        rollback_original = db_session.rollback
+
+        def commit_registrado():
+            chamadas_commit.append(True)
+            return commit_original()
+
+        def rollback_registrado():
+            chamadas_rollback.append(True)
+            return rollback_original()
+
+        monkeypatch.setattr(db_session, "commit", commit_registrado)
+        monkeypatch.setattr(db_session, "rollback", rollback_registrado)
+
+        quantidade = notificacao_service.notificar_usuarios(
+            db_session,
+            [(usuario.id_usuario, "/pedidos/9")],
+            "pedido_aprovado",
+            "Pedido aprovado",
+            "Aviso",
+        )
+
+        assert quantidade == 1
+        assert chamadas_commit == []
+        assert chamadas_rollback == []
+        assert usuario in db_session.dirty
+        assert usuario.nome == "Nome pendente do chamador"
+
+        with Session(bind=db_session.get_bind()) as consulta:
+            assert consulta.get(Usuario, usuario.id_usuario).nome == nome_original
+            assert consulta.query(Notificacao).count() == 1
+
     def test_sem_destinatarios_validos_nao_grava_nada(self, db_session: Session, caplog):
         with caplog.at_level(logging.WARNING):
             vazia = notificacao_service.notificar_usuarios(
@@ -171,19 +231,21 @@ class TestNotificarUsuarios:
 
     def test_falha_de_gravacao_e_absorvida_com_log(self, db_session: Session, monkeypatch, caplog):
         usuario = _usuario(db_session, "dono@abaco.org.br")
-        original_commit = db_session.commit
-        original_rollback = db_session.rollback
+        commits = []
         rollbacks = []
+        commit_original = Session.commit
+        rollback_original = Session.rollback
 
-        def commit_com_falha():
+        def commit_com_falha(session: Session):
+            commits.append(session)
             raise RuntimeError("falha simulada de gravação")
 
-        def rollback_registrado():
-            rollbacks.append(True)
-            return original_rollback()
+        def rollback_registrado(session: Session):
+            rollbacks.append(session)
+            return rollback_original(session)
 
-        monkeypatch.setattr(db_session, "commit", commit_com_falha)
-        monkeypatch.setattr(db_session, "rollback", rollback_registrado)
+        monkeypatch.setattr(Session, "commit", commit_com_falha)
+        monkeypatch.setattr(Session, "rollback", rollback_registrado)
 
         with caplog.at_level(logging.ERROR):
             quantidade = notificacao_service.notificar_usuarios(
@@ -191,8 +253,8 @@ class TestNotificarUsuarios:
             )
 
         assert quantidade == 0
-        assert rollbacks
+        assert commits and all(sessao is not db_session for sessao in commits)
+        assert rollbacks and all(sessao is not db_session for sessao in rollbacks)
         assert "falha simulada" in caplog.text
-        monkeypatch.setattr(db_session, "commit", original_commit)
-        monkeypatch.setattr(db_session, "rollback", original_rollback)
-        assert db_session.query(Notificacao).count() == 0
+        with Session(bind=db_session.get_bind()) as consulta:
+            assert consulta.query(Notificacao).count() == 0
