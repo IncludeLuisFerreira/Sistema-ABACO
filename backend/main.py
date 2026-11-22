@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +26,14 @@ from app.api.v1.usuarios import router as usuarios_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.db.database import SessionLocal, engine
-from app.schemas.health_schema import HealthResponse, LivenessResponse
+from app.email.metrics import EmailDeliveryStats, password_reset_email_metrics
+from app.email.service import get_email_provider_name
+from app.schemas.health_schema import (
+    EmailDeliveryStatsResponse,
+    EmailHealthResponse,
+    HealthResponse,
+    LivenessResponse,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -153,6 +161,38 @@ def health_live():
 )
 def health_ready():
     return _database_readiness()
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _email_health_is_degraded(stats: EmailDeliveryStats, provider: str) -> bool:
+    if provider == "console" and settings.is_production:
+        return True
+    if stats.consecutive_failures == 0 or stats.last_failure_at is None:
+        return False
+    window = timedelta(minutes=settings.email_health_failure_window_minutes)
+    return _utcnow() - stats.last_failure_at <= window
+
+
+@app.get(
+    "/api/health/email",
+    response_model=EmailHealthResponse,
+    responses={503: {"model": EmailHealthResponse}},
+)
+def health_email():
+    """Saúde do envio de e-mails; 503 quando a falha é recente ou não há provedor."""
+    stats = password_reset_email_metrics.snapshot()
+    provider = get_email_provider_name(settings)
+    body = EmailHealthResponse(
+        status="degraded" if _email_health_is_degraded(stats, provider) else "ok",
+        provider=provider,
+        password_reset=EmailDeliveryStatsResponse.model_validate(stats),
+    )
+    if body.status == "degraded":
+        return JSONResponse(status_code=503, content=body.model_dump(mode="json"))
+    return body
 
 
 @app.get(

@@ -7,10 +7,19 @@ from app.email.messages import ItemEstoqueBaixo
 from app.email.providers import brevo, console, smtp
 
 
-def _select_provider(settings) -> Callable[[str, str, str], None]:
+def get_email_provider_name(settings) -> str:
     if settings.brevo_api_key.strip():
-        return brevo.send
+        return "brevo"
     if settings.smtp_user.strip():
+        return "smtp"
+    return "console"
+
+
+def _select_provider(settings) -> Callable[[str, str, str], None]:
+    provider = get_email_provider_name(settings)
+    if provider == "brevo":
+        return brevo.send
+    if provider == "smtp":
         return smtp.send
     return console.send
 
