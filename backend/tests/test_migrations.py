@@ -13,12 +13,13 @@ def _script_directory() -> ScriptDirectory:
 
 
 def test_single_migration_head() -> None:
-    assert _script_directory().get_heads() == ["008"]
+    assert _script_directory().get_heads() == ["009"]
 
 
 def test_migration_chain_is_linear() -> None:
     script = _script_directory()
     expected = [
+        "009",
         "008",
         "007",
         "006",
@@ -29,7 +30,7 @@ def test_migration_chain_is_linear() -> None:
         "001",
     ]
     chain = []
-    rev = script.get_revision("008")
+    rev = script.get_revision("009")
     while rev is not None:
         chain.append(rev.revision)
         down = rev.down_revision

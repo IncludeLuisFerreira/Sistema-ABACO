@@ -35,6 +35,19 @@ class TestCreateUsuario:
         with pytest.raises(UsuarioEmailAlreadyExistsError):
             create_usuario(db_session, payload)
 
+    def test_duplicate_email_ignoring_case_raises(self, db_session: Session, usuario):
+        usuario.email = "Teste@Abaco.org.BR"
+        db_session.commit()
+
+        payload = UsuarioCreateSchema(
+            nome="Duplicado",
+            email="teste@abaco.org.br",
+            senha="senha123",
+            cargo=1,
+        )
+        with pytest.raises(UsuarioEmailAlreadyExistsError):
+            create_usuario(db_session, payload)
+
 
 class TestListUsuarios:
     def test_lists_all(self, db_session: Session, usuario):

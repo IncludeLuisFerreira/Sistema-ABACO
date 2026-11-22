@@ -1,6 +1,7 @@
 import hmac
 
 from jwt import PyJWTError
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -12,6 +13,7 @@ from app.core.security import (
     password_version,
     verify_password,
 )
+from app.core.validators import normalize_email
 from app.models.usuario import Usuario
 
 
@@ -52,7 +54,8 @@ def get_authenticated_user(db: Session, subject: str | None) -> Usuario:
 
 
 def authenticate_user(db: Session, email: str, senha: str) -> Usuario:
-    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    normalized_email = normalize_email(email)
+    usuario = db.query(Usuario).filter(func.lower(Usuario.email) == normalized_email).first()
 
     if not usuario or not usuario.senha_hash:
         raise InvalidCredentialsError
@@ -93,13 +96,14 @@ def revoke_user_sessions(db: Session, usuario_id: int) -> None:
     db.commit()
 
 
-def process_forgot_password(db: Session, email: str) -> str:
-    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+def process_forgot_password(db: Session, email: str) -> tuple[Usuario, str]:
+    normalized_email = normalize_email(email)
+    usuario = db.query(Usuario).filter(func.lower(Usuario.email) == normalized_email).first()
     if not usuario:
         raise EmailNotFoundError
 
-    token = create_reset_token(email=email, password_hash=usuario.senha_hash)
-    return token
+    token = create_reset_token(email=usuario.email, password_hash=usuario.senha_hash)
+    return usuario, token
 
 
 def _consume_password_token(db: Session, payload: dict, nova_senha: str, *, first_access: bool = False) -> bool:

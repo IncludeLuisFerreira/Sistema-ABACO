@@ -1,18 +1,30 @@
 import re
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field, model_validator
+
+from app.core.validators import normalize_email
 
 
 SENHA_PATTERN = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).+$")
 
 
+def _normalize_email_input(value: object) -> object:
+    if isinstance(value, str):
+        return normalize_email(value)
+    return value
+
+
+NormalizedEmail = Annotated[EmailStr, BeforeValidator(_normalize_email_input)]
+
+
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     senha: str = Field(min_length=1)
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class PasswordPairRequest(BaseModel):

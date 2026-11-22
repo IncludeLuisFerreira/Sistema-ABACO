@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from app.email import EmailDeliveryError
@@ -130,7 +132,11 @@ class TestAuthEndpoints:
         def fail_to_send_email(email, token):
             raise EmailDeliveryError("SMTP failure")
 
-        monkeypatch.setattr(auth_routes, "process_forgot_password", lambda db, email: "reset-token")
+        monkeypatch.setattr(
+            auth_routes,
+            "process_forgot_password",
+            lambda db, email: (SimpleNamespace(email="user@abaco.org.br"), "reset-token"),
+        )
         monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)
 
         response = api_client.post(
