@@ -57,7 +57,7 @@
               </button>
 
               <button
-                *ngIf="canPurchase(pedido.status) && isDirector()"
+                *ngIf="canPurchase(pedido.status) && canManagePedidos()"
                 type="button"
                 class="btn btn--purchase"
                 (click)="startPurchase(pedido)"
@@ -67,7 +67,7 @@
               </button>
 
               <button
-                *ngIf="canDeliver(pedido.status) && isDirector()"
+                *ngIf="canDeliver(pedido.status) && canManagePedidos()"
                 type="button"
                 class="btn btn--deliver"
                 (click)="deliver.emit(pedido)"
@@ -77,6 +77,7 @@
               </button>
 
               <button
+                *ngIf="canManagePedidos()"
                 type="button"
                 class="btn btn--danger"
                 (click)="remove.emit(pedido)"

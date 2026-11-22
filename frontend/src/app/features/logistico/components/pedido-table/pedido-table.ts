@@ -67,6 +67,10 @@ export class PedidoTableComponent {
     return this.currentUserCargo === 1;
   }
 
+  canManagePedidos(): boolean {
+    return this.currentUserCargo === 1 || this.currentUserCargo === 3;
+  }
+
   trackById(_index: number, item: ItemPedido): number {
     return item.idItemPedido;
   }

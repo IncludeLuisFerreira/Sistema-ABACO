@@ -39,7 +39,7 @@ export class PedidoListComponent implements OnInit {
   }
 
   get approvedPedidos(): Pedido[] {
-    return this.pedidos.filter((p) => p.status !== null && p.status! >= 1);
+    return this.pedidos.filter((p) => p.status === 1);
   }
 
   get filteredPedidos(): Pedido[] {

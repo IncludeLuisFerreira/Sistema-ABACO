@@ -86,3 +86,45 @@ describe('PedidoTableComponent - aprovação', () => {
     }
   });
 });
+
+describe('PedidoTableComponent - permissões de gestão', () => {
+  it.each([1, 3])('exibe Comprar para o cargo %s em pedido aprovado', (cargo) => {
+    expect(buttonLabels(setup(cargo, 1))).toContain('Comprar');
+  });
+
+  it.each([1, 3])('exibe Entregar para o cargo %s em pedido comprado', (cargo) => {
+    expect(buttonLabels(setup(cargo, 2))).toContain('Entregar');
+  });
+
+  it('exibe Comprar e Entregar para o Administrador', () => {
+    expect(buttonLabels(setup(3, 1))).toContain('Comprar');
+    expect(buttonLabels(setup(3, 2))).toContain('Entregar');
+  });
+
+  it('oculta Comprar e Entregar para o Professor', () => {
+    expect(buttonLabels(setup(2, 1))).not.toContain('Comprar');
+    expect(buttonLabels(setup(2, 2))).not.toContain('Entregar');
+  });
+
+  it.each([1, 3])('exibe Excluir para o cargo %s', (cargo) => {
+    expect(buttonLabels(setup(cargo, 0))).toContain('Excluir');
+  });
+
+  it.each([2, 0, null])('oculta Excluir para o cargo %s', (cargo) => {
+    expect(buttonLabels(setup(cargo, 0))).not.toContain('Excluir');
+  });
+
+  it('libera a gestão apenas para Diretor e Administrador', () => {
+    const component = TestBed.createComponent(PedidoTableComponent).componentInstance;
+
+    for (const cargo of [1, 3]) {
+      component.currentUserCargo = cargo;
+      expect(component.canManagePedidos()).toBe(true);
+    }
+
+    for (const cargo of [2, 0, null]) {
+      component.currentUserCargo = cargo;
+      expect(component.canManagePedidos()).toBe(false);
+    }
+  });
+});
