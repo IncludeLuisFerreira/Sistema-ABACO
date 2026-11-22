@@ -59,8 +59,8 @@
     padding: 4px;
     flex-direction: column;
     gap: 5px;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     justify-content: center;
     align-items: center;
   }
@@ -113,8 +113,8 @@
     color: #94a3b8;
     font-size: 1.8rem;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     line-height: 1;
   }
@@ -188,7 +188,9 @@
 }
 
 .academico-nav__links a {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   color: #94a3b8;
@@ -225,6 +227,7 @@
   border-radius: 8px;
   color: #94a3b8;
   padding: 0.5rem 1rem;
+  min-height: 44px;
   width: 100%;
   cursor: pointer;
   font-weight: 600;
