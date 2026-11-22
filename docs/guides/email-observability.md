@@ -32,19 +32,26 @@ gerando `logger.exception`, mas o usuário recebe 500 nesse caminho.
 curl http://localhost:8000/api/health/email
 ```
 
-- **200** com `status=ok` quando não há falhas consecutivas.
-- **503** com `status=degraded` quando a última tentativa de envio falhou.
+- **200** com `status=ok` quando não há falha recente e há provedor configurado (ou o ambiente
+  não é produção).
+- **503** com `status=degraded` quando a última falha ocorreu dentro de
+  `EMAIL_HEALTH_FAILURE_WINDOW_MINUTES` (padrão: 15) ou quando `APP_ENV=production` e nenhum
+  provedor Brevo/SMTP está configurado.
+
+O health não fica degradado para sempre: uma falha antiga deixa de manter o 503 depois da janela,
+mesmo sem novo envio. Para alerta durável, use o log `password_reset_email_failed`.
 
 Exemplo de resposta degradada:
 
 ```json
 {
   "status": "degraded",
+  "provider": "brevo",
   "password_reset": {
     "attempts": 4,
     "failures": 1,
     "consecutive_failures": 1,
-    "last_failure_at": "2026-11-22T17:00:00Z",
+    "last_failure_at": "2026-11-22T17:00:00+00:00",
     "last_failure_type": "EmailDeliveryError"
   }
 }
@@ -54,6 +61,8 @@ Campos:
 
 | Campo | Significado |
 |---|---|
+| `status` | `ok` ou `degraded` |
+| `provider` | Provedor selecionado: `brevo`, `smtp` ou `console` |
 | `attempts` | Pedidos de recuperação para e-mail cadastrado que chegaram a tentar o envio |
 | `failures` | Falhas de envio acumuladas desde o start do processo |
 | `consecutive_failures` | Falhas desde o último envio sem exceção; zera no próximo sucesso |
@@ -68,10 +77,10 @@ Os contadores não incluem e-mail, token ou qualquer dado pessoal.
   workers ou réplicas. Para alerta durável, use o log; para múltiplos processos, consulte cada um
   ou agregue os logs.
 - O fallback de console (quando não há Brevo nem SMTP configurado) registra a mensagem e retorna
-  sem exceção; para a métrica, ele não conta como falha. Configure Brevo/SMTP para monitorar
-  entrega real.
-- O health check observa exceções do provedor, não a taxa de entrega final na caixa de entrada do
-  destinatário.
+  sem exceção; para a métrica, ele não conta como falha. Em produção, o health fica `degraded`
+  enquanto o provedor for `console`; em desenvolvimento, ele permanece `ok`.
+- O health check observa exceções do provedor e a configuração do provedor, não a taxa de entrega
+  final na caixa de entrada do destinatário.
 
 ## Como validar localmente
 

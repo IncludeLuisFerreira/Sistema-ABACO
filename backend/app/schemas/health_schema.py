@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -23,5 +24,6 @@ class EmailDeliveryStatsResponse(BaseModel):
 
 
 class EmailHealthResponse(BaseModel):
-    status: str
+    status: Literal["ok", "degraded"]
+    provider: Literal["brevo", "smtp", "console"]
     password_reset: EmailDeliveryStatsResponse

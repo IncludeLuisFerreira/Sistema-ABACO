@@ -18,6 +18,16 @@ from main import app
 
 
 @pytest.fixture(autouse=True)
+def _reset_email_delivery_metrics():
+    """Evita que contadores globais vazem entre testes."""
+    from app.email.metrics import password_reset_email_metrics
+
+    password_reset_email_metrics.reset()
+    yield
+    password_reset_email_metrics.reset()
+
+
+@pytest.fixture(autouse=True)
 def _force_console_email_provider(request, monkeypatch):
     """Impede envio real de e-mail na suíte, exceto nos testes marcados como integration."""
     if request.node.get_closest_marker("integration"):

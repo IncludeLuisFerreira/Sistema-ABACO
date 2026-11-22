@@ -54,6 +54,9 @@ class Settings(BaseSettings):
 	)
 	rate_limit_auth: str = Field(default="5/minute", alias="RATE_LIMIT_AUTH")
 	rate_limit_default: str = Field(default="60/minute", alias="RATE_LIMIT_DEFAULT")
+	email_health_failure_window_minutes: int = Field(
+		default=15, ge=0, alias="EMAIL_HEALTH_FAILURE_WINDOW_MINUTES"
+	)
 
 	@field_validator("smtp_from", mode="before")
 	@classmethod

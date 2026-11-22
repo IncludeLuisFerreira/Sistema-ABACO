@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -126,6 +127,7 @@ class TestHealthCheck:
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "ok"
+        assert body["provider"] == "console"
         assert body["password_reset"] == {
             "attempts": 0,
             "failures": 0,
@@ -133,6 +135,34 @@ class TestHealthCheck:
             "last_failure_at": None,
             "last_failure_type": None,
         }
+
+    def test_email_health_ok_quando_falha_antiga(self, api_client):
+        password_reset_email_metrics.reset()
+        password_reset_email_metrics.record_attempt()
+        password_reset_email_metrics.record_failure("EmailDeliveryError")
+        password_reset_email_metrics._last_failure_at = datetime.now(
+            timezone.utc
+        ) - timedelta(minutes=16)
+
+        response = api_client.get("/api/health/email")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
+
+    def test_email_health_degraded_em_producao_sem_provedor_configurado(
+        self, api_client, monkeypatch
+    ):
+        import main
+
+        password_reset_email_metrics.reset()
+        monkeypatch.setattr(main.settings, "environment", "production")
+
+        response = api_client.get("/api/health/email")
+
+        assert response.status_code == 503
+        body = response.json()
+        assert body["status"] == "degraded"
+        assert body["provider"] == "console"
 
     def test_email_health_degraded_retorna_503(self, api_client):
         password_reset_email_metrics.reset()
@@ -232,6 +262,37 @@ class TestAuthEndpoints:
         stats = password_reset_email_metrics.snapshot()
         assert stats.attempts == 0
         assert stats.failures == 0
+
+    def test_forgot_password_unexpected_failure_is_counted(self, api_client, monkeypatch):
+        import app.api.v1.auth as auth_routes
+
+        password_reset_email_metrics.reset()
+        monkeypatch.setattr(
+            auth_routes,
+            "process_forgot_password",
+            lambda db, email: (SimpleNamespace(email="user@abaco.org.br"), "reset-token"),
+        )
+
+        def fail_to_send_email(email, token):
+            raise RuntimeError("falha inesperada")
+
+        monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)
+
+        response = api_client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "user@abaco.org.br"},
+        )
+
+        assert response.status_code == 500
+        stats = password_reset_email_metrics.snapshot()
+        assert stats.attempts == 1
+        assert stats.failures == 1
+        assert stats.consecutive_failures == 1
+        assert stats.last_failure_type == "UnexpectedError"
+
+        health = api_client.get("/api/health/email")
+        assert health.status_code == 503
+        assert health.json()["password_reset"]["last_failure_type"] == "UnexpectedError"
 
 
 class TestProtectedEndpoints:

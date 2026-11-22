@@ -111,7 +111,7 @@ curl http://localhost:8000/api/health
 # {"status":"ok","database":"connected"}
 
 curl http://localhost:8000/api/health/email
-# {"status":"ok","password_reset":{"attempts":0,"failures":0,...}}
+# {"status":"ok","provider":"smtp","password_reset":{"attempts":0,"failures":0,...}}
 ```
 
 Falhas no envio de recuperação de senha ficam visíveis no endpoint acima, no log
