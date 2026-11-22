@@ -64,4 +64,13 @@ describe('AdminHome', () => {
     expect(component.donutResponsive[0].breakpoint).toBe(768);
     expect(component.barResponsive[0].breakpoint).toBe(768);
   });
+
+  it('preserva a configuracao dos labels do eixo ao montar o grafico', () => {
+    expect(component.barXaxis.categories).toEqual(['Curso A']);
+    expect(component.barXaxis.labels).toMatchObject({
+      rotate: -45,
+      trim: true,
+      maxHeight: 90,
+    });
+  });
 });

@@ -38,7 +38,16 @@ export class AdminHome implements OnInit, OnDestroy {
   donutSeries: ApexNonAxisChartSeries = [];
   donutLabels: string[] = [];
   barSeries: ApexNonAxisChartSeries = [];
-  barXaxis: ApexXAxis = { categories: [] };
+  barXaxis: ApexXAxis = {
+    categories: [],
+    labels: {
+      rotate: -45,
+      rotateAlways: false,
+      trim: true,
+      maxHeight: 90,
+      style: { fontSize: '11px' },
+    },
+  };
   consumoSeries: ApexNonAxisChartSeries = [];
   consumoXaxis: ApexXAxis = { categories: [] };
 
@@ -118,7 +127,10 @@ export class AdminHome implements OnInit, OnDestroy {
   private buildAcademicoCharts(data: ChartAcademico): void {
     this.donutLabels = data.alunos_por_curso.map((item: { curso: string }) => item.curso);
     this.donutSeries = data.alunos_por_curso.map((item: { quantidade: number }) => item.quantidade);
-    this.barXaxis = { categories: data.alunos_por_curso.map((item: { curso: string }) => item.curso) };
+    this.barXaxis = {
+      ...this.barXaxis,
+      categories: data.alunos_por_curso.map((item: { curso: string }) => item.curso),
+    };
     this.barSeries = [{ name: 'Alunos', data: data.alunos_por_curso.map((item: { quantidade: number }) => item.quantidade) }];
   }
 
