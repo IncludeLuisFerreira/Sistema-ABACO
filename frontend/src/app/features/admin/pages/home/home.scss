@@ -9,9 +9,9 @@
 .dashboard-error button { background: none; border: none; color: #991b1b; text-decoration: underline; cursor: pointer; font-weight: 600; }
 
 /* KPIs */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 1rem; margin-bottom: 2rem; }
 
-.kpi-card { display: flex; align-items: center; gap: 1rem; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); padding: 1.25rem; text-decoration: none; color: inherit; transition: transform 0.15s, box-shadow 0.15s; }
+.kpi-card { display: flex; align-items: center; gap: 1rem; min-width: 0; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); padding: 1.25rem; text-decoration: none; color: inherit; transition: transform 0.15s, box-shadow 0.15s; }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1); }
 .kpi-card__icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
 .kpi-card__icon--blue { background: #e0f2fe; }
@@ -20,7 +20,7 @@
 .kpi-card__icon--red { background: #fee2e2; }
 .kpi-card__info { flex: 1; min-width: 0; }
 .kpi-card__value { font-size: 1.8rem; font-weight: 800; display: block; line-height: 1; color: #0f172a; }
-.kpi-card__label { font-size: 0.78rem; color: #64748b; font-weight: 600; }
+.kpi-card__label { font-size: 0.78rem; color: #64748b; font-weight: 600; overflow-wrap: anywhere; }
 
 /* Sections */
 .home-section { margin-bottom: 2.5rem; }
@@ -48,13 +48,27 @@
 .nav-card p { margin: 0.15rem 0 0; color: #64748b; font-size: 0.8rem; }
 
 /* Charts */
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.chart-box { background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); padding: 1.5rem; }
+.charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.chart-box { min-width: 0; overflow: hidden; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); padding: 1.5rem; }
+.chart-box apx-chart { display: block; width: 100%; min-width: 0; }
+
+@media (max-width: 1023px) {
+  .charts-grid { grid-template-columns: minmax(0, 1fr); }
+}
 
 @media (max-width: 768px) {
   .admin-home { padding: 1rem; }
   .admin-home__header h1 { font-size: 1.3rem; }
   .admin-home__header p { font-size: 0.85rem; }
-  .charts-grid { grid-template-columns: 1fr; }
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .kpi-card { gap: 0.75rem; padding: 1rem; }
+  .chart-box { padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: minmax(0, 1fr); }
+  .kpi-card__icon { width: 40px; height: 40px; font-size: 1.25rem; }
+  .kpi-card__value { font-size: 1.5rem; }
+  .actions-grid,
+  .card-grid { grid-template-columns: minmax(0, 1fr); }
 }

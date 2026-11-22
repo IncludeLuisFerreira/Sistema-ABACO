@@ -1,8 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-// REFACTOR: EMPTY e catchError importados sem uso
-import { Subject, EMPTY, catchError, forkJoin, takeUntil, timeout } from 'rxjs';
+import { Subject, forkJoin, takeUntil, timeout } from 'rxjs';
 import { ChartComponent } from 'ng-apexcharts';
 import type {
   ApexChart, ApexDataLabels, ApexFill, ApexLegend,
@@ -43,11 +42,30 @@ export class AdminHome implements OnInit, OnDestroy {
   consumoSeries: ApexNonAxisChartSeries = [];
   consumoXaxis: ApexXAxis = { categories: [] };
 
-  readonly donutChart: ApexChart = { type: 'donut', height: 320, toolbar: { show: false } };
+  readonly donutChart: ApexChart = { type: 'donut', width: '100%', height: 320, toolbar: { show: false }, redrawOnParentResize: true, redrawOnWindowResize: true };
   readonly donutDataLabels: ApexDataLabels = { enabled: true, formatter: (_: string, opts: { w: { config: { series: number[] } }; seriesIndex: number }) => String(opts.w.config.series[opts.seriesIndex]) };
-  readonly donutLegend: ApexLegend = { position: 'bottom' };
-  readonly donutResponsive: ApexResponsive[] = [{ breakpoint: 480, options: { chart: { width: 280 }, legend: { position: 'bottom' } } }];
-  readonly barChart: ApexChart = { type: 'bar', height: 320, toolbar: { show: false } };
+  readonly donutLegend: ApexLegend = { position: 'bottom', horizontalAlign: 'center', fontSize: '12px', itemMargin: { horizontal: 8, vertical: 4 } };
+  readonly donutResponsive: ApexResponsive[] = [
+    {
+      breakpoint: 768,
+      options: {
+        chart: { width: '100%', height: 280 },
+        legend: { position: 'bottom', horizontalAlign: 'center', fontSize: '11px' },
+        dataLabels: { style: { fontSize: '11px' } },
+      },
+    },
+  ];
+  readonly barChart: ApexChart = { type: 'bar', width: '100%', height: 320, toolbar: { show: false }, redrawOnParentResize: true, redrawOnWindowResize: true };
+  readonly barResponsive: ApexResponsive[] = [
+    {
+      breakpoint: 768,
+      options: {
+        chart: { width: '100%', height: 280 },
+        plotOptions: { bar: { columnWidth: '70%' } },
+        dataLabels: { style: { fontSize: '11px' } },
+      },
+    },
+  ];
   readonly barDataLabels: ApexDataLabels = { enabled: false };
   readonly barPlotOptions: ApexPlotOptions = { bar: { borderRadius: 6, columnWidth: '55%' } };
   readonly fill: ApexFill = { colors: ['#0f766e'] };
