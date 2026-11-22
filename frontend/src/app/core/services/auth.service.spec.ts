@@ -254,6 +254,27 @@ describe('AuthService', () => {
       expect(captured?.message).toBe('Campo obrigatório.');
     });
 
+    it('login traduz erro 422 de e-mail inválido em mensagem legível', () => {
+      let captured: { status?: number; message?: string } | undefined;
+      service.login('email-invalido', 'x').subscribe({ error: (err) => (captured = err) });
+      const req = httpMock.expectOne(LOGIN_URL);
+      req.flush(
+        {
+          detail: [
+            {
+              loc: ['body', 'email'],
+              msg: 'value is not a valid email address: The part after the @-sign is not valid. It should have a period.',
+              type: 'value_error',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
+
+      expect(captured?.status).toBe(422);
+      expect(captured?.message).toBe('Informe um e-mail válido.');
+    });
+
     it('forgotPassword propaga erro de rede', () => {
       let captured: { status?: number } | undefined;
       service.forgotPassword('admin@abaco.org.br').subscribe({ error: (err) => (captured = err) });
