@@ -216,7 +216,7 @@ ABACO_Sistema/
 - **Serviços com cache**: `TurmaService` e `MatriculaService` utilizam cache em memória com `Observable` para evitar requisições duplicadas
 - **Guards**: `authGuard` (token válido), `roleGuard([cargos])` (permissão por cargo), `adminGuard`
 - **Interceptors**: `TokenInterceptor` (injeção de Bearer), `ErrorInterceptor` (tratamento de 401/403/409)
-- **Responsividade**: sidebar com menu hamburger em mobile (≤768px), tabelas com scroll horizontal
+- **Responsividade**: matriz canônica — mobile `≤768px`, desktop `≥769px`; painéis laterais colapsam em `≤1023px`. Sidebar com menu hambúrguer/overlay em mobile, alvos de toque de navegação `≥44px` (botões de linha de tabela permanecem em `36px`) e tabelas com scroll horizontal.
 
 ---
 

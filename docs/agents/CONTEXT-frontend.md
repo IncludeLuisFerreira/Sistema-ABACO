@@ -48,6 +48,18 @@ ou `loadComponent`. Rotas internas usam `loadComponent`.
 - Estilo: SCSS do componente. **Não há Tailwind** — não use classes utilitárias.
 - Formatação: Prettier com `printWidth: 100`, `singleQuote: true`, parser Angular para HTML.
 
+## Responsividade
+
+Matriz canônica (não introduza outros breakpoints para shell/navegação):
+
+- **Mobile**: `≤768px` — sidebar vira drawer com hambúrguer, overlay e fechamento ao navegar.
+- **Desktop**: `≥769px` — sidebar fixa.
+- **Painéis laterais**: colapsam em `≤1023px` quando o layout do módulo tiver painel lateral.
+
+Alvos de toque de navegação (links do menu, hambúrguer, fechar, ações da nav) devem ter área mínima
+de `44x44px`. Botões de ação em linha de tabela permanecem em `36px`. Não remova `overflow-x: hidden`
+de shells de layout sem issue específica.
+
 ## Receita: nova página em uma feature
 
 1. Crie `features/<dominio>/pages/<nome>/<nome>.ts|.html|.scss`.
