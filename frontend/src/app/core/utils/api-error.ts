@@ -38,6 +38,10 @@ const VALIDATION_MESSAGE_TRANSLATIONS: ValidationMessageTranslation[] = [
     pattern: /^Input should be a valid string$/i,
     replacement: 'Informe um texto válido.',
   },
+  {
+    pattern: /^value is not a valid email address.*$/i,
+    replacement: 'Informe um e-mail válido.',
+  },
   { pattern: /^Field required$/i, replacement: 'Campo obrigatório.' },
   {
     pattern: /^String should have at least (\d+) characters$/i,

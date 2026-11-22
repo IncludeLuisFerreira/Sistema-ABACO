@@ -1,6 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 
 import { CargoNivel, Usuario } from '../../../../core/models/usuario.model';
 import {
@@ -11,6 +17,11 @@ import {
 import { uniqueEmailValidator } from '../../../../shared/validators/email.validator';
 import { PASSWORD_VALIDATORS } from '../../../../shared/validators/password.validator';
 import { personNameValidator } from '../../../../shared/validators/person-name.validator';
+
+function cargoValidoValidator(control: AbstractControl): ValidationErrors | null {
+  const cargo = Number(control.value);
+  return cargo === 1 || cargo === 2 || cargo === 3 ? null : { cargoInvalido: true };
+}
 
 export interface UsuarioFormSubmit {
   nome: string;
@@ -50,13 +61,13 @@ export class UsuarioFormComponent implements OnChanges {
 
   roleOptions: Array<{ label: string; value: CargoNivel }> = [...this.allRoleOptions];
 
-  readonly form = this.fb.nonNullable.group({
-    nome: ['', [Validators.required, personNameValidator()]],
-    telefone: ['', [brazilianPhoneValidator()]],
-    email: ['', [Validators.required, Validators.email]],
-    endereco: [''],
-    cargo: [3 as CargoNivel, [Validators.required]],
-    senha: [''],
+  readonly form = this.fb.group({
+    nome: this.fb.nonNullable.control('', [Validators.required, personNameValidator()]),
+    telefone: this.fb.nonNullable.control('', [brazilianPhoneValidator()]),
+    email: this.fb.nonNullable.control('', [Validators.required, Validators.email]),
+    endereco: this.fb.nonNullable.control(''),
+    cargo: this.fb.control<CargoNivel | null>(3, [Validators.required, cargoValidoValidator]),
+    senha: this.fb.nonNullable.control(''),
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -90,6 +101,12 @@ export class UsuarioFormComponent implements OnChanges {
     }
 
     const value = this.form.getRawValue();
+    const cargo = this.cargoFromUsuario(value.cargo);
+    if (cargo === null) {
+      this.form.controls.cargo.markAsTouched();
+      return;
+    }
+
     const telefoneDigits = onlyPhoneDigits(value.telefone.trim());
     const payload: UsuarioFormSubmit = {
       nome: this.mode === 'edit' && value.nome === this.usuario?.nome
@@ -98,7 +115,7 @@ export class UsuarioFormComponent implements OnChanges {
         ? this.usuario?.telefone ?? null : telefoneDigits || null,
       email: value.email.trim().toLowerCase(),
       endereco: value.endereco.trim() || null,
-      cargo: Number(value.cargo) as CargoNivel,
+      cargo,
     };
 
     if (this.mode === 'create') {
@@ -131,9 +148,12 @@ export class UsuarioFormComponent implements OnChanges {
         telefone: formatBrazilianPhone(this.usuario.telefone ?? ''),
         email: this.usuario.email,
         endereco: this.usuario.endereco ?? '',
-        cargo: this.normalizeCargo(this.usuario.cargo),
+        cargo: this.cargoFromUsuario(this.usuario.cargo),
         senha: '',
       });
+      if (this.form.controls.cargo.invalid) {
+        this.form.controls.cargo.markAsTouched();
+      }
       this.form.controls.email.setValidators([Validators.required, Validators.email]);
       this.form.controls.email.disable({ emitEvent: false });
       this.form.controls.senha.clearValidators();
@@ -163,13 +183,13 @@ export class UsuarioFormComponent implements OnChanges {
     this.refreshRoleOptions();
   }
 
-  private normalizeCargo(cargo: number | null | string): CargoNivel {
+  private cargoFromUsuario(cargo: number | null | string): CargoNivel | null {
     const num = Number(cargo);
     if (num === 1 || num === 2 || num === 3) {
       return num as CargoNivel;
     }
 
-    return 3;
+    return null;
   }
 
   private toggleFormState(): void {

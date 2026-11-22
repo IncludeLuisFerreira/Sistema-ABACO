@@ -21,6 +21,20 @@ describe('getApiErrorMessage', () => {
     );
   });
 
+  it('translates invalid email validation messages', () => {
+    const error = {
+      error: {
+        detail: [
+          {
+            msg: 'value is not a valid email address: The part after the @-sign is not valid. It should have a period.',
+          },
+        ],
+      },
+    };
+
+    expect(getApiErrorMessage(error, 'fallback')).toBe('Informe um e-mail válido.');
+  });
+
   it('translates numeric range validation messages', () => {
     const error = {
       error: {
