@@ -1,8 +1,10 @@
+import logging
 from types import SimpleNamespace
 
 import pytest
 
 from app.email import EmailDeliveryError
+from app.email.metrics import password_reset_email_metrics
 
 
 RESTRICTED_ENDPOINTS = [
@@ -116,6 +118,35 @@ class TestHealthCheck:
         assert response.status_code == 200
         assert "online" in response.json()["status"].lower()
 
+    def test_email_health_ok_sem_falhas(self, api_client):
+        password_reset_email_metrics.reset()
+
+        response = api_client.get("/api/health/email")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "ok"
+        assert body["password_reset"] == {
+            "attempts": 0,
+            "failures": 0,
+            "consecutive_failures": 0,
+            "last_failure_at": None,
+            "last_failure_type": None,
+        }
+
+    def test_email_health_degraded_retorna_503(self, api_client):
+        password_reset_email_metrics.reset()
+        password_reset_email_metrics.record_attempt()
+        password_reset_email_metrics.record_failure("EmailDeliveryError")
+
+        response = api_client.get("/api/health/email")
+
+        assert response.status_code == 503
+        body = response.json()
+        assert body["status"] == "degraded"
+        assert body["password_reset"]["consecutive_failures"] == 1
+        assert body["password_reset"]["last_failure_type"] == "EmailDeliveryError"
+
 
 class TestAuthEndpoints:
     def test_login_invalid_credentials_returns_401(self, api_client):
@@ -126,8 +157,12 @@ class TestAuthEndpoints:
         response = api_client.post("/api/v1/auth/login", json={})
         assert response.status_code == 422
 
-    def test_forgot_password_masks_email_delivery_failures(self, api_client, monkeypatch):
+    def test_forgot_password_masks_email_delivery_failures(
+        self, api_client, monkeypatch, caplog
+    ):
         import app.api.v1.auth as auth_routes
+
+        password_reset_email_metrics.reset()
 
         def fail_to_send_email(email, token):
             raise EmailDeliveryError("SMTP failure")
@@ -139,15 +174,64 @@ class TestAuthEndpoints:
         )
         monkeypatch.setattr(auth_routes, "send_reset_email", fail_to_send_email)
 
+        with caplog.at_level(logging.ERROR, logger="app.api.v1.auth"):
+            response = api_client.post(
+                "/api/v1/auth/forgot-password",
+                json={"email": "user@abaco.org.br"},
+            )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"
+        }
+        stats = password_reset_email_metrics.snapshot()
+        assert stats.attempts == 1
+        assert stats.failures == 1
+        assert stats.consecutive_failures == 1
+        assert stats.last_failure_type == "EmailDeliveryError"
+        assert stats.last_failure_at is not None
+        assert "password_reset_email_failed" in caplog.text
+
+    def test_forgot_password_success_clears_email_failure_state(
+        self, api_client, monkeypatch
+    ):
+        import app.api.v1.auth as auth_routes
+
+        password_reset_email_metrics.reset()
+        password_reset_email_metrics.record_attempt()
+        password_reset_email_metrics.record_failure("EmailDeliveryError")
+
+        monkeypatch.setattr(
+            auth_routes,
+            "process_forgot_password",
+            lambda db, email: (SimpleNamespace(email="user@abaco.org.br"), "reset-token"),
+        )
+        monkeypatch.setattr(auth_routes, "send_reset_email", lambda email, token: None)
+
         response = api_client.post(
             "/api/v1/auth/forgot-password",
             json={"email": "user@abaco.org.br"},
         )
 
         assert response.status_code == 200
-        assert response.json() == {
-            "message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"
-        }
+        stats = password_reset_email_metrics.snapshot()
+        assert stats.attempts == 2
+        assert stats.failures == 1
+        assert stats.consecutive_failures == 0
+        assert stats.last_failure_type == "EmailDeliveryError"
+
+    def test_forgot_password_unknown_email_is_not_counted_as_attempt(self, api_client):
+        password_reset_email_metrics.reset()
+
+        response = api_client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "naoexiste@abaco.org.br"},
+        )
+
+        assert response.status_code == 200
+        stats = password_reset_email_metrics.snapshot()
+        assert stats.attempts == 0
+        assert stats.failures == 0
 
 
 class TestProtectedEndpoints:

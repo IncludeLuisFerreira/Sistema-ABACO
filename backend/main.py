@@ -25,7 +25,13 @@ from app.api.v1.usuarios import router as usuarios_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.db.database import SessionLocal, engine
-from app.schemas.health_schema import HealthResponse, LivenessResponse
+from app.email.metrics import password_reset_email_metrics
+from app.schemas.health_schema import (
+    EmailDeliveryStatsResponse,
+    EmailHealthResponse,
+    HealthResponse,
+    LivenessResponse,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -153,6 +159,23 @@ def health_live():
 )
 def health_ready():
     return _database_readiness()
+
+
+@app.get(
+    "/api/health/email",
+    response_model=EmailHealthResponse,
+    responses={503: {"model": EmailHealthResponse}},
+)
+def health_email():
+    """Saúde do envio de e-mails; 503 quando há falhas consecutivas."""
+    stats = password_reset_email_metrics.snapshot()
+    body = EmailHealthResponse(
+        status="degraded" if stats.consecutive_failures > 0 else "ok",
+        password_reset=EmailDeliveryStatsResponse.model_validate(stats),
+    )
+    if body.status == "degraded":
+        return JSONResponse(status_code=503, content=body.model_dump(mode="json"))
+    return body
 
 
 @app.get(

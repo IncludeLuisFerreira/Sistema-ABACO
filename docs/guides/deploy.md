@@ -109,7 +109,13 @@ docker compose up --build -d
 ```bash
 curl http://localhost:8000/api/health
 # {"status":"ok","database":"connected"}
+
+curl http://localhost:8000/api/health/email
+# {"status":"ok","password_reset":{"attempts":0,"failures":0,...}}
 ```
+
+Falhas no envio de recuperação de senha ficam visíveis no endpoint acima, no log
+`password_reset_email_failed` e no guia `docs/guides/email-observability.md`.
 
 ---
 
@@ -181,7 +187,7 @@ Esperado: **200** e somente dados das turmas vinculadas ao professor. Se `/matri
 |----------|---------|
 | Banco não sobe | Verifique se `database-schema.sql` existe (não é uma pasta vazia) |
 | Backend não conecta ao banco | Confirme `DATABASE_URL` no `.env` |
-| Emails não chegam | Confira `SMTP_USER`/`SMTP_PASSWORD` (senha de app do Gmail) e se `SMTP_FROM` é o mesmo endereço; com Brevo, confirme o remetente verificado. Sem provedor, os links aparecem no log: `docker logs sga_backend` |
+| Emails não chegam | Confira `SMTP_USER`/`SMTP_PASSWORD` (senha de app do Gmail) e se `SMTP_FROM` é o mesmo endereço; com Brevo, confirme o remetente verificado. Consulte `GET /api/health/email` e o log `password_reset_email_failed` (ver `docs/guides/email-observability.md`). Sem provedor, os links aparecem no log: `docker logs sga_backend` |
 | CORS bloqueado | Adicione o domínio em `CORS_ORIGINS` no `.env` |
 | Rate limit atingido | Aumente `RATE_LIMIT_AUTH` no `.env` |
 

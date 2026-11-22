@@ -38,6 +38,7 @@ from app.services.auth_service import (
 )
 from app.core.limiter import limiter
 from app.email import EmailDeliveryError, send_reset_email
+from app.email.metrics import password_reset_email_metrics
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -114,16 +115,25 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
     except EmailNotFoundError:
         return {"message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"}
 
+    password_reset_email_metrics.record_attempt()
     try:
         send_reset_email(usuario.email, token)
     except EmailDeliveryError as error:
-        logger.error("Solicitação de recuperação não concluída por falha de envio (%s)", type(error).__name__)
+        stats = password_reset_email_metrics.record_failure(type(error).__name__)
+        logger.error(
+            "password_reset_email_failed error_type=%s consecutive_failures=%s",
+            type(error).__name__,
+            stats.consecutive_failures,
+        )
     except Exception:
+        password_reset_email_metrics.record_failure("UnexpectedError")
         logger.exception("Erro inesperado no envio de e-mail de recuperação")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao enviar e-mail de recuperação. Tente novamente mais tarde.",
         )
+    else:
+        password_reset_email_metrics.record_success()
 
     return {"message": "Se o e-mail estiver cadastrado, um link de recuperação será enviado"}
 
