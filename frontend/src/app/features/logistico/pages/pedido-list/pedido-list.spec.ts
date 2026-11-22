@@ -69,3 +69,33 @@ describe('PedidoListComponent - aprovação', () => {
     expect(messages).toEqual(['Erro ao aprovar pedido.']);
   });
 });
+
+describe('PedidoListComponent - lista de compras', () => {
+  it('mostra apenas pedidos aprovados e ainda não comprados', () => {
+    const { component } = setup();
+    component.pedidos = [
+      { ...pedido, idPedido: 1, status: 0 },
+      { ...pedido, idPedido: 2, status: 1 },
+      { ...pedido, idPedido: 3, status: 2 },
+      { ...pedido, idPedido: 4, status: 3 },
+      { ...pedido, idPedido: 5, status: null },
+    ];
+
+    component.setTab('lista-compras');
+
+    expect(component.filteredPedidos.map((item) => item.idPedido)).toEqual([2]);
+  });
+
+  it('mantém todos os pedidos na aba geral', () => {
+    const { component } = setup();
+    component.pedidos = [
+      { ...pedido, idPedido: 1, status: 0 },
+      { ...pedido, idPedido: 2, status: 1 },
+      { ...pedido, idPedido: 3, status: 3 },
+    ];
+
+    component.setTab('todos');
+
+    expect(component.filteredPedidos.map((item) => item.idPedido)).toEqual([1, 2, 3]);
+  });
+});
