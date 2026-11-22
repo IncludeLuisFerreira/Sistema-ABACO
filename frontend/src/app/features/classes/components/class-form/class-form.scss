@@ -39,6 +39,8 @@ select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .hint {
@@ -141,6 +143,7 @@ select {
 .error {
   color: #b91c1c;
   font-size: 0.75rem;
+  overflow-wrap: break-word;
 }
 
 .form-error {
@@ -238,5 +241,33 @@ footer {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .avaliacoes__header {
+    display: none;
+  }
+
+  .avaliacao-row {
+    grid-template-columns: 1fr;
+  }
+
+  .avaliacao-row__remove {
+    justify-self: end;
+    width: 44px;
+    height: 44px;
+  }
+
+  .dias-aula__grid {
+    flex-wrap: wrap;
+  }
+
+  footer {
+    flex-direction: column-reverse;
+  }
+
+  footer .btn {
+    width: 100%;
   }
 }

@@ -67,6 +67,7 @@ select {
 .error {
   color: #b91c1c;
   font-size: 0.75rem;
+  overflow-wrap: break-word;
 }
 
 footer {
@@ -114,5 +115,15 @@ footer {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  footer {
+    flex-direction: column-reverse;
+  }
+
+  footer .btn {
+    width: 100%;
   }
 }
