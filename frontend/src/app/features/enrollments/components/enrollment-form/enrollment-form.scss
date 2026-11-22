@@ -39,11 +39,14 @@ select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .error {
   color: #b91c1c;
   font-size: 0.75rem;
+  overflow-wrap: break-word;
 }
 
 footer {
@@ -91,5 +94,15 @@ footer {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  footer {
+    flex-direction: column-reverse;
+  }
+
+  footer .btn {
+    width: 100%;
   }
 }

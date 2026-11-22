@@ -15,6 +15,8 @@
   padding: 1.5rem;
   max-width: 420px;
   width: 100%;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
 }
 
@@ -22,12 +24,14 @@
   margin: 0 0 0.5rem;
   font-size: 1.15rem;
   color: #0f172a;
+  overflow-wrap: break-word;
 }
 
 .confirm-card__message {
   margin: 0 0 1.25rem;
   color: #475569;
   font-size: 0.95rem;
+  overflow-wrap: break-word;
 }
 
 .confirm-card__actions {
@@ -76,4 +80,14 @@
 .confirm-card__btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .confirm-card__actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-card__btn {
+    width: 100%;
+  }
 }
