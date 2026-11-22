@@ -63,12 +63,24 @@ export class PedidoTableComponent {
     return status === 2;
   }
 
+  canDelete(status: number | null): boolean {
+    return status === 0 || status === 1;
+  }
+
   isDirector(): boolean {
     return this.currentUserCargo === 1;
   }
 
   canManagePedidos(): boolean {
     return this.currentUserCargo === 1 || this.currentUserCargo === 3;
+  }
+
+  hasActions(status: number | null): boolean {
+    return (
+      (this.canApprove(status) && this.isDirector()) ||
+      ((this.canPurchase(status) || this.canDeliver(status) || this.canDelete(status)) &&
+        this.canManagePedidos())
+    );
   }
 
   trackById(_index: number, item: ItemPedido): number {

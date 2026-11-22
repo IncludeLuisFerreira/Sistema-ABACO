@@ -77,7 +77,7 @@
               </button>
 
               <button
-                *ngIf="canManagePedidos()"
+                *ngIf="canManagePedidos() && canDelete(pedido.status)"
                 type="button"
                 class="btn btn--danger"
                 (click)="remove.emit(pedido)"
@@ -86,6 +86,7 @@
                 Excluir
               </button>
             </ng-container>
+            <span *ngIf="!hasActions(pedido.status)">-</span>
             <ng-template #purchaseActions>
               <button
                 type="button"

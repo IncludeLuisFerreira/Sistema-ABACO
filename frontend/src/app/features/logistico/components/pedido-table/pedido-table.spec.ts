@@ -96,11 +96,6 @@ describe('PedidoTableComponent - permissões de gestão', () => {
     expect(buttonLabels(setup(cargo, 2))).toContain('Entregar');
   });
 
-  it('exibe Comprar e Entregar para o Administrador', () => {
-    expect(buttonLabels(setup(3, 1))).toContain('Comprar');
-    expect(buttonLabels(setup(3, 2))).toContain('Entregar');
-  });
-
   it('oculta Comprar e Entregar para o Professor', () => {
     expect(buttonLabels(setup(2, 1))).not.toContain('Comprar');
     expect(buttonLabels(setup(2, 2))).not.toContain('Entregar');
@@ -108,6 +103,10 @@ describe('PedidoTableComponent - permissões de gestão', () => {
 
   it.each([1, 3])('exibe Excluir para o cargo %s', (cargo) => {
     expect(buttonLabels(setup(cargo, 0))).toContain('Excluir');
+  });
+
+  it.each([2, 3])('oculta Excluir depois da compra (status %s)', (status) => {
+    expect(buttonLabels(setup(1, status))).not.toContain('Excluir');
   });
 
   it.each([2, 0, null])('oculta Excluir para o cargo %s', (cargo) => {
