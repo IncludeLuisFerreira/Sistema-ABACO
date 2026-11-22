@@ -113,8 +113,27 @@ class TestUsuarioCreateSchemaValidation:
 				telefone="01999999999",
 			)
 
+	@pytest.mark.parametrize("senha", ["1234567", "somenteletras", "12345678"])
+	def test_senha_fraca_rejeitada(self, senha):
+		with pytest.raises(ValidationError):
+			UsuarioCreateSchema(
+				nome="Novo Usuario",
+				email="novo@abaco.org.br",
+				senha=senha,
+				cargo=2,
+			)
+
+	def test_senha_com_letra_e_numero_aceita(self):
+		payload = UsuarioCreateSchema(
+			nome="Novo Usuario",
+			email="novo@abaco.org.br",
+			senha="senha123",
+			cargo=2,
+		)
+		assert payload.senha == "senha123"
+
 
 @pytest.mark.parametrize("nome", ["---", "a--", "a b"])
 def test_nome_exige_tres_letras(nome):
     with pytest.raises(ValidationError):
-        UsuarioCreateSchema(nome=nome, email="novo@abaco.org.br", senha="123", cargo=2)
+        UsuarioCreateSchema(nome=nome, email="novo@abaco.org.br", senha="senha123", cargo=2)

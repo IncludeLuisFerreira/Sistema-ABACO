@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Matricula } from '../../../../core/models/matricula.model';
 import { Turma } from '../../../../core/models/turma.model';
 import { Nota, NotaBatchPayload, NotaItem } from '../../../../core/models/nota.model';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { MatriculaService } from '../../../../core/services/matricula.service';
 import { TurmaService } from '../../../../core/services/turma.service';
 import { NotaService } from '../../../../core/services/nota.service';
@@ -97,6 +98,10 @@ export class GradesManagementComponent implements OnInit {
       return;
     }
 
+    if (!this.notasValidas()) {
+      return;
+    }
+
     this.saving = true;
     this.localFeedback = null;
 
@@ -118,13 +123,30 @@ export class GradesManagementComponent implements OnInit {
         this.changeDetectorRef.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao registrar notas.';
+        const message = getApiErrorMessage(err, 'Erro ao registrar notas.');
         this.localFeedback = message;
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
       },
     });
+  }
+
+  private notasValidas(): boolean {
+    const invalida = this.students.some(
+      (student) =>
+        student.nota !== null &&
+        (!Number.isFinite(student.nota) || student.nota < 0 || student.nota > 10),
+    );
+    if (!invalida) {
+      return true;
+    }
+
+    const message = 'As notas devem estar entre 0 e 10.';
+    this.localFeedback = message;
+    this.notifications.error(message);
+    this.changeDetectorRef.detectChanges();
+    return false;
   }
 
   private loadTurmas(): void {

@@ -1,20 +1,30 @@
 from datetime import date
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+
+
+def _validar_status(value: object) -> object:
+    if value is None or (isinstance(value, int) and not isinstance(value, bool)):
+        return value
+    raise ValueError("Status deve ser 0, 1 ou 2")
+
+
+MatriculaStatus = Annotated[Literal[0, 1, 2], BeforeValidator(_validar_status)]
 
 
 class MatriculaCreateSchema(BaseModel):
     idAluno: int
     idTurma: int
     dataMatricula: date | None = None
-    status: int | None = 0
+    status: MatriculaStatus = 0
 
 
 class MatriculaUpdateSchema(BaseModel):
     idAluno: int | None = None
     idTurma: int | None = None
     dataMatricula: date | None = None
-    status: int | None = None
+    status: MatriculaStatus | None = None
 
 
 class MatriculaAlunoInfo(BaseModel):

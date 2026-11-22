@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 
 import { Estoque, EstoqueCreatePayload, EstoqueUpdatePayload } from '../../../../core/models/estoque.model';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { EstoqueService } from '../../../../core/services/estoque.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -135,7 +136,7 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao dar baixa no estoque.';
+        const message = getApiErrorMessage(err, 'Erro ao dar baixa no estoque.');
         this.notifications.error(message);
         this.baixaSaving = false;
         this.changeDetectorRef.detectChanges();
@@ -166,7 +167,7 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar item.';
+          const message = getApiErrorMessage(err, 'Erro ao criar item.');
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -198,7 +199,7 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar item.';
+        const message = getApiErrorMessage(err, 'Erro ao atualizar item.');
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();

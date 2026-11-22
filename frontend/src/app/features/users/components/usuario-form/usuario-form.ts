@@ -9,6 +9,7 @@ import {
   onlyPhoneDigits,
 } from '../../../../shared/validators/brazilian-phone.validator';
 import { uniqueEmailValidator } from '../../../../shared/validators/email.validator';
+import { PASSWORD_VALIDATORS } from '../../../../shared/validators/password.validator';
 import { personNameValidator } from '../../../../shared/validators/person-name.validator';
 
 export interface UsuarioFormSubmit {
@@ -156,7 +157,7 @@ export class UsuarioFormComponent implements OnChanges {
       Validators.email,
       uniqueEmailValidator(this.existingEmails),
     ]);
-    this.form.controls.senha.setValidators([Validators.required]);
+    this.form.controls.senha.setValidators(PASSWORD_VALIDATORS);
     this.form.controls.senha.updateValueAndValidity({ emitEvent: false });
     this.form.controls.email.updateValueAndValidity({ emitEvent: false });
     this.refreshRoleOptions();

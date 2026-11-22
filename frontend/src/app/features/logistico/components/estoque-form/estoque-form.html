@@ -13,7 +13,8 @@
 
     <label>
       <span>Quantidade disponivel</span>
-      <input formControlName="quantidadeDisponivel" type="number" placeholder="Quantidade" />
+      <input formControlName="quantidadeDisponivel" type="number" min="0" placeholder="Quantidade" />
+      <small class="error" *ngIf="form.controls.quantidadeDisponivel.errors?.['min'] && form.controls.quantidadeDisponivel.touched">Quantidade nao pode ser negativa.</small>
     </label>
 
     <label>
@@ -23,7 +24,8 @@
 
     <label>
       <span>Estoque minimo</span>
-      <input formControlName="estoqueMinimo" type="number" placeholder="Quantidade para alerta" />
+      <input formControlName="estoqueMinimo" type="number" min="0" placeholder="Quantidade para alerta" />
+      <small class="error" *ngIf="form.controls.estoqueMinimo.errors?.['min'] && form.controls.estoqueMinimo.touched">Estoque minimo nao pode ser negativo.</small>
       <small>Quando o saldo atingir este valor, um alerta sera exibido.</small>
     </label>
 

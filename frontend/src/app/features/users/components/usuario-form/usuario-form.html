@@ -58,7 +58,9 @@
     <label *ngIf="mode === 'create'">
       <span>Senha provisoria *</span>
       <input formControlName="senha" type="password" placeholder="Defina uma senha inicial" autocomplete="new-password" />
-      <small class="error" *ngIf="form.controls.senha.invalid && form.controls.senha.touched">Senha e obrigatoria para cadastro.</small>
+      <small class="error" *ngIf="form.controls.senha.errors?.['required'] && form.controls.senha.touched">Senha e obrigatoria para cadastro.</small>
+      <small class="error" *ngIf="form.controls.senha.errors?.['minlength'] && form.controls.senha.touched">A senha deve ter ao menos 8 caracteres.</small>
+      <small class="error" *ngIf="form.controls.senha.errors?.['passwordComposition'] && form.controls.senha.touched">A senha deve conter letras e numeros.</small>
     </label>
 
     <footer>

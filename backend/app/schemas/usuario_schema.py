@@ -1,13 +1,13 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.core.validators import normalize_email, normalize_nome, normalize_telefone_br
+from app.schemas.auth_schema import SENHA_PATTERN
 
 
 class UsuarioCreateSchema(BaseModel):
 	nome: str = Field(min_length=1)
 	email: EmailStr
-	# FIXME: política de senha fraca (min_length=1) difere do reset (8+ com letra/número)
-	senha: str = Field(min_length=1)
+	senha: str = Field(min_length=8)
 	cargo: int = Field(ge=1, le=3)
 	telefone: str | None = None
 	endereco: str | None = None
@@ -16,6 +16,13 @@ class UsuarioCreateSchema(BaseModel):
 	@classmethod
 	def validar_email(cls, value: str) -> str:
 		return normalize_email(value)
+
+	@field_validator("senha")
+	@classmethod
+	def validar_senha(cls, value: str) -> str:
+		if not SENHA_PATTERN.match(value):
+			raise ValueError("A senha deve conter pelo menos uma letra e um número")
+		return value
 
 	@field_validator("nome")
 	@classmethod
