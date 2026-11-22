@@ -15,7 +15,7 @@ from app.models.item_pedido import ItemPedido
 from app.models.movimentacao_estoque import MovimentacaoEstoque
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-MIGRATION_008 = BACKEND_DIR / "alembic" / "versions" / "008_normaliza_nomeitem_estoque.py"
+MIGRATION_010 = BACKEND_DIR / "alembic" / "versions" / "010_normaliza_nomeitem_estoque.py"
 
 
 def _script_directory() -> ScriptDirectory:
@@ -24,20 +24,22 @@ def _script_directory() -> ScriptDirectory:
     return ScriptDirectory.from_config(cfg)
 
 
-def _load_migration_008():
-    spec = importlib.util.spec_from_file_location("migration_008", MIGRATION_008)
+def _load_migration_010():
+    spec = importlib.util.spec_from_file_location("migration_010", MIGRATION_010)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
 def test_single_migration_head() -> None:
-    assert _script_directory().get_heads() == ["008"]
+    assert _script_directory().get_heads() == ["010"]
 
 
 def test_migration_chain_is_linear() -> None:
     script = _script_directory()
     expected = [
+        "010",
+        "009",
         "008",
         "007",
         "006",
@@ -48,7 +50,7 @@ def test_migration_chain_is_linear() -> None:
         "001",
     ]
     chain = []
-    rev = script.get_revision("008")
+    rev = script.get_revision("010")
     while rev is not None:
         chain.append(rev.revision)
         down = rev.down_revision
@@ -57,8 +59,8 @@ def test_migration_chain_is_linear() -> None:
     assert chain == expected
 
 
-def test_migration_008_normaliza_e_mescla_duplicatas(tmp_path) -> None:
-    db_path = tmp_path / "migracao-008.db"
+def test_migration_010_normaliza_e_mescla_duplicatas(tmp_path) -> None:
+    db_path = tmp_path / "migracao-010.db"
     engine = create_engine(f"sqlite:///{db_path}")
     Base.metadata.create_all(engine)
 
@@ -101,7 +103,7 @@ def test_migration_008_normaliza_e_mescla_duplicatas(tmp_path) -> None:
     with engine.begin() as connection:
         context = MigrationContext.configure(connection)
         with Operations.context(context):
-            _load_migration_008().upgrade()
+            _load_migration_010().upgrade()
 
     with Session(engine) as session:
         itens = session.query(Estoque).all()
@@ -117,5 +119,43 @@ def test_migration_008_normaliza_e_mescla_duplicatas(tmp_path) -> None:
 
         item_pedido = session.query(ItemPedido).one()
         assert item_pedido.id_item_estoque == id_mantido
+
+    engine.dispose()
+
+
+def test_migration_010_conflito_de_unidade_mantem_primeira(tmp_path) -> None:
+    db_path = tmp_path / "migracao-010-unidade.db"
+    engine = create_engine(f"sqlite:///{db_path}")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        mantido = Estoque(
+            nome_item="Fita adesiva",
+            quantidade_disponivel=3,
+            unidade="un",
+            estoque_minimo=1,
+        )
+        duplicata = Estoque(
+            nome_item="  fita   ADESIVA ",
+            quantidade_disponivel=7,
+            unidade="cx",
+            estoque_minimo=2,
+        )
+        session.add_all([mantido, duplicata])
+        session.commit()
+
+    with engine.begin() as connection:
+        context = MigrationContext.configure(connection)
+        with Operations.context(context):
+            _load_migration_010().upgrade()
+
+    with Session(engine) as session:
+        itens = session.query(Estoque).all()
+        assert len(itens) == 1
+        item = itens[0]
+        assert item.nome_item == "Fita adesiva"
+        assert item.quantidade_disponivel == 10
+        assert item.estoque_minimo == 2
+        assert item.unidade == "un"
 
     engine.dispose()

@@ -4,16 +4,16 @@
 
 **Goal:** Tratar violações de integridade como erros de domínio em aluno/curso, normalizar nomes do estoque e limpar nomes antigos via migration.
 
-**Architecture:** Serviços continuam donos da regra; routers apenas traduzem exceções de domínio para HTTP 409. A normalização de nome do estoque vira um helper único no service. A migration 008 normaliza, mescla duplicatas e reponta FKs antes de remover as linhas redundantes.
+**Architecture:** Serviços continuam donos da regra; routers apenas traduzem exceções de domínio para HTTP 409. A normalização de nome do estoque vira um helper único no service. A migration 010 normaliza, mescla duplicatas e reponta FKs antes de remover as linhas redundantes.
 
-**Tech Stack:** Python 3.14, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (testes em SQLite).
+**Tech Stack:** Python 3.11, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (testes em SQLite).
 
 **Spec:** Issue #46 (`gh issue view 46`) + plano aprovado em conversa.
 
 ## Global Constraints
 
 - Não alterar `database-schema.sql`.
-- Migration nova: `008`, `down_revision = "007"`, um único head.
+- Migration nova: `010`, `down_revision = "009"`, um único head.
 - Conventional Commits em português, até 72 caracteres na primeira linha.
 - Cobertura mínima de 70% nos arquivos alterados.
 - Sem `print()` / `console.log` no diff.
@@ -230,19 +230,19 @@ git commit -m "fix(estoque): normaliza nome e distingue violacao unica"
 
 ---
 
-### Task 4: Migration 008 — limpeza dos nomes antigos
+### Task 4: Migration 010 — limpeza dos nomes antigos
 
 **Files:**
-- Create: `backend/alembic/versions/008_normaliza_nomeitem_estoque.py`
+- Create: `backend/alembic/versions/010_normaliza_nomeitem_estoque.py`
 - Modify: `backend/tests/test_migrations.py`
 - Test: `backend/tests/test_migrations.py`
 
 **Interfaces:**
-- Produces: migration `008`, `down_revision = "007"`; normaliza, mescla duplicatas por `lower(nomeitem)` e reponta FKs.
+- Produces: migration `010`, `down_revision = "009"`; normaliza, mescla duplicatas por `lower(nomeitem)` e reponta FKs.
 
 - [ ] **Step 1: Atualizar teste de cabeçalho e escrever teste de limpeza**
 
-Em `test_migrations.py`, trocar o head esperado para `["008"]` e incluir `"008"` no início da cadeia.
+Em `test_migrations.py`, trocar o head esperado para `["010"]` e incluir `"010"` no início da cadeia.
 
 Adicionar teste que cria schema SQLite via `Base.metadata.create_all`, insere:
 
@@ -253,16 +253,16 @@ MovimentacaoEstoque(id_item_estoque=<id da segunda>, quantidade=-1, tipo_movimen
 ItemPedido(id_pedido=<pedido>, id_item_estoque=<id da segunda>, nome_item="Papel A4", quantidade=1)
 ```
 
-Executar `command.stamp(cfg, "007")` e `command.upgrade(cfg, "008")` apontando `DATABASE_URL` para o SQLite temporário. Assertar: uma única linha, `nomeitem == "Papel A4"`, `quantidadedisponivel == 15`, `estoqueminimo == 4`, FKs apontando para o id remanescente.
+Executar `command.stamp(cfg, "009")` e `command.upgrade(cfg, "010")` apontando `DATABASE_URL` para o SQLite temporário. Assertar: uma única linha, `nomeitem == "Papel A4"`, `quantidadedisponivel == 15`, `estoqueminimo == 4`, FKs apontando para o id remanescente.
 
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `cd backend && python -m pytest tests/test_migrations.py -q`
-Expected: FAIL porque a revisão `008` não existe.
+Expected: FAIL porque a revisão `010` não existe.
 
 - [ ] **Step 3: Implementar migration**
 
-Criar `008_normaliza_nomeitem_estoque.py`. No `upgrade()`:
+Criar `010_normaliza_nomeitem_estoque.py`. No `upgrade()`:
 
 1. Ler todas as linhas de `estoque` ordenadas por `iditemestoque`.
 2. Agrupar por `" ".join(nomeitem.split()).lower()`.
@@ -281,7 +281,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add backend/alembic/versions/008_normaliza_nomeitem_estoque.py backend/tests/test_migrations.py
+git add backend/alembic/versions/010_normaliza_nomeitem_estoque.py backend/tests/test_migrations.py
 git commit -m "fix(estoque): limpa nomes antigos via migration"
 ```
 
@@ -307,7 +307,7 @@ cd backend && python -m pytest \
   --cov=app.services.curso_service \
   --cov=app.services.estoque_service \
   --cov=app.api.v1.alunos --cov=app.api.v1.cursos --cov=app.api.v1.estoque \
-  --cov=alembic.versions.008_normaliza_nomeitem_estoque \
+  --cov=alembic.versions.010_normaliza_nomeitem_estoque \
   --cov-report=term-missing
 ```
 
@@ -316,4 +316,4 @@ Expected: cada arquivo alterado com cobertura ≥ 70%.
 - [ ] **Step 3: Head único**
 
 Run: `cd backend && alembic heads`
-Expected: `008 (head)`.
+Expected: `010 (head)`.

@@ -1,17 +1,20 @@
 """normaliza nomeitem do estoque e mescla duplicatas
 
-Revision ID: 008
-Revises: 007
+Revision ID: 010
+Revises: 009
 Create Date: 2026-11-19
 """
+import logging
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "008"
-down_revision: Union[str, None] = "007"
+logger = logging.getLogger("alembic.runtime.migration")
+
+revision: str = "010"
+down_revision: Union[str, None] = "009"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -51,6 +54,23 @@ def upgrade() -> None:
     for grupo in grupos.values():
         mantido, nome_normalizado = grupo[0]
         duplicatas = grupo[1:]
+
+        if duplicatas:
+            logger.info(
+                "normaliza_estoque: mesclando %s em '%s' (mantido=%s)",
+                [duplicata["iditemestoque"] for duplicata, _ in duplicatas],
+                nome_normalizado,
+                mantido["iditemestoque"],
+            )
+            unidades_grupo = {
+                linha["unidade"] for linha, _ in grupo if linha["unidade"] is not None
+            }
+            if len(unidades_grupo) > 1:
+                logger.warning(
+                    "normaliza_estoque: unidades conflitantes %s em '%s'; mantendo a primeira",
+                    sorted(unidades_grupo),
+                    nome_normalizado,
+                )
 
         quantidades = [
             linha["quantidadedisponivel"]
