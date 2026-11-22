@@ -89,6 +89,13 @@ export class UsersManagementComponent implements OnInit {
 
   onSave(payload: UsuarioFormSubmit): void {
     if (this.formMode === 'edit' && !this.canAssignDiretoria && Number(this.selectedUsuario?.cargo) === 1) return;
+
+    const cargo = this.normalizeCargo(payload.cargo);
+    if (cargo === null) {
+      this.notifications.error('Nível de acesso inválido. Selecione Diretoria, Professor ou Admin.');
+      return;
+    }
+
     this.saving = true;
     this.localFeedback = null;
 
@@ -98,7 +105,7 @@ export class UsersManagementComponent implements OnInit {
         telefone: payload.telefone,
         email: payload.email,
         senha: payload.senha ?? '',
-        cargo: payload.cargo,
+        cargo,
         endereco: payload.endereco,
       };
 
@@ -130,7 +137,7 @@ export class UsersManagementComponent implements OnInit {
     const updatePayload: UsuarioUpdatePayload = {
       nome: payload.nome,
       telefone: payload.telefone,
-      cargo: this.normalizeCargo(payload.cargo),
+      cargo,
       endereco: payload.endereco,
     };
 
@@ -226,12 +233,12 @@ export class UsersManagementComponent implements OnInit {
     this.pagedUsuarios = this.filteredUsuarios.slice(start, start + this.pageSize);
   }
 
-  private normalizeCargo(cargo: number | string): CargoNivel {
+  private normalizeCargo(cargo: number | string): CargoNivel | null {
     const num = Number(cargo);
     if (num === 1 || num === 2 || num === 3) {
       return num as CargoNivel;
     }
 
-    return 3;
+    return null;
   }
 }

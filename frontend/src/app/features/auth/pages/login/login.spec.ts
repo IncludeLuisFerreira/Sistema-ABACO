@@ -71,6 +71,15 @@ describe('Login', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
+  it('exibe mensagem legível quando o login retorna 422', () => {
+    auth.login.mockReturnValue(throwError(() => ({ status: 422, message: 'Campo obrigatório.' })));
+    preencherFormulario();
+    component.onSubmit();
+
+    expect(component.error).toBe('Campo obrigatório.');
+    expect(component.error).not.toContain('[object Object]');
+  });
+
   it('formulário inválido não chama o backend', () => {
     preencherFormulario('', '');
     component.onSubmit();

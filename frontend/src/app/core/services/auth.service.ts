@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, catchError, map, throwError, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { getApiErrorMessage } from '../utils/api-error';
 
 interface LoginApiResponse {
   access_token: string;
@@ -158,7 +159,7 @@ export class AuthService {
         tap(({ session }) => this.persistSession(session)),
         map(({ token, role, primeiroAcesso }) => ({ token, role, primeiroAcesso })),
         catchError((error) => {
-          const message = error?.error?.detail || error?.message || 'Credenciais inválidas';
+          const message = getApiErrorMessage(error, 'Credenciais inválidas');
           return throwError(() => ({ status: error?.status, message }));
         }),
       );

@@ -53,6 +53,9 @@
       <select formControlName="cargo">
         <option *ngFor="let option of roleOptions" [value]="option.value">{{ option.label }}</option>
       </select>
+      <small class="error" *ngIf="form.controls.cargo.invalid && form.controls.cargo.touched">
+        Selecione um nível de acesso válido.
+      </small>
     </label>
 
     <label *ngIf="mode === 'create'">
