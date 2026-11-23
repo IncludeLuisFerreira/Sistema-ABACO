@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
+}
+
 .turmas-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
 .turmas-header { margin-bottom: 1.5rem; }
 .turmas-header h1 { margin: 0; font-size: 1.5rem; }
@@ -44,7 +50,7 @@
 
 .turma-card__progresso { margin-top: 0.5rem; }
 .turma-card__bar { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 0.25rem; }
-.turma-card__fill { height: 100%; background: #0f766e; border-radius: 3px; transition: width 0.3s; }
+.turma-card__fill { height: 100%; background: var(--abaco-gold); border-radius: 3px; transition: width 0.3s; }
 .turma-card__progresso-text { font-size: 0.78rem; color: #64748b; }
 
 .turma-card__actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9; }

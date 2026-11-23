@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
+}
+
 .alunos-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
 .alunos-header { margin-bottom: 1.5rem; }
 .alunos-header h1 { margin: 0; font-size: 1.5rem; }

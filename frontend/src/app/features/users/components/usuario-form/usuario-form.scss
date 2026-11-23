@@ -43,7 +43,7 @@ select {
   background-color: #ffffff !important;
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
-  caret-color: #0f766e !important;
+  caret-color: var(--abaco-gold) !important;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 0.65rem 0.75rem;
@@ -59,8 +59,8 @@ select {
 
   &:focus {
     outline: none;
-    border-color: #0f766e;
-    box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+    border-color: var(--abaco-gold);
+    box-shadow: 0 0 0 2px rgba(242, 169, 59, 0.25);
   }
 }
 
@@ -86,8 +86,8 @@ footer {
 }
 
 .btn--primary {
-  background: #0f766e;
-  color: #fff;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
 }
 
 .btn--ghost {

@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: #f8fafc;
+  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
 }
 
 .error-card {
@@ -13,8 +13,10 @@
   width: 100%;
   padding: 2.5rem;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--abaco-line);
+  border-top: 4px solid var(--abaco-gold);
+  border-radius: 18px;
+  box-shadow: var(--abaco-shadow);
 }
 
 .error-card__code {
@@ -60,12 +62,12 @@
 }
 
 .error-card__btn--primary {
-  background: #0f766e;
-  color: #fff;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
 }
 
 .error-card__btn--primary:hover {
-  background: #0d6b63;
+  background: var(--abaco-gold-strong);
 }
 
 .error-card__btn--secondary {

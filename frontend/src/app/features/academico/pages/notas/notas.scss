@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
+}
+
 .notas-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
 .notas-header { margin-bottom: 1.5rem; }
 .notas-header h1 { margin: 0; font-size: 1.5rem; }
@@ -18,8 +24,8 @@
 .notas-table tbody tr { border-bottom: 1px solid #f1f5f9; }
 .notas-table input { width: 80px; padding: 0.35rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; text-align: center; }
 
-.save-btn { margin-top: 1rem; padding: 0.6rem 1.5rem; background: #0f766e; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-.save-btn:hover { background: #0d6b63; }
+.save-btn { margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--abaco-gold); color: var(--abaco-ink); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.save-btn:hover { background: var(--abaco-gold-strong); }
 .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (max-width: 768px) {
