@@ -1,14 +1,24 @@
 .primary {
      margin-top: 1rem;
      width: 100%;
-     background: var(--color-primary);
-     color: #fff;
-     padding: 0.75rem;
-     border-radius: 6px;
+     background: linear-gradient(180deg, #f7b758 0%, var(--abaco-gold) 100%);
+     color: var(--abaco-ink);
+     padding: 0.8rem;
+     border-radius: 10px;
      border: 0;
-     font-weight: 600;
+     font-weight: 800;
+     cursor: pointer;
+     box-shadow: 0 10px 20px rgba(242, 169, 59, 0.26);
+     transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary:hover:not([disabled]) {
+     transform: translateY(-1px);
+     box-shadow: 0 14px 26px rgba(242, 169, 59, 0.32);
 }
 
 .primary[disabled] {
      opacity: 0.6;
+     cursor: not-allowed;
+     box-shadow: none;
 }

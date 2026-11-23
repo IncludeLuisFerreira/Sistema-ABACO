@@ -12,6 +12,17 @@
 	--abaco-surface: var(--color-surface);
 	--abaco-bg: var(--color-background);
 	--abaco-danger: var(--color-danger);
+	--abaco-ink: #0f172a;
+	--abaco-ink-soft: #1e293b;
+	--abaco-body: #475569;
+	--abaco-muted: #64748b;
+	--abaco-line: #e8ecf2;
+	--abaco-gold: #f2a93b;
+	--abaco-gold-strong: #d98b1f;
+	--abaco-gold-soft: #fff4e2;
+	--abaco-gold-line: #f6d9a8;
+	--abaco-canvas: #f7f8fb;
+	--abaco-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
 }
 
 html,
@@ -25,6 +36,16 @@ body {
 
 * {
 	box-sizing: border-box;
+}
+
+.eyebrow {
+	display: inline-block;
+	margin-bottom: 0.45rem;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--abaco-gold-strong);
 }
 
 input,
