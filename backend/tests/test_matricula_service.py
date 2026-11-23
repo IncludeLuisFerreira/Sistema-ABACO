@@ -136,6 +136,88 @@ class TestUpdateMatricula:
         assert matricula_ativa.id_aluno != aluno2.id_aluno
         assert matricula_ativa.id_turma == turma.id_turma
 
+    def test_reativacao_com_matricula_ativa_no_mesmo_curso_levanta(
+        self, db_session: Session, matricula_ativa, aluno, turma, usuario_professor
+    ):
+        turma2 = Turma(
+            capacidade=30,
+            id_curso=turma.id_curso,
+            id_professor=usuario_professor.id_usuario,
+            dias_aula="1",
+        )
+        db_session.add(turma2)
+        db_session.commit()
+        db_session.refresh(turma2)
+
+        update_matricula(db_session, matricula_ativa.id_matricula, MatriculaUpdateSchema(status=1))
+        create_matricula(
+            db_session,
+            MatriculaCreateSchema(idAluno=aluno.id_aluno, idTurma=turma2.id_turma, status=0),
+        )
+
+        payload = MatriculaUpdateSchema(
+            idAluno=aluno.id_aluno, idTurma=turma.id_turma, status=0
+        )
+        with pytest.raises(MatriculaDuplicadaError):
+            update_matricula(db_session, matricula_ativa.id_matricula, payload)
+
+        db_session.refresh(matricula_ativa)
+        assert matricula_ativa.status == 1
+
+    def test_edita_matricula_inativa_em_turma_cheia_nao_levanta(
+        self, db_session: Session, matricula_ativa, aluno, turma
+    ):
+        aluno2 = Aluno(nome="Aluno Dois")
+        db_session.add(aluno2)
+        db_session.commit()
+        db_session.refresh(aluno2)
+        db_session.add(Matricula(id_aluno=aluno2.id_aluno, id_turma=turma.id_turma, status=0))
+        db_session.commit()
+
+        update_matricula(db_session, matricula_ativa.id_matricula, MatriculaUpdateSchema(status=1))
+        turma.capacidade = 1
+        db_session.commit()
+
+        resultado = update_matricula(
+            db_session,
+            matricula_ativa.id_matricula,
+            MatriculaUpdateSchema(
+                idAluno=aluno.id_aluno,
+                idTurma=turma.id_turma,
+                dataMatricula=date(2026, 4, 10),
+            ),
+        )
+        assert resultado.data_matricula == date(2026, 4, 10)
+
+        resultado = update_matricula(
+            db_session,
+            matricula_ativa.id_matricula,
+            MatriculaUpdateSchema(
+                idAluno=aluno.id_aluno, idTurma=turma.id_turma, status=2
+            ),
+        )
+        assert resultado.status == 2
+
+    def test_reativacao_em_turma_cheia_levanta(
+        self, db_session: Session, matricula_ativa, aluno, turma
+    ):
+        aluno2 = Aluno(nome="Aluno Dois")
+        db_session.add(aluno2)
+        db_session.commit()
+        db_session.refresh(aluno2)
+        db_session.add(Matricula(id_aluno=aluno2.id_aluno, id_turma=turma.id_turma, status=0))
+        db_session.commit()
+
+        update_matricula(db_session, matricula_ativa.id_matricula, MatriculaUpdateSchema(status=1))
+        turma.capacidade = 1
+        db_session.commit()
+
+        payload = MatriculaUpdateSchema(
+            idAluno=aluno.id_aluno, idTurma=turma.id_turma, status=0
+        )
+        with pytest.raises(TurmaLotadaError):
+            update_matricula(db_session, matricula_ativa.id_matricula, payload)
+
 
 class TestDeleteMatricula:
     def test_deletes_existing(self, db_session: Session, matricula_ativa):

@@ -177,6 +177,120 @@ class TestMatriculasEndpoints:
         assert response.status_code == 409
         assert response.json()["detail"] == "Aluno ja possui matricula ativa neste curso"
 
+    def test_update_reativacao_com_duplicata_retorna_409(self, seeded, director_headers):
+        client = seeded["client"]
+        matricula = seeded["matricula"]
+        turma2 = client.post(
+            "/api/v1/turmas",
+            json={
+                "capacidade": 2,
+                "dataInicio": "2026-03-01",
+                "dataFim": "2026-06-30",
+                "idCurso": seeded["curso"]["idCurso"],
+                "idProfessor": seeded["professor"]["idUsuario"],
+                "diasAula": "1",
+            },
+            headers=director_headers,
+        ).json()
+
+        assert client.put(
+            f"/api/v1/matriculas/{matricula['idMatricula']}",
+            json={"status": 1},
+            headers=director_headers,
+        ).status_code == 200
+        assert client.post(
+            "/api/v1/matriculas",
+            json={"idAluno": seeded["aluno"]["idAluno"], "idTurma": turma2["idTurma"]},
+            headers=director_headers,
+        ).status_code == 200
+
+        response = client.put(
+            f"/api/v1/matriculas/{matricula['idMatricula']}",
+            json={
+                "idAluno": matricula["idAluno"],
+                "idTurma": seeded["turma"]["idTurma"],
+                "status": 0,
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 409
+        assert response.json()["detail"] == "Aluno ja possui matricula ativa neste curso"
+
+    def test_update_matricula_inativa_em_turma_cheia_retorna_200(self, seeded, director_headers):
+        client = seeded["client"]
+        turma_id = seeded["turma"]["idTurma"]
+        matricula = seeded["matricula"]
+        aluno2 = client.post("/api/v1/alunos", json={"nome": "Aluno Dois"}, headers=director_headers).json()
+        assert client.post(
+            "/api/v1/matriculas",
+            json={"idAluno": aluno2["idAluno"], "idTurma": turma_id},
+            headers=director_headers,
+        ).status_code == 200
+        assert client.put(
+            f"/api/v1/matriculas/{matricula['idMatricula']}",
+            json={"status": 1},
+            headers=director_headers,
+        ).status_code == 200
+        assert client.put(
+            f"/api/v1/turmas/{turma_id}",
+            json={"capacidade": 1},
+            headers=director_headers,
+        ).status_code == 200
+
+        response = client.put(
+            f"/api/v1/matriculas/{matricula['idMatricula']}",
+            json={
+                "idAluno": matricula["idAluno"],
+                "idTurma": turma_id,
+                "dataMatricula": "2026-04-10",
+            },
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["dataMatricula"] == "2026-04-10"
+
+        response = client.put(
+            f"/api/v1/matriculas/{matricula['idMatricula']}",
+            json={"idAluno": matricula["idAluno"], "idTurma": turma_id, "status": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == 2
+
+    def test_update_lotacao_tem_precedencia_sobre_duplicidade(self, seeded, director_headers):
+        client = seeded["client"]
+        turma_lotada = client.post(
+            "/api/v1/turmas",
+            json={
+                "capacidade": 2,
+                "dataInicio": "2026-03-01",
+                "dataFim": "2026-06-30",
+                "idCurso": seeded["curso"]["idCurso"],
+                "idProfessor": seeded["professor"]["idUsuario"],
+                "diasAula": "1",
+            },
+            headers=director_headers,
+        ).json()
+        aluno2 = client.post("/api/v1/alunos", json={"nome": "Aluno Dois"}, headers=director_headers).json()
+        assert client.post(
+            "/api/v1/matriculas",
+            json={"idAluno": aluno2["idAluno"], "idTurma": turma_lotada["idTurma"]},
+            headers=director_headers,
+        ).status_code == 200
+        assert client.put(
+            f"/api/v1/turmas/{turma_lotada['idTurma']}",
+            json={"capacidade": 1},
+            headers=director_headers,
+        ).status_code == 200
+
+        response = client.put(
+            f"/api/v1/matriculas/{seeded['matricula']['idMatricula']}",
+            json={"idAluno": aluno2["idAluno"], "idTurma": turma_lotada["idTurma"]},
+            headers=director_headers,
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Turma esta lotada"
+
     def test_delete_sucesso(self, seeded, director_headers):
         client = seeded["client"]
         aluno = client.post("/api/v1/alunos", json={"nome": "Aluno Delete"}, headers=director_headers).json()
