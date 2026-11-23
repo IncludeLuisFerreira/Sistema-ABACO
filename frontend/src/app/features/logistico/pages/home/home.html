@@ -1,23 +1,55 @@
 <div class="logistico-dashboard">
   <header class="logistico-dashboard__header">
-    <h1>Logístico</h1>
-    <p>Gerencie o estoque e os pedidos de materiais da ABACO.</p>
+    <span class="eyebrow">Módulo logístico</span>
+    <h1>Visão geral</h1>
+    <p>Gerencie o estoque e os pedidos de materiais da ABACO em um só lugar.</p>
   </header>
 
   <section class="logistico-dashboard__section">
     <h2 class="logistico-dashboard__section-title">Acesso rápido</h2>
     <div class="logistico-dashboard__cards">
       <a class="card" routerLink="/admin/logistico/estoque">
-        <h2>Estoque</h2>
-        <p>Visualizar, cadastrar e gerenciar itens do estoque</p>
+        <span class="card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8.5 12 3 3 8.5v7L12 21l9-5.5v-7Z" />
+            <path d="M3 8.5 12 14l9-5.5" />
+            <path d="M12 14v7" />
+          </svg>
+        </span>
+        <span class="card__body">
+          <h2>Estoque</h2>
+          <p>Cadastre, acompanhe e movimente os itens do estoque.</p>
+        </span>
+        <span class="card__arrow" aria-hidden="true">&rarr;</span>
       </a>
+
       <a class="card" routerLink="/admin/logistico/pedidos">
-        <h2>Pedidos</h2>
-        <p>Listar, aprovar e acompanhar pedidos de material</p>
+        <span class="card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="4" width="14" height="17" rx="2" />
+            <path d="M9 4h6v3H9z" />
+            <path d="M9 12h6M9 16h4" />
+          </svg>
+        </span>
+        <span class="card__body">
+          <h2>Pedidos</h2>
+          <p>Acompanhe solicitações, aprovações e entregas.</p>
+        </span>
+        <span class="card__arrow" aria-hidden="true">&rarr;</span>
       </a>
+
       <a class="card" routerLink="/admin/logistico/pedidos/novo">
-        <h2>Novo Pedido</h2>
-        <p>Criar uma nova solicitação de material</p>
+        <span class="card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v8M8 12h8" />
+          </svg>
+        </span>
+        <span class="card__body">
+          <h2>Novo pedido</h2>
+          <p>Crie uma nova solicitação de material.</p>
+        </span>
+        <span class="card__arrow" aria-hidden="true">&rarr;</span>
       </a>
     </div>
   </section>

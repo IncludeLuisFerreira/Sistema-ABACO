@@ -53,6 +53,13 @@ export class PedidoListComponent implements OnInit {
     this.activeTab = tab;
   }
 
+  onTabChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === 'todos' || value === 'lista-compras') {
+      this.setTab(value);
+    }
+  }
+
   onApprove(pedido: Pedido): void {
     this.dialog.confirm({ message: `Aprovar o pedido #${pedido.idPedido}?`, confirmLabel: 'Aprovar' }).subscribe(shouldApprove => {
       if (!shouldApprove) {

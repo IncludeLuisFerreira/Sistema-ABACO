@@ -54,4 +54,15 @@ describe('EstoqueFormComponent - validacao', () => {
 
     expect(payloads[0]?.nomeItem).toBe('Caneta');
   });
+
+  it('emite cancelamento ao clicar no botao de fechar', () => {
+    const { fixture, component } = setup();
+    let cancelled = false;
+    component.cancel.subscribe(() => (cancelled = true));
+
+    const closeButton = fixture.nativeElement.querySelector('.close-btn') as HTMLButtonElement;
+    closeButton.click();
+
+    expect(cancelled).toBe(true);
+  });
 });

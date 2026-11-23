@@ -1,7 +1,18 @@
 <section class="form-card" aria-label="Formulario de item de estoque">
-  <header>
-    <h2>{{ mode === 'create' ? 'Novo item' : 'Editar item' }}</h2>
-    <p>{{ mode === 'create' ? 'Cadastre um novo item no estoque.' : 'Atualize os dados do item.' }}</p>
+  <header class="form-card__header">
+    <div class="form-card__heading">
+      <h2>{{ mode === 'create' ? 'Novo item' : 'Editar item' }}</h2>
+      <p>{{ mode === 'create' ? 'Cadastre um novo item no estoque.' : 'Atualize os dados do item.' }}</p>
+    </div>
+    <button
+      type="button"
+      class="close-btn"
+      aria-label="Fechar formulario"
+      (click)="cancel.emit()"
+      [disabled]="loading"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
   </header>
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>

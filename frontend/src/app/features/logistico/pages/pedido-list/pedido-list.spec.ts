@@ -98,4 +98,13 @@ describe('PedidoListComponent - lista de compras', () => {
 
     expect(component.filteredPedidos.map((item) => item.idPedido)).toEqual([1, 2, 3]);
   });
+
+  it('troca o filtro a partir do select', () => {
+    const { component } = setup();
+    const event = { target: { value: 'lista-compras' } } as unknown as Event;
+
+    component.onTabChange(event);
+
+    expect(component.activeTab).toBe('lista-compras');
+  });
 });

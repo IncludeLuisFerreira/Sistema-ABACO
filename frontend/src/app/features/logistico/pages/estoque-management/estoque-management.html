@@ -1,10 +1,16 @@
 <main class="estoque-management">
   <header class="estoque-management__topbar">
-    <div>
+    <div class="estoque-management__heading">
+      <span class="eyebrow">Módulo logístico</span>
       <h1>Estoque</h1>
       <p>Painel de gerenciamento de itens do estoque.</p>
     </div>
-    <button type="button" class="new-item-btn" (click)="openCreate()" [disabled]="saving || loadingList">Novo item</button>
+    <button type="button" class="new-item-btn" (click)="openCreate()" [disabled]="saving || loadingList">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      Novo item
+    </button>
   </header>
 
   <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
@@ -23,16 +29,18 @@
       (baixa)="openBaixa($event)"
       (pageChange)="onPageChange($event)"
     ></app-estoque-list>
+  </section>
 
+  <div class="modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
     <app-estoque-form
-      *ngIf="panelOpen"
+      (click)="$event.stopPropagation()"
       [mode]="formMode"
       [item]="selectedItem"
       [loading]="saving"
       (save)="onSave($event)"
       (cancel)="closePanel()"
     ></app-estoque-form>
-  </section>
+  </div>
 
   <div class="modal-overlay" *ngIf="baixaItem" (click)="closeBaixa()">
     <div class="modal-content" (click)="$event.stopPropagation()">
