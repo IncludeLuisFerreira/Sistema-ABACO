@@ -1,8 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.core.validators import normalize_nome_item
+
 
 def _strip_nome_item(value: str) -> str:
-    nome = value.strip()
+    nome = normalize_nome_item(value)
     if not nome:
         raise ValueError("Nome do item é obrigatório")
     return nome

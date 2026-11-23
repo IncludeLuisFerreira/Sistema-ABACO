@@ -32,6 +32,11 @@ def normalize_nome(value: str) -> str:
 	return cleaned
 
 
+def normalize_nome_item(value: str) -> str:
+	"""Remove espaços nas pontas e colapsa espaços internos (ex.: '  Papel   A4 ' -> 'Papel A4')."""
+	return re.sub(r"\s+", " ", value.strip())
+
+
 def normalize_email(value: str) -> str:
 	"""Remove espaços e converte para minúsculo; formato é validado pelo EmailStr."""
 	return value.strip().lower()

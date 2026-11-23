@@ -172,3 +172,44 @@ class TestEstoqueEndpoints:
         )
         response = client.delete(f"/api/v1/estoque/{estoque_id}", headers=headers)
         assert response.status_code == 409
+
+    def test_create_nome_com_espacos_internos_retorna_409(self, seeded, director_headers):
+        response = seeded["client"].post(
+            "/api/v1/estoque",
+            json={"nomeItem": "  Papel   A4  ", "quantidadeDisponivel": 1},
+            headers=director_headers,
+        )
+        assert response.status_code == 409
+
+    def test_create_duplicado_apenas_por_caixa_e_espaco_retorna_409(self, api_client, director_headers):
+        assert api_client.post(
+            "/api/v1/estoque",
+            json={"nomeItem": "Fita", "quantidadeDisponivel": 2},
+            headers=director_headers,
+        ).status_code == 200
+
+        response = api_client.post(
+            "/api/v1/estoque",
+            json={"nomeItem": "  FITA  ", "quantidadeDisponivel": 2},
+            headers=director_headers,
+        )
+        assert response.status_code == 409
+
+    def test_update_normaliza_espacos_internos(self, seeded, director_headers):
+        estoque_id = seeded["estoque"]["idItemEstoque"]
+        response = seeded["client"].put(
+            f"/api/v1/estoque/{estoque_id}",
+            json={"nomeItem": "  Caneta   Azul  "},
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["nomeItem"] == "Caneta Azul"
+
+    def test_search_normaliza_espacos_do_termo(self, seeded, director_headers):
+        response = seeded["client"].get(
+            "/api/v1/estoque/search",
+            params={"q": "papel   a4"},
+            headers=director_headers,
+        )
+        assert response.status_code == 200
+        assert any(item["nomeItem"] == "Papel A4" for item in response.json())
