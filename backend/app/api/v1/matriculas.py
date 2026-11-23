@@ -71,6 +71,10 @@ def update_matriculas(matricula_id: int, payload: MatriculaUpdateSchema, _curren
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aluno informado nao existe") from exc
     except TurmaNotFoundForMatriculaError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Turma informada nao existe") from exc
+    except TurmaLotadaError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Turma esta lotada") from exc
+    except MatriculaDuplicadaError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Aluno ja possui matricula ativa neste curso") from exc
     except MatriculaHasDependenciesError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Nao foi possivel atualizar a matricula") from exc
     return MatriculaResponseSchema.model_validate(matricula)
