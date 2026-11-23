@@ -1,7 +1,7 @@
 :host {
   display: block;
-  min-height: 100vh;
-  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
+  min-height: 100%;
+  background: var(--abaco-canvas-glow);
 }
 
 .admin-home { padding: 2rem; max-width: 1240px; margin: 0 auto; }
@@ -20,7 +20,7 @@
 .kpi-card { display: flex; align-items: center; gap: 1rem; min-width: 0; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06); padding: 1.25rem; text-decoration: none; color: inherit; transition: transform 0.15s, box-shadow 0.15s; }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1); }
 .kpi-card__icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
-.kpi-card__icon--blue { background: #e0f2fe; }
+.kpi-card__icon--blue { background: var(--abaco-gold-soft); }
 .kpi-card__icon--green { background: #dcfce7; }
 .kpi-card__icon--amber { background: #fef3c7; }
 .kpi-card__icon--red { background: #fee2e2; }

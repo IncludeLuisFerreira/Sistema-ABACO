@@ -9,6 +9,7 @@ import type {
   ApexTitleSubtitle, ApexXAxis,
 } from 'ng-apexcharts';
 
+import { ABACO_PALETTE } from '../../../../core/constants/palette';
 import { AuthService } from '../../../../core/services/auth.service';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -77,7 +78,7 @@ export class AdminHome implements OnInit, OnDestroy {
   ];
   readonly barDataLabels: ApexDataLabels = { enabled: false };
   readonly barPlotOptions: ApexPlotOptions = { bar: { borderRadius: 6, columnWidth: '55%' } };
-  readonly fill: ApexFill = { colors: ['#0f766e'] };
+  readonly fill: ApexFill = { colors: [ABACO_PALETTE.gold] };
   readonly barTitle: ApexTitleSubtitle = { text: 'Alunos por Curso' };
 
   ngOnInit(): void {

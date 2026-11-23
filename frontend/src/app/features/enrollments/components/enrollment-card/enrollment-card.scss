@@ -61,8 +61,8 @@
   cursor: pointer;
   border: none;
 }
-.enrollment-card__btn--grades { background: #f0f9ff; color: #0369a1; }
-.enrollment-card__btn--grades:hover { background: #e0f2fe; }
+.enrollment-card__btn--grades { background: var(--abaco-gold-soft); color: var(--abaco-gold-text); }
+.enrollment-card__btn--grades:hover { background: var(--abaco-gold-soft); }
 .enrollment-card__btn--edit { background: #f1f5f9; color: #475569; }
 .enrollment-card__btn--edit:hover { background: #e2e8f0; }
 .enrollment-card__btn--transcript { background: #f0fdf4; color: #15803d; }

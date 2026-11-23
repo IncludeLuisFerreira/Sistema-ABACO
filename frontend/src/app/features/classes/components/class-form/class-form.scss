@@ -44,7 +44,7 @@ select {
 }
 
 .hint {
-  color: var(--abaco-gold-strong);
+  color: var(--abaco-gold-text);
   font-size: 0.8rem;
   margin-top: 0.2rem;
 }
@@ -137,7 +137,7 @@ select {
 
 .avaliacoes__add:hover {
   border-color: var(--abaco-gold);
-  color: var(--abaco-gold-strong);
+  color: var(--abaco-gold-text);
 }
 
 .error {

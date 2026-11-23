@@ -1,7 +1,7 @@
 :host {
   display: block;
-  min-height: 100vh;
-  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
+  min-height: 100%;
+  background: var(--abaco-canvas-glow);
 }
 
 .turmas-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
@@ -57,7 +57,7 @@
 .turma-card__btn { padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; }
 .turma-card__btn--detalhes { background: #fef3c7; color: #92400e; }
 .turma-card__btn--presenca { background: #f0fdf4; color: #15803d; }
-.turma-card__btn--notas { background: #f0f9ff; color: #0369a1; }
+.turma-card__btn--notas { background: var(--abaco-gold-soft); color: var(--abaco-gold-text); }
 
 @media (max-width: 768px) {
   .turmas-page { padding: 1rem; }

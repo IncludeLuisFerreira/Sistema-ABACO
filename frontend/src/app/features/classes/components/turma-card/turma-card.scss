@@ -111,12 +111,12 @@
 }
 
 .turma-card__btn--alunos {
-  background: #f0f9ff;
-  color: #0369a1;
+  background: var(--abaco-gold-soft);
+  color: var(--abaco-gold-text);
 }
 
 .turma-card__btn--alunos:hover {
-  background: #e0f2fe;
+  background: var(--abaco-gold-soft);
 }
 
 .turma-card__btn--dup {

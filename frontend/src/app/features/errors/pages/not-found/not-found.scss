@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%), linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
+  background: var(--abaco-canvas-glow);
 }
 
 .error-card {
@@ -12,7 +12,7 @@
   max-width: 440px;
   width: 100%;
   padding: 2.5rem;
-  background: #fff;
+  background: var(--abaco-surface);
   border: 1px solid var(--abaco-line);
   border-top: 4px solid var(--abaco-gold);
   border-radius: 18px;
