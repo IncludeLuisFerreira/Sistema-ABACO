@@ -5,7 +5,9 @@ from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.curso_schema import CursoCreateSchema, CursoResponseSchema, CursoUpdateSchema
 from app.services.curso_service import (
+    CursoAlreadyExistsError,
     CursoHasDependenciesError,
+    CursoIntegrityError,
     CursoNotFoundError,
     create_curso,
     delete_curso,
@@ -33,7 +35,12 @@ def read_curso(curso_id: int, _current_user: dict = Depends(verify_cargo(1, 3)),
 
 @router.post("")
 def create_cursos(payload: CursoCreateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
-    curso = create_curso(db, payload)
+    try:
+        curso = create_curso(db, payload)
+    except CursoAlreadyExistsError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe um curso com esses dados") from exc
+    except CursoIntegrityError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Não foi possível salvar o curso: dados inconsistentes") from exc
     return CursoResponseSchema.model_validate(curso)
 
 

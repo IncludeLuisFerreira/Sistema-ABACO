@@ -1,6 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.db.errors import is_unique_violation
 from app.models.aluno import Aluno
 from app.schemas.aluno_schema import AlunoCreateSchema, AlunoUpdateSchema
 
@@ -10,6 +11,14 @@ class AlunoNotFoundError(Exception):
 
 
 class AlunoHasDependenciesError(Exception):
+    pass
+
+
+class AlunoAlreadyExistsError(Exception):
+    pass
+
+
+class AlunoIntegrityError(Exception):
     pass
 
 
@@ -23,8 +32,15 @@ def create_aluno(db: Session, payload: AlunoCreateSchema) -> Aluno:
         numero=payload.numero,
     )
     db.add(aluno)
-    # FIXME: create_aluno sem try/except IntegrityError nem rollback (difere de update/delete)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        if is_unique_violation(exc):
+            raise AlunoAlreadyExistsError from exc
+        raise AlunoIntegrityError from exc
+
     db.refresh(aluno)
     return aluno
 
