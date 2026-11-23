@@ -55,9 +55,13 @@ select {
 
 input:focus,
 select:focus {
-  outline: none;
   border-color: var(--abaco-gold);
-  box-shadow: 0 0 0 3px rgba(242, 169, 59, 0.25);
+  box-shadow: 0 0 0 3px var(--abaco-focus-ring);
+}
+
+select:focus-visible {
+  outline: 2px solid var(--abaco-focus);
+  outline-offset: 2px;
 }
 
 .error {
@@ -88,7 +92,7 @@ legend {
   font-size: 0.82rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--abaco-gold-strong);
+  color: var(--abaco-gold-text);
 }
 
 .item-row {
@@ -173,14 +177,14 @@ legend {
 }
 
 .btn--primary {
-  background: linear-gradient(180deg, #f7b758 0%, var(--abaco-gold) 100%);
+  background: linear-gradient(180deg, var(--abaco-gold-light) 0%, var(--abaco-gold) 100%);
   color: var(--abaco-ink);
-  box-shadow: 0 10px 20px rgba(242, 169, 59, 0.26);
+  box-shadow: var(--abaco-shadow-gold);
 }
 
 .btn--primary:hover:not([disabled]) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 26px rgba(242, 169, 59, 0.32);
+  box-shadow: var(--abaco-shadow-gold-hover);
 }
 
 .btn--ghost {

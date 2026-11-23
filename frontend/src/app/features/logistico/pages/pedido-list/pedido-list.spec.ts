@@ -46,7 +46,7 @@ function setup(approveError?: { status: number; error: { detail: string } }) {
 
   const fixture = TestBed.createComponent(PedidoListComponent);
   fixture.componentInstance.ngOnInit();
-  return { component: fixture.componentInstance, messages };
+  return { component: fixture.componentInstance, fixture, messages };
 }
 
 describe('PedidoListComponent - aprovação', () => {
@@ -104,6 +104,20 @@ describe('PedidoListComponent - lista de compras', () => {
     const event = { target: { value: 'lista-compras' } } as unknown as Event;
 
     component.onTabChange(event);
+
+    expect(component.activeTab).toBe('lista-compras');
+  });
+
+  it('reflete o valor inicial e responde à mudança do select no DOM', () => {
+    const { component, fixture } = setup();
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    expect(select.value).toBe('todos');
+
+    select.value = 'lista-compras';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
 
     expect(component.activeTab).toBe('lista-compras');
   });

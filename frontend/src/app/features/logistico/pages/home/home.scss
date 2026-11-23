@@ -12,15 +12,6 @@
   margin-bottom: 2.5rem;
 }
 
-.eyebrow {
-  display: inline-block;
-  margin-bottom: 0.55rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--abaco-gold-strong);
-}
 
 .logistico-dashboard__header h1 {
   margin: 0;
@@ -103,7 +94,7 @@
 }
 
 .card:focus-visible {
-  outline: 2px solid var(--abaco-gold);
+  outline: 2px solid var(--abaco-focus);
   outline-offset: 2px;
 }
 
@@ -117,7 +108,7 @@
   border-radius: 14px;
   background: var(--abaco-gold-soft);
   border: 1px solid var(--abaco-gold-line);
-  color: var(--abaco-gold-strong);
+  color: var(--abaco-gold-text);
 }
 
 .card__icon svg {
@@ -153,7 +144,7 @@
 
 .card:hover .card__arrow {
   transform: translateX(3px);
-  color: var(--abaco-gold-strong);
+  color: var(--abaco-gold-text);
 }
 
 @media (max-width: 768px) {

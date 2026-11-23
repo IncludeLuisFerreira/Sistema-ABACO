@@ -31,7 +31,17 @@
     ></app-estoque-list>
   </section>
 
-  <div class="modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
+  <div
+    #dialogOverlay
+    class="modal-overlay"
+    *ngIf="panelOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="estoque-form-title"
+    tabindex="-1"
+    (click)="onBackdropClick()"
+    (keydown)="onDialogKeydown($event)"
+  >
     <app-estoque-form
       (click)="$event.stopPropagation()"
       [mode]="formMode"
@@ -42,9 +52,9 @@
     ></app-estoque-form>
   </div>
 
-  <div class="modal-overlay" *ngIf="baixaItem" (click)="closeBaixa()">
+  <div class="modal-overlay" *ngIf="baixaItem" role="dialog" aria-modal="true" aria-labelledby="baixa-title" (click)="closeBaixa()">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <h2>Dar Baixa no Estoque</h2>
+      <h2 id="baixa-title">Dar Baixa no Estoque</h2>
       <p class="modal-item-name">{{ baixaItem.nomeItem }}</p>
 
       <form [formGroup]="baixaForm" (ngSubmit)="submitBaixa()" novalidate>
