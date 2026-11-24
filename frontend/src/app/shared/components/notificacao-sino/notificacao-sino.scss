@@ -197,3 +197,32 @@
   font-size: 0.72rem;
   color: #64748b;
 }
+
+/* Mobile: o sino da topbar não é o último elemento (hamburger à direita), então ancorar o
+   painel ao sino empurra parte dele para fora da viewport. Ancorar à viewport. */
+@media (max-width: 768px) {
+  .notificacao-sino__painel {
+    position: fixed;
+    top: calc(1.2rem + 52px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: min(70vh, calc(100vh - 84px));
+  }
+
+  /* No drawer a `transform` da sidebar cria containing block para `fixed` e o overflow
+     recortaria o painel. Ancorar ao próprio sino, ocupando a largura do drawer. */
+  .notificacao-sino--sidebar {
+    display: flex;
+    width: 100%;
+  }
+
+  .notificacao-sino--sidebar .notificacao-sino__painel {
+    position: absolute;
+    top: auto;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    width: auto;
+  }
+}

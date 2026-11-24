@@ -210,6 +210,20 @@
   color: var(--abaco-ink);
 }
 
+.admin-nav__badge {
+  margin-left: auto;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
 .admin-nav__user {
   padding: 1rem 1.25rem;
   border-top: 1px solid #1e293b;
@@ -220,49 +234,6 @@
 
 .admin-nav__user app-notificacao-sino {
   display: block;
-}
-
-.admin-nav__notification {
-  background: transparent;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  color: #94a3b8;
-  padding: 0.5rem 1rem;
-  min-height: 44px;
-  width: 100%;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.15s, color 0.15s;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-decoration: none;
-}
-
-.admin-nav__notification:hover {
-  background: #1e293b;
-  color: #e2e8f0;
-}
-
-.bell-icon {
-  font-size: 1.2rem;
-}
-
-.notification-badge {
-  background: #dc2626;
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  min-width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.25rem;
-  line-height: 1;
 }
 
 .admin-nav__logout {

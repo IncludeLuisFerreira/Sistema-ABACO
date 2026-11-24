@@ -70,8 +70,21 @@
         </a>
       </li>
       <li>
-        <a routerLink="/admin/logistico/estoque" routerLinkActive="active" (click)="menuOpen = false">
+        <a
+          routerLink="/admin/logistico/estoque"
+          routerLinkActive="active"
+          [attr.aria-label]="alertaEstoqueTexto ? 'Estoque: ' + alertaEstoqueTexto : null"
+          [attr.title]="alertaEstoqueTexto"
+          (click)="menuOpen = false"
+        >
           Estoque
+          <span
+            class="admin-nav__badge"
+            aria-hidden="true"
+            *ngIf="estoqueService.alertasCount() > 0"
+          >
+            {{ estoqueService.alertasCount() }}
+          </span>
         </a>
       </li>
       <li>
@@ -91,17 +104,6 @@
     </ul>
 
     <div class="admin-nav__user">
-      <button
-        type="button"
-        class="admin-nav__notification"
-        routerLink="/admin/logistico/estoque"
-        title="Alertas de estoque"
-      >
-        <span class="bell-icon">&#128276;</span>
-        <span class="notification-badge" *ngIf="estoqueService.alertasCount() > 0">
-          {{ estoqueService.alertasCount() }}
-        </span>
-      </button>
       <app-notificacao-sino variant="sidebar" />
       <button type="button" class="admin-nav__logout" (click)="logout()">
         Sair
