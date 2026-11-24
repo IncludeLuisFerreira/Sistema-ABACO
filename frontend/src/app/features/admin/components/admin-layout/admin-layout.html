@@ -1,8 +1,16 @@
 ﻿<div class="admin-shell">
   <!-- Top bar (mobile) -->
   <div class="mobile-topbar">
-    <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
-    <span class="mobile-topbar__title">SGA ABACO</span>
+    <a
+      class="mobile-topbar__brand"
+      routerLink="/admin/home"
+      (click)="menuOpen = false"
+      aria-label="Ir para a página inicial"
+    >
+      <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
+      <span class="mobile-topbar__title">SGA ABACO</span>
+    </a>
+    <app-notificacao-sino />
     <button class="hamburger" (click)="menuOpen = !menuOpen" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'">
       <span></span><span></span><span></span>
     </button>
@@ -14,10 +22,10 @@
   <!-- Sidebar -->
   <nav class="admin-nav" [class.admin-nav--open]="menuOpen">
     <button class="admin-nav__close" (click)="menuOpen = false" aria-label="Fechar menu">&times;</button>
-    <div class="admin-nav__brand">
+    <a class="admin-nav__brand" routerLink="/admin/home" (click)="menuOpen = false">
       <img src="/Logo_ABACO.png" alt="ABACO" class="admin-nav__logo" />
       <span class="admin-nav__title">SGA ABACO</span>
-    </div>
+    </a>
 
     <ul class="admin-nav__links">
       <li>
@@ -64,13 +72,25 @@
     <div class="admin-nav__section-label">Logistico</div>
     <ul class="admin-nav__links">
       <li>
-        <a routerLink="/admin/logistico" routerLinkActive="active" (click)="menuOpen = false">
+        <a routerLink="/admin/logistico" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="menuOpen = false">
           Visão Geral
         </a>
       </li>
       <li>
-        <a routerLink="/admin/logistico/estoque" routerLinkActive="active" (click)="menuOpen = false">
+        <a
+          routerLink="/admin/logistico/estoque"
+          routerLinkActive="active"
+          [attr.aria-label]="alertaEstoqueTexto ? 'Estoque: ' + alertaEstoqueTexto : null"
+          (click)="menuOpen = false"
+        >
           Estoque
+          <span
+            class="admin-nav__badge"
+            aria-hidden="true"
+            *ngIf="estoqueService.alertasCount() > 0"
+          >
+            {{ estoqueService.alertasCount() }}
+          </span>
         </a>
       </li>
       <li>
@@ -80,8 +100,8 @@
       </li>
     </ul>
 
-    <div class="admin-nav__section-label" *ngIf="auth.authState().role === 'DIRECTOR'">Administracao</div>
-    <ul class="admin-nav__links" *ngIf="auth.authState().role === 'DIRECTOR'">
+    <div class="admin-nav__section-label" *ngIf="auth.authState().role === 'DIRECTOR' || auth.authState().role === 'ADMIN'">Administracao</div>
+    <ul class="admin-nav__links" *ngIf="auth.authState().role === 'DIRECTOR' || auth.authState().role === 'ADMIN'">
       <li>
         <a routerLink="/admin/usuarios" routerLinkActive="active" (click)="menuOpen = false">
           Usuarios
@@ -90,17 +110,7 @@
     </ul>
 
     <div class="admin-nav__user">
-      <button
-        type="button"
-        class="admin-nav__notification"
-        routerLink="/admin/logistico/estoque"
-        title="Alertas de estoque"
-      >
-        <span class="bell-icon">&#128276;</span>
-        <span class="notification-badge" *ngIf="estoqueService.alertasCount() > 0">
-          {{ estoqueService.alertasCount() }}
-        </span>
-      </button>
+      <app-notificacao-sino variant="sidebar" />
       <button type="button" class="admin-nav__logout" (click)="logout()">
         Sair
       </button>

@@ -40,7 +40,7 @@ export class PedidoFormPageComponent {
       itens: payload.itens.map((item) => ({
         nomeItem: item.nomeItem,
         quantidade: item.quantidade,
-        idItemEstoque: item.idItemEstoque ?? null,
+        idItemEstoque: item.idItemEstoque,
         precoUnitario: null,
       })),
     };

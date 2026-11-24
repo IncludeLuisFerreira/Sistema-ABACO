@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 
 import { Estoque, EstoqueCreatePayload, EstoqueUpdatePayload } from '../../../../core/models/estoque.model';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { EstoqueService } from '../../../../core/services/estoque.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -24,6 +25,9 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(DialogService);
   private readonly notifications = inject(NotificationService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
+  @ViewChild('dialogOverlay') private dialogOverlay?: ElementRef<HTMLElement>;
+  private lastFocusedElement: HTMLElement | null = null;
 
   readonly baixaForm = this.fb.nonNullable.group({
     quantidade: [0, [Validators.required, Validators.min(1)]],
@@ -87,22 +91,76 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
   }
 
   openCreate(): void {
+    this.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.formMode = 'create';
     this.selectedItem = null;
     this.localFeedback = null;
     this.panelOpen = true;
+    this.focusDialog();
   }
 
   openEdit(item: Estoque): void {
+    this.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.formMode = 'edit';
     this.selectedItem = item;
     this.localFeedback = null;
     this.panelOpen = true;
+    this.focusDialog();
   }
 
   closePanel(): void {
+    const previousFocus = this.lastFocusedElement;
     this.panelOpen = false;
     this.selectedItem = null;
+    this.lastFocusedElement = null;
+    setTimeout(() => previousFocus?.focus());
+  }
+
+  onBackdropClick(): void {
+    if (!this.saving) {
+      this.closePanel();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.panelOpen && !this.saving) {
+      this.closePanel();
+    }
+  }
+
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Tab' || !this.dialogOverlay) {
+      return;
+    }
+
+    const host = this.dialogOverlay.nativeElement;
+    const focusables = Array.from(
+      host.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+
+    if (focusables.length === 0) {
+      event.preventDefault();
+      host.focus();
+      return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && (active === first || active === host)) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+
+    if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   openBaixa(item: Estoque): void {
@@ -135,7 +193,7 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao dar baixa no estoque.';
+        const message = getApiErrorMessage(err, 'Erro ao dar baixa no estoque.');
         this.notifications.error(message);
         this.baixaSaving = false;
         this.changeDetectorRef.detectChanges();
@@ -166,7 +224,7 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar item.';
+          const message = getApiErrorMessage(err, 'Erro ao criar item.');
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -198,7 +256,7 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar item.';
+        const message = getApiErrorMessage(err, 'Erro ao atualizar item.');
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
@@ -237,18 +295,53 @@ export class EstoqueManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  private focusDialog(): void {
+    setTimeout(() => {
+      const host = this.dialogOverlay?.nativeElement;
+      if (!host) {
+        return;
+      }
+
+      const field = host.querySelector<HTMLElement>(
+        'input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+      );
+      const target = field ?? host.querySelector<HTMLElement>('button:not([disabled])') ?? host;
+      target.focus();
+    });
+  }
+
   private loadEstoque(): void {
     this.loadingList = true;
-    this.estoqueService.loadAll();
+    this.subscriptions.push(
+      this.estoqueService.loadAll().subscribe({
+        next: () => {
+          this.loadingList = false;
+          this.changeDetectorRef.detectChanges();
+        },
+        error: () => {
+          this.loadingList = false;
+          this.notifications.error('Erro ao carregar estoque. Tente novamente.');
+          this.changeDetectorRef.detectChanges();
+        },
+      }),
+    );
   }
 
   private loadAlertas(): void {
-    this.estoqueService.getAlertas().subscribe({
-      next: (alertas) => {
-        this.alertaEstoqueIds = new Set(alertas.map((a) => a.idItemEstoque));
-        this.changeDetectorRef.detectChanges();
-      },
-    });
+    this.subscriptions.push(
+      this.estoqueService.getAlertas().subscribe({
+        next: (alertas) => {
+          this.alertaEstoqueIds = new Set(alertas.map((a) => a.idItemEstoque));
+          this.changeDetectorRef.detectChanges();
+        },
+        error: () => {
+          this.alertaEstoqueIds = new Set();
+          this.estoqueService.resetAlertasCount();
+          this.notifications.error('Erro ao carregar alertas do estoque.');
+          this.changeDetectorRef.detectChanges();
+        },
+      }),
+    );
   }
 
   private applyFiltersAndPagination(): void {

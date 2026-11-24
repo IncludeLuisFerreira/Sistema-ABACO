@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { AuthService, decodePayload, getStoredToken } from '../../../../core/services/auth.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 // REFACTOR: getPedidoStatusLabel/getPedidoStatusClass importados sem uso
@@ -34,17 +34,12 @@ export class PedidoListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // REFACTOR: decodifica JWT manualmente; usar AuthService.getRoleFromToken()
-    const token = getStoredToken();
-    if (token) {
-      const payload = decodePayload(token);
-      this.currentUserCargo = payload.cargo ?? null;
-    }
+    this.currentUserCargo = this.authService.getCargo();
     this.loadPedidos();
   }
 
   get approvedPedidos(): Pedido[] {
-    return this.pedidos.filter((p) => p.status !== null && p.status! >= 1);
+    return this.pedidos.filter((p) => p.status === 1);
   }
 
   get filteredPedidos(): Pedido[] {
@@ -56,6 +51,13 @@ export class PedidoListComponent implements OnInit {
 
   setTab(tab: 'todos' | 'lista-compras'): void {
     this.activeTab = tab;
+  }
+
+  onTabChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === 'todos' || value === 'lista-compras') {
+      this.setTab(value);
+    }
   }
 
   onApprove(pedido: Pedido): void {
@@ -98,7 +100,7 @@ export class PedidoListComponent implements OnInit {
   }
 
   onDeliver(pedido: Pedido): void {
-    this.dialog.confirm({ message: `Entregar pedido #${pedido.idPedido}? Os itens serão adicionados ao estoque.`, confirmLabel: 'Entregar' }).subscribe(shouldDeliver => {
+    this.dialog.confirm({ message: `Entregar pedido #${pedido.idPedido}?`, confirmLabel: 'Entregar' }).subscribe(shouldDeliver => {
       if (!shouldDeliver) {
         return;
       }

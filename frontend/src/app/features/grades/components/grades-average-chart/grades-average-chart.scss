@@ -1,9 +1,12 @@
 :host {
   display: block;
+  min-width: 0;
   margin-top: 1.5rem;
 }
 
 .chart-card {
+  min-width: 0;
+  overflow: hidden;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
@@ -27,7 +30,15 @@
 }
 
 .chart-card__body {
+  width: 100%;
+  min-width: 0;
   min-height: 300px;
+}
+
+.chart-card__body apx-chart {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
 
 .chart-card__empty,
@@ -44,7 +55,7 @@
   width: 24px;
   height: 24px;
   border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border-top-color: var(--abaco-gold);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   margin-bottom: 0.75rem;
@@ -53,5 +64,25 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-card {
+    padding: 1rem;
+  }
+
+  .chart-card__header h2 {
+    font-size: 1.05rem;
+  }
+
+  .chart-card__body {
+    min-height: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-card {
+    padding: 0.85rem;
   }
 }

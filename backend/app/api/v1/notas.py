@@ -1,8 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.authorization import (
+    enforce_turma_access,
+    require_matricula_access,
+    require_turma_access,
+)
 from app.core.dependencies import verify_cargo
 from app.db.database import get_db
+from app.models.matricula import Matricula
+from app.models.turma import Turma
 from app.schemas.nota_schema import MediaTurmaSchema, NotaBatchSchema, NotaResponseSchema
 from app.services.nota_service import (
     InvalidMatriculasError,
@@ -18,9 +25,10 @@ router = APIRouter(prefix="/api/v1/notas", tags=["notas"])
 @router.post("")
 def create_notas(
     payload: NotaBatchSchema,
-    _current_user: dict = Depends(verify_cargo(1, 2, 3)),
+    current_user: dict = Depends(verify_cargo(1, 2, 3)),
     db: Session = Depends(get_db),
 ):
+    enforce_turma_access(db, payload.idTurma, current_user)
     # REFACTOR: validação "prova >= 1" pertence ao schema/service, não ao router
     if payload.prova < 1:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="O numero da prova deve ser maior ou igual a 1.")
@@ -35,7 +43,7 @@ def create_notas(
 @router.get("/matricula/{matricula_id}")
 def read_notas_by_matricula(
     matricula_id: int,
-    _current_user: dict = Depends(verify_cargo(1, 2, 3)),
+    _matricula: Matricula = Depends(require_matricula_access),
     db: Session = Depends(get_db),
 ):
     notas = list_notas_by_matricula(db, matricula_id)
@@ -46,7 +54,7 @@ def read_notas_by_matricula(
 def read_notas_by_turma(
     turma_id: int,
     prova: int | None = Query(None),
-    _current_user: dict = Depends(verify_cargo(1, 2, 3)),
+    _turma: Turma = Depends(require_turma_access),
     db: Session = Depends(get_db),
 ):
     notas = list_notas_by_turma(db, turma_id, prova)
@@ -56,7 +64,7 @@ def read_notas_by_turma(
 @router.get("/media/turma/{turma_id}")
 def read_media_turma(
     turma_id: int,
-    _current_user: dict = Depends(verify_cargo(1, 2, 3)),
+    _turma: Turma = Depends(require_turma_access),
     db: Session = Depends(get_db),
 ):
     medias = calcular_media_por_prova(db, turma_id)

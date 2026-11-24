@@ -2,34 +2,56 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { adminGuard } from './role.guard';
-import { AuthService } from '../services/auth.service';
 
-describe('adminGuard', () => {
-  it('redirects when no token', () => {
-    const authService = { isAuthenticated: () => false, getToken: () => null };
+const SESSION_KEY = 'abaco_session';
 
+function storeSession(cargo: number | null): void {
+  const role = cargo === 1 ? 'DIRECTOR' : cargo === 2 ? 'TEACHER' : cargo === 3 ? 'ADMIN' : 'GUEST';
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      userId: 1,
+      cargo,
+      role,
+      primeiroAcesso: false,
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+    }),
+  );
+}
+
+describe('adminGuard (cargos 1 e 3)', () => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
+      providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
-
-    const result = TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
-    expect(result).toBe('/login');
+    localStorage.clear();
   });
 
-  it('redirects with malformed token', () => {
-    const authService = { isAuthenticated: () => true, getToken: () => 'malformed' };
+  afterEach(() => localStorage.clear());
 
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
-    });
+  const run = () => TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
 
-    const result = TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
-    expect(result).toBe('/login');
+  it('permite DIRECTOR (cargo 1)', () => {
+    storeSession(1);
+    expect(run()).toBe(true);
+  });
+
+  it('permite ADMIN (cargo 3)', () => {
+    storeSession(3);
+    expect(run()).toBe(true);
+  });
+
+  it('nega TEACHER (cargo 2)', () => {
+    storeSession(2);
+    expect(run()).toBe('/acesso-negado');
+  });
+
+  it('nega GUEST (cargo null)', () => {
+    storeSession(null);
+    expect(run()).toBe('/acesso-negado');
+  });
+
+  it('redireciona para /login sem sessão', () => {
+    expect(run()).toBe('/login');
   });
 });

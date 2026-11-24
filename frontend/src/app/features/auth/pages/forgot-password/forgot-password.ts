@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { finalize } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -13,7 +13,7 @@ import { AuthService } from '../../../../core/services/auth.service';
   styleUrls: ['./forgot-password.scss'],
 })
 export class ForgotPassword {
-  form: any;
+  form: FormGroup<{ email: FormControl<string> }>;
 
   loading = false;
   error: string | null = null;
@@ -21,12 +21,12 @@ export class ForgotPassword {
   shake = false;
 
   constructor(private fb: FormBuilder, private auth: AuthService) {
-    this.form = this.fb.group({
+    this.form = this.fb.nonNullable.group({
       email: ['', [Validators.required, Validators.email]],
     });
   }
 
-  onSubmit() {
+  onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -38,7 +38,7 @@ export class ForgotPassword {
     this.loading = true;
     this.form.disable();
 
-    const { email } = this.form.value;
+    const email = this.form.controls.email.value;
 
     this.auth.forgotPassword(email).pipe(
       finalize(() => {

@@ -1,8 +1,12 @@
 import pytest
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.estoque import Estoque
+from app.schemas.estoque_schema import EstoqueCreateSchema, EstoqueUpdateSchema
+from app.services import estoque_service
 from app.services.estoque_service import (
+    EstoqueAlreadyExistsError,
     EstoqueNotFoundError,
     EstoqueSaldoInsuficienteError,
     dar_baixa,
@@ -56,3 +60,61 @@ class TestGetAlertas:
 
         alertas = get_alertas(db_session)
         assert len(alertas) == 0
+
+
+class TestIntegridadeEstoque:
+    def test_create_integridade_nao_unica_propaga(self, db_session: Session, monkeypatch):
+        def commit_que_falha():
+            raise IntegrityError(
+                "INSERT INTO estoque",
+                {},
+                Exception("NOT NULL constraint failed: estoque.nomeitem"),
+            )
+
+        monkeypatch.setattr(db_session, "commit", commit_que_falha)
+
+        with pytest.raises(IntegrityError):
+            estoque_service.create_estoque(
+                db_session,
+                EstoqueCreateSchema(nomeItem="Caneta", quantidadeDisponivel=1),
+            )
+
+    def test_create_integridade_unica_por_pgcode_vira_dominio(self, db_session: Session, monkeypatch):
+        class OrigPostgres:
+            pgcode = "23505"
+
+        def commit_que_falha():
+            raise IntegrityError("INSERT INTO estoque", {}, OrigPostgres())
+
+        monkeypatch.setattr(db_session, "commit", commit_que_falha)
+
+        with pytest.raises(EstoqueAlreadyExistsError):
+            estoque_service.create_estoque(
+                db_session,
+                EstoqueCreateSchema(nomeItem="Caneta", quantidadeDisponivel=1),
+            )
+
+    def test_update_duplicado_mensagem_usa_nome_tentado(self, db_session: Session):
+        db_session.add(Estoque(nome_item="Cola", quantidade_disponivel=1))
+        db_session.add(Estoque(nome_item="Papel A4", quantidade_disponivel=1))
+        db_session.commit()
+        cola = db_session.query(Estoque).filter(Estoque.nome_item == "Cola").one()
+
+        with pytest.raises(EstoqueAlreadyExistsError) as excinfo:
+            estoque_service.update_estoque(
+                db_session,
+                cola.id_item_estoque,
+                EstoqueUpdateSchema(nomeItem="  Papel   A4  "),
+            )
+
+        mensagem = str(excinfo.value)
+        assert "Papel A4" in mensagem
+        assert "'Cola'" not in mensagem
+
+    def test_search_normaliza_espacos_do_termo(self, db_session: Session):
+        db_session.add(Estoque(nome_item="Papel A4", quantidade_disponivel=1))
+        db_session.commit()
+
+        resultados = estoque_service.search_estoque_by_name(db_session, " papel   a4 ")
+
+        assert [item.nome_item for item in resultados] == ["Papel A4"]

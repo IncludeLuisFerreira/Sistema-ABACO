@@ -29,10 +29,10 @@ export class EstoqueFormComponent implements OnChanges {
   @Output() readonly cancel = new EventEmitter<void>();
 
   readonly form = this.fb.nonNullable.group({
-    nomeItem: ['', [Validators.required]],
-    quantidadeDisponivel: [<number | null>null],
+    nomeItem: ['', [Validators.required, Validators.pattern(/\S/)]],
+    quantidadeDisponivel: [<number | null>null, [Validators.min(0)]],
     unidade: [''],
-    estoqueMinimo: [<number | null>null],
+    estoqueMinimo: [<number | null>null, [Validators.min(0)]],
   });
 
   ngOnChanges(changes: SimpleChanges): void {

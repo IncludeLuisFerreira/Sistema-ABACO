@@ -1,13 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { Pedido, ItemPedido, getPedidoStatusLabel, getPedidoStatusClass } from '../../../../core/models/pedido.model';
 
 @Component({
   selector: 'app-pedido-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './pedido-table.html',
   styleUrls: ['./pedido-table.scss'],
 })
@@ -64,8 +63,24 @@ export class PedidoTableComponent {
     return status === 2;
   }
 
+  canDelete(status: number | null): boolean {
+    return status === 0 || status === 1;
+  }
+
   isDirector(): boolean {
     return this.currentUserCargo === 1;
+  }
+
+  canManagePedidos(): boolean {
+    return this.currentUserCargo === 1 || this.currentUserCargo === 3;
+  }
+
+  hasActions(status: number | null): boolean {
+    return (
+      (this.canApprove(status) && this.isDirector()) ||
+      ((this.canPurchase(status) || this.canDeliver(status) || this.canDelete(status)) &&
+        this.canManagePedidos())
+    );
   }
 
   trackById(_index: number, item: ItemPedido): number {

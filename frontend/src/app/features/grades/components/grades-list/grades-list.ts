@@ -48,9 +48,8 @@ export class GradesListComponent {
     }));
   }
 
-  onProvaChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.provaChange.emit(Number(target.value));
+  onProvaChange(value: number | string): void {
+    this.provaChange.emit(Number(value));
   }
 
   onNotaInput(idMatricula: number, event: Event): void {

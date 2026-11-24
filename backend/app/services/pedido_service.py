@@ -1,11 +1,21 @@
+import logging
 from datetime import date
 
+from fastapi import BackgroundTasks
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.email import EmailDeliveryError, send_pedido_aprovado_email
+from app.email.messages import ItemEstoqueBaixo
+from app.models.estoque import Estoque
 from app.models.item_pedido import ItemPedido
 from app.models.pedido import Pedido
+from app.models.usuario import Usuario
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoUpdateSchema
+from app.services import notificacao_eventos_service as notificacoes_eventos
+
+
+logger = logging.getLogger(__name__)
 
 
 class PedidoNotFoundError(Exception):
@@ -21,6 +31,10 @@ class TurmaNotFoundForPedidoError(Exception):
 
 
 class EstoqueNotFoundForPedidoError(Exception):
+    pass
+
+
+class PedidoItemInvalidoError(Exception):
     pass
 
 
@@ -44,8 +58,22 @@ def _resolve_turma(db: Session, turma_id: int) -> None:
         raise TurmaNotFoundForPedidoError
 
 
+def _resolve_estoque(db: Session, estoque_id: int) -> Estoque:
+    estoque_item = (
+        db.query(Estoque).filter(Estoque.id_item_estoque == estoque_id).first()
+    )
+    if not estoque_item:
+        raise EstoqueNotFoundForPedidoError(
+            f"Item de estoque {estoque_id} não encontrado"
+        )
+    return estoque_item
+
+
 def create_pedido(db: Session, payload: PedidoCreateSchema, usuario_id: int) -> Pedido:
     _resolve_turma(db, payload.idTurma)
+    # Valida todos os itens antes de gravar qualquer coisa: id inexistente vira 400.
+    for item in payload.itens:
+        _resolve_estoque(db, item.idItemEstoque)
 
     pedido = Pedido(
         id_usuario=usuario_id,
@@ -53,49 +81,131 @@ def create_pedido(db: Session, payload: PedidoCreateSchema, usuario_id: int) -> 
         data_pedido=payload.dataPedido or date.today(),
         status=0,
     )
-    db.add(pedido)
-    db.flush()
 
-    for item in payload.itens:
-        item_pedido = ItemPedido(
-            id_pedido=pedido.id_pedido,
-            nome_item=item.nomeItem,
-            id_item_estoque=item.idItemEstoque,
-            quantidade=item.quantidade,
-            preco_unitario=item.precoUnitario,
-        )
-        db.add(item_pedido)
+    try:
+        db.add(pedido)
+        db.flush()
 
-    db.commit()
+        for item in payload.itens:
+            item_pedido = ItemPedido(
+                id_pedido=pedido.id_pedido,
+                nome_item=item.nomeItem,
+                id_item_estoque=item.idItemEstoque,
+                quantidade=item.quantidade,
+                preco_unitario=item.precoUnitario,
+            )
+            db.add(item_pedido)
+
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise PedidoHasDependenciesError from exc
+
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_criado(db, pedido, usuario_id)
     return pedido
 
 
-def list_pedidos(db: Session) -> list[Pedido]:
-    return db.query(Pedido).order_by(Pedido.id_pedido.desc()).all()
+def list_pedidos(db: Session, solicitante_id: int | None = None) -> list[Pedido]:
+    query = db.query(Pedido)
+    if solicitante_id is not None:
+        query = query.filter(Pedido.id_usuario == solicitante_id)
+    return query.order_by(Pedido.id_pedido.desc()).all()
 
 
-def get_pedido_by_id(db: Session, pedido_id: int) -> Pedido:
-    pedido = db.query(Pedido).filter(Pedido.id_pedido == pedido_id).first()
+def get_pedido_by_id(db: Session, pedido_id: int, solicitante_id: int | None = None) -> Pedido:
+    query = db.query(Pedido).filter(Pedido.id_pedido == pedido_id)
+    if solicitante_id is not None:
+        # Pedido de terceiro é tratado como inexistente para não revelar a existência.
+        query = query.filter(Pedido.id_usuario == solicitante_id)
+    pedido = query.first()
     if not pedido:
         raise PedidoNotFoundError
     return pedido
 
 
-def aprovar_pedido(db: Session, pedido_id: int) -> Pedido:
-    from app.services.estoque_service import EstoqueSaldoInsuficienteError, deduzir_por_pedido
+def _enviar_email_aprovacao(
+    email: str,
+    pedido_id: int,
+    data_aprovacao: date,
+    itens: list[tuple[str, int]],
+) -> None:
+    try:
+        send_pedido_aprovado_email(email, pedido_id, data_aprovacao, itens)
+    except EmailDeliveryError:
+        logger.error(
+            "Falha ao enviar e-mail de aprovação do pedido #%s para %s",
+            pedido_id,
+            email,
+        )
+    except Exception:
+        logger.exception(
+            "Erro inesperado ao enviar e-mail de aprovação do pedido #%s para %s",
+            pedido_id,
+            email,
+        )
 
-    pedido = get_pedido_by_id(db, pedido_id)
+
+def _notificar_solicitante_aprovacao(
+    db: Session,
+    pedido: Pedido,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
+    """Agenda o e-mail de aprovação após o commit, sem reverter a aprovação em caso de falha."""
+    usuario = pedido.usuario
+    if usuario is None:
+        usuario = db.query(Usuario).filter(Usuario.id_usuario == pedido.id_usuario).first()
+
+    email = (usuario.email or "").strip() if usuario else ""
+    if not email:
+        logger.warning(
+            "Pedido #%s aprovado sem envio de e-mail: solicitante não possui e-mail cadastrado",
+            pedido.id_pedido,
+        )
+        return
+
+    itens = [
+        (item.nome_item or f"Item #{item.id_item_estoque}", item.quantidade)
+        for item in pedido.itens
+        if item.quantidade is not None
+    ]
+
+    # Os dados são copiados antes do agendamento: a tarefa roda depois do response,
+    # quando a sessão do banco já pode ter sido fechada.
+    if background_tasks is not None:
+        background_tasks.add_task(
+            _enviar_email_aprovacao,
+            email,
+            pedido.id_pedido,
+            date.today(),
+            itens,
+        )
+        return
+
+    _enviar_email_aprovacao(email, pedido.id_pedido, date.today(), itens)
+
+
+def _aprovar_pedido(
+    db: Session,
+    pedido: Pedido,
+    background_tasks: BackgroundTasks | None = None,
+) -> Pedido:
+    from app.services.estoque_service import EstoqueSaldoInsuficienteError, deduzir_por_pedido
 
     if pedido.status != 0:
         raise PedidoInvalidTransitionError("Apenas pedidos com status 'Solicitado' podem ser aprovados")
 
     pedido.status = 1
+    itens_baixos: list[ItemEstoqueBaixo] = []
 
     try:
-        deduzir_por_pedido(db, pedido)
+        itens_baixos = deduzir_por_pedido(db, pedido)
         db.commit()
-    except EstoqueSaldoInsuficienteError as exc:
+    except (
+        EstoqueSaldoInsuficienteError,
+        EstoqueNotFoundForPedidoError,
+        PedidoItemInvalidoError,
+    ) as exc:
         db.rollback()
         raise PedidoInvalidTransitionError(str(exc)) from exc
     except IntegrityError as exc:
@@ -103,21 +213,43 @@ def aprovar_pedido(db: Session, pedido_id: int) -> Pedido:
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_aprovado(db, pedido)
+    notificacoes_eventos.notificar_estoque_baixo(db, itens_baixos, background_tasks)
+    # O e-mail só é enviado depois do commit e nunca deve desfazer a aprovação.
+    _notificar_solicitante_aprovacao(db, pedido, background_tasks)
     return pedido
 
 
-def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> Pedido:
+def aprovar_pedido(
+    db: Session,
+    pedido_id: int,
+    background_tasks: BackgroundTasks | None = None,
+) -> Pedido:
+    pedido = get_pedido_by_id(db, pedido_id)
+    return _aprovar_pedido(db, pedido, background_tasks)
+
+
+def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema, background_tasks: BackgroundTasks | None = None) -> Pedido:
     pedido = get_pedido_by_id(db, pedido_id)
 
     if pedido.status != 1:
         raise PedidoInvalidTransitionError("Apenas pedidos com status 'Aprovado' podem ser marcados como comprados")
 
     qtd_map = {item.idItemPedido: item.quantidade for item in payload.itens}
+    itens_por_id = {item.id_item_pedido: item for item in pedido.itens}
 
-    # FIXME: itens desconhecidos e quantidades negativas são ignorados sem erro
-    for item_pedido in pedido.itens:
-        if item_pedido.id_item_pedido in qtd_map:
-            item_pedido.quantidade = qtd_map[item_pedido.id_item_pedido]
+    # A baixa do estoque acontece na aprovação. Alterar a quantidade depois
+    # disso deixaria o saldo e a auditoria inconsistentes.
+    for item_id, quantidade in qtd_map.items():
+        item_pedido = itens_por_id.get(item_id)
+        if item_pedido is None:
+            raise PedidoInvalidTransitionError(
+                f"Item {item_id} não pertence ao pedido"
+            )
+        if item_pedido.quantidade != quantidade:
+            raise PedidoInvalidTransitionError(
+                "A quantidade dos itens não pode ser alterada após a aprovação"
+            )
 
     pedido.status = 2
 
@@ -128,12 +260,16 @@ def comprar_pedido(db: Session, pedido_id: int, payload: PedidoCompraSchema) -> 
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_comprado(db, pedido)
     return pedido
 
 
-def update_pedido_status(db: Session, pedido_id: int, payload: PedidoUpdateSchema) -> Pedido:
-    from app.services.estoque_service import EstoqueSaldoInsuficienteError, deduzir_por_pedido
-
+def update_pedido_status(
+    db: Session,
+    pedido_id: int,
+    payload: PedidoUpdateSchema,
+    background_tasks: BackgroundTasks | None = None,
+) -> Pedido:
     pedido = get_pedido_by_id(db, pedido_id)
 
     if payload.status not in (1, 2):
@@ -141,8 +277,11 @@ def update_pedido_status(db: Session, pedido_id: int, payload: PedidoUpdateSchem
             "Transição de status inválida. Use os endpoints específicos para aprovar, comprar ou entregar."
         )
 
-    expected_previous = 0 if payload.status == 1 else 1
-    if pedido.status != expected_previous:
+    # Aprovação deve passar exatamente pelo mesmo fluxo do endpoint /aprovar.
+    if payload.status == 1:
+        return _aprovar_pedido(db, pedido, background_tasks)
+
+    if pedido.status != 1:
         raise PedidoInvalidTransitionError(
             f"Não é possível alterar o status de {pedido.status} para {payload.status}"
         )
@@ -150,48 +289,25 @@ def update_pedido_status(db: Session, pedido_id: int, payload: PedidoUpdateSchem
     pedido.status = payload.status
 
     try:
-        if payload.status == 1:
-            deduzir_por_pedido(db, pedido)
         db.commit()
-    except EstoqueSaldoInsuficienteError as exc:
-        db.rollback()
-        raise PedidoInvalidTransitionError(str(exc)) from exc
     except IntegrityError as exc:
         db.rollback()
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_comprado(db, pedido)
     return pedido
 
 
-def entregar_pedido(db: Session, pedido_id: int) -> Pedido:
-    from app.models.estoque import Estoque
-
+def entregar_pedido(db: Session, pedido_id: int, background_tasks: BackgroundTasks | None = None) -> Pedido:
     pedido = get_pedido_by_id(db, pedido_id)
 
     if pedido.status != 2:
         raise PedidoCannotBeDeliveredError
 
     pedido.status = 3
-
-    for item_pedido in pedido.itens:
-        if not item_pedido.quantidade or not item_pedido.nome_item:
-            continue
-
-        # FIXME: casa estoque por nome_item (string) em vez de id_item_estoque
-        estoque_item = db.query(Estoque).filter(
-            Estoque.nome_item == item_pedido.nome_item
-        ).first()
-
-        if estoque_item:
-            estoque_item.quantidade_disponivel = (estoque_item.quantidade_disponivel or 0) + item_pedido.quantidade
-        else:
-            novo_item = Estoque(
-                nome_item=item_pedido.nome_item,
-                quantidade_disponivel=item_pedido.quantidade,
-                unidade=None,
-            )
-            db.add(novo_item)
+    # A baixa já foi feita e auditada na aprovação (movimento pedido_aprovado).
+    # Somar o estoque aqui duplicaria a movimentação e zeraria o consumo real.
 
     try:
         db.commit()
@@ -200,6 +316,7 @@ def entregar_pedido(db: Session, pedido_id: int) -> Pedido:
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
+    notificacoes_eventos.notificar_pedido_entregue(db, pedido)
     return pedido
 
 

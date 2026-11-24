@@ -242,7 +242,6 @@ package "app" {
     class AuthDependencies {
       + get_current_user(authorization) : dict
       + verify_cargo(cargos) : callable
-      + verify_director_role() : dict
     }
     class RateLimiter
   }

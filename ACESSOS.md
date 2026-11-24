@@ -4,12 +4,17 @@
 
 | Cargo | Email | Senha |
 |-------|-------|-------|
-| **Diretora** | admin@abaco.org.br | admin123 |
-| **Admin** | admin2@abaco.org.br | admin123 |
-| **Professora** | maria@abaco.org.br | prof12345 |
-| **Professor** | joao@abaco.org.br | prof12345 |
-| **Professora** | ana@abaco.org.br | prof12345 |
-| **Professor** | paulo@abaco.org.br | prof12345 |
+| **Diretora** | admin@abaco.org.br | `ADMIN_SEED_PASSWORD` (padrão `admin123`) |
+| **Admin** | admin2@abaco.org.br | `SEED_ADMIN_PASSWORD` (padrão `admin123`) |
+| **Professora** | maria@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+| **Professor** | joao@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+| **Professora** | ana@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+| **Professor** | paulo@abaco.org.br | `SEED_PROFESSOR_PASSWORD` (padrão `prof12345`) |
+
+> As senhas vêm do `.env` (veja `.env.example`). Sem `SEED_ADMIN_PASSWORD`/`SEED_PROFESSOR_PASSWORD`,
+> `admin2` e os professores não são criados — e sem professor não há turmas, matrículas nem pedidos
+> de teste. O primeiro diretor (`admin@abaco.org.br`) depende de `ADMIN_SEED_EMAIL`/`ADMIN_SEED_PASSWORD`.
+> O seed é idempotente e pode ser rodado avulso: `docker compose exec backend python -m app.db.seed`.
 
 > Para criar um Administrativo (cargo 3), a Diretora pode cadastrar via `/admin/usuarios`.
 
@@ -46,8 +51,8 @@ Pedro, Carla, Lucas, Juliana, Rafael, Beatriz, Gabriel, Mariana, Fernando, Patr�
 | 2 | João Santos | Aprovado | Lápis (40), Tesoura (15) |
 | 3 | Ana Costa | Comprado | Papel sulfite (8 resmas) |
 
-### Matrículas (8)
-Distribuídas entre as 4 turmas.
+### Matrículas (12)
+Distribuídas entre as 6 turmas.
 
 ### Estoque
 | Item | Disponível | Mínimo | Alerta? |
@@ -63,13 +68,13 @@ Distribuídas entre as 4 turmas.
 
 ## Como testar
 
-1. **Diretora**: loga com `admin@abaco.org.br` / `admin123`
+1. **Diretora**: loga com `admin@abaco.org.br` / senha definida em `ADMIN_SEED_PASSWORD`
    - Vê o dashboard na home com KPIs e gráficos
    - Acessa Turmas → vê os cards agrupados por curso
    - Gerencia alunos, matrículas, usuários
    - Aprova pedidos, vê estoque crítico
 
-2. **Professor**: loga com `maria@abaco.org.br` / `prof12345`
+2. **Professor**: loga com `maria@abaco.org.br` / senha definida em `SEED_PROFESSOR_PASSWORD`
    - Vê dashboard do professor
    - Acessa "Minhas Turmas" → vê 2 turmas de Informática
    - Registra presenças e notas

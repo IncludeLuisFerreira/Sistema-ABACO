@@ -31,19 +31,47 @@ label {
 
 label span {
   font-size: 0.85rem;
+  font-weight: 500;
   color: #0f172a;
 }
 
 input,
 select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: var(--abaco-gold) !important;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  opacity: 1 !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder {
+    color: #94a3b8;
+    -webkit-text-fill-color: #94a3b8;
+  }
+
+  &:focus {
+    border-color: var(--abaco-gold);
+    box-shadow: 0 0 0 3px var(--abaco-focus-ring);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--abaco-focus);
+    outline-offset: 2px;
+  }
 }
 
 .error {
   color: #b91c1c;
   font-size: 0.75rem;
+  overflow-wrap: break-word;
 }
 
 footer {
@@ -62,8 +90,8 @@ footer {
 }
 
 .btn--primary {
-  background: #0f766e;
-  color: #fff;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
 }
 
 .btn--ghost {
@@ -91,5 +119,15 @@ footer {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  footer {
+    flex-direction: column-reverse;
+  }
+
+  footer .btn {
+    width: 100%;
   }
 }

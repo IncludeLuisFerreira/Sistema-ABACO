@@ -38,8 +38,8 @@ export interface Pedido {
 
 export interface ItemPedidoCreatePayload {
   nomeItem: string;
-  quantidade: number | null;
-  idItemEstoque: number | null;
+  quantidade: number;
+  idItemEstoque: number;
   precoUnitario: number | null;
 }
 

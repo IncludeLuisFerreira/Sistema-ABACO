@@ -10,6 +10,7 @@
       <div class="turma-header__badge" [class.turma-header__badge--andamento]="getStatus() === 'em_andamento'" [class.turma-header__badge--futura]="getStatus() === 'futura'" [class.turma-header__badge--encerrada]="getStatus() === 'encerrada'">
         {{ statusLabel() }}
       </div>
+      <span class="eyebrow">Área do professor</span>
       <h1 class="turma-header__curso">{{ turma.curso?.nomeCurso ?? 'Turma #' + turma.idTurma }}</h1>
       <p class="turma-header__professor" *ngIf="turma.professor?.nome">Professor(a): {{ turma.professor?.nome }}</p>
 
@@ -34,7 +35,7 @@
       <div class="chart-section__header">
         <h2>Distribuição de Notas</h2>
         <label class="prova-select">
-          <select [ngModel]="provaSelecionada" (ngModelChange)="onProvaChange($event)">
+          <select class="abaco-select" [ngModel]="provaSelecionada" (ngModelChange)="onProvaChange($event)">
             <option *ngFor="let p of provasDisponiveis" [value]="p.value">{{ p.label }}</option>
           </select>
         </label>

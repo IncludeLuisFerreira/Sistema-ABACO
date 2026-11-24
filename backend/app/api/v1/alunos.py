@@ -5,7 +5,9 @@ from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.aluno_schema import AlunoCreateSchema, AlunoResponseSchema, AlunoUpdateSchema
 from app.services.aluno_service import (
+    AlunoAlreadyExistsError,
     AlunoHasDependenciesError,
+    AlunoIntegrityError,
     AlunoNotFoundError,
     create_aluno,
     delete_aluno,
@@ -35,7 +37,12 @@ def read_aluno(aluno_id: int, _current_user: dict = Depends(verify_cargo(1, 3)),
 
 @router.post("")
 def create_alunos(payload: AlunoCreateSchema, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
-    aluno = create_aluno(db, payload)
+    try:
+        aluno = create_aluno(db, payload)
+    except AlunoAlreadyExistsError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe um aluno com esses dados") from exc
+    except AlunoIntegrityError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Não foi possível salvar o aluno: dados inconsistentes") from exc
     return AlunoResponseSchema.model_validate(aluno)
 
 

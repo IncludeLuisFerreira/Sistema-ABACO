@@ -1,6 +1,12 @@
-.turmas-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
+:host {
+  display: block;
+  min-height: 100%;
+  background: var(--abaco-canvas-glow);
+}
+
+.turmas-page { padding: 2.5rem 1rem 3rem; max-width: 1240px; margin: 0 auto; }
 .turmas-header { margin-bottom: 1.5rem; }
-.turmas-header h1 { margin: 0; font-size: 1.5rem; }
+.turmas-header h1 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--abaco-ink); }
 .loading { color: #64748b; }
 .error { color: #d93025; }
 
@@ -11,14 +17,15 @@
 .turmas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.25rem; }
 
 .turma-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  background: var(--abaco-surface);
+  border-radius: 18px;
+  border: 1px solid var(--abaco-line);
+  box-shadow: var(--abaco-shadow);
   padding: 1.25rem;
   border-left: 4px solid transparent;
   transition: box-shadow 0.2s, transform 0.15s;
 }
-.turma-card:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1); transform: translateY(-2px); }
+.turma-card:hover { box-shadow: var(--abaco-shadow-hover); transform: translateY(-2px); }
 .turma-card--andamento { border-left-color: #dc2626; }
 .turma-card--futura { border-left-color: #f59e0b; }
 .turma-card--encerrada { border-left-color: #94a3b8; }
@@ -44,17 +51,27 @@
 
 .turma-card__progresso { margin-top: 0.5rem; }
 .turma-card__bar { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 0.25rem; }
-.turma-card__fill { height: 100%; background: #0f766e; border-radius: 3px; transition: width 0.3s; }
+.turma-card__fill { height: 100%; background: var(--abaco-gold); border-radius: 3px; transition: width 0.3s; }
 .turma-card__progresso-text { font-size: 0.78rem; color: #64748b; }
 
 .turma-card__actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9; }
 .turma-card__btn { padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; }
 .turma-card__btn--detalhes { background: #fef3c7; color: #92400e; }
 .turma-card__btn--presenca { background: #f0fdf4; color: #15803d; }
-.turma-card__btn--notas { background: #f0f9ff; color: #0369a1; }
+.turma-card__btn--notas { background: var(--abaco-gold-soft); color: var(--abaco-gold-text); }
 
 @media (max-width: 768px) {
-  .turmas-page { padding: 1rem; }
-  .turmas-header h1 { font-size: 1.25rem; }
-  .turmas-grid { grid-template-columns: 1fr; }
+  .turmas-page { padding: 1.25rem 1rem 2rem; }
+  .turmas-header h1 { font-size: 1.4rem; }
+  .turmas-grid { grid-template-columns: minmax(0, 1fr); }
+  .turma-card { padding: 1rem; }
+  .turma-card__actions { flex-wrap: wrap; }
+  .turma-card__btn {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    text-align: center;
+  }
 }

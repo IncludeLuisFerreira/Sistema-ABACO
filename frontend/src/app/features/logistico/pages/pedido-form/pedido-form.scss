@@ -1,26 +1,41 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, #e0f2fe, #f8fafc 55%);
+  background:
+    radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%),
+    linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
 }
 
 .pedido-form-page {
-  max-width: 800px;
+  max-width: 820px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 2.5rem 1rem 3rem;
 }
+
+.pedido-form-page__header {
+  margin-bottom: 1.5rem;
+}
+
 
 .pedido-form-page h1 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--abaco-ink);
 }
 
 .pedido-form-page > p {
   margin: 0.4rem 0 1.5rem;
-  color: #475569;
+  color: var(--abaco-body);
 }
 
 @media (max-width: 768px) {
-  .pedido-form-page { padding: 1rem; }
-  .pedido-form-page h1 { font-size: 1.3rem; }
+  .pedido-form-page {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .pedido-form-page h1 {
+    font-size: 1.4rem;
+  }
 }

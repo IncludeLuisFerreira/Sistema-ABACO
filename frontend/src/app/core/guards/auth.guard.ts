@@ -1,19 +1,24 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { clearStoredToken, getStoredToken, isTokenExpired } from '../services/auth.service';
+import { clearStoredSession, getStoredSession, isSessionExpired } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
-  const token = getStoredToken();
+  const session = getStoredSession();
 
-  if (!token) {
+  if (!session) {
     return router.parseUrl('/login');
   }
 
-  if (isTokenExpired(token)) {
-    clearStoredToken();
+  if (isSessionExpired(session)) {
+    clearStoredSession();
     return router.parseUrl('/login');
+  }
+
+  const targetUrl = state?.url ?? '';
+  if (session.primeiroAcesso && !targetUrl.startsWith('/alterar-senha')) {
+    return router.parseUrl('/alterar-senha');
   }
 
   return true;

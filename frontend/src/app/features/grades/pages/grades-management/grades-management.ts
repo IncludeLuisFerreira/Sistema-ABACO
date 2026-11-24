@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Matricula } from '../../../../core/models/matricula.model';
 import { Turma } from '../../../../core/models/turma.model';
 import { Nota, NotaBatchPayload, NotaItem } from '../../../../core/models/nota.model';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { MatriculaService } from '../../../../core/services/matricula.service';
 import { TurmaService } from '../../../../core/services/turma.service';
 import { NotaService } from '../../../../core/services/nota.service';
@@ -30,7 +31,11 @@ export class GradesManagementComponent implements OnInit {
   loadingTurmas = false;
   loadingNotas = false;
   saving = false;
+  loadFailed = false;
   localFeedback: string | null = null;
+
+  private matriculasRequestId = 0;
+  private notasRequestId = 0;
 
   constructor(
     private readonly turmaService: TurmaService,
@@ -51,6 +56,11 @@ export class GradesManagementComponent implements OnInit {
     this.selectedTurma = this.turmas.find((t) => t.idTurma === turmaId) ?? null;
     this.students = [];
     this.notasExistentes = [];
+    this.loadingNotas = false;
+    this.loadFailed = false;
+    this.localFeedback = null;
+    this.matriculasRequestId++;
+    this.notasRequestId++;
 
     if (this.selectedTurma) {
       this.loadMatriculas();
@@ -62,6 +72,11 @@ export class GradesManagementComponent implements OnInit {
   onProvaChange(prova: number): void {
     this.prova = prova;
     this.localFeedback = null;
+    this.notasExistentes = [];
+    this.buildStudentList();
+    this.loadingNotas = false;
+    this.loadFailed = false;
+    this.notasRequestId++;
 
     if (this.selectedTurma) {
       this.loadNotas();
@@ -78,7 +93,12 @@ export class GradesManagementComponent implements OnInit {
   }
 
   onSave(): void {
-    if (!this.selectedTurma || this.students.length === 0) {
+    // Nunca salva sobre uma lista montada sem as notas reais: sobrescreveria as notas por null.
+    if (!this.selectedTurma || this.students.length === 0 || this.loadingNotas || this.loadFailed) {
+      return;
+    }
+
+    if (!this.notasValidas()) {
       return;
     }
 
@@ -103,13 +123,30 @@ export class GradesManagementComponent implements OnInit {
         this.changeDetectorRef.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao registrar notas.';
+        const message = getApiErrorMessage(err, 'Erro ao registrar notas.');
         this.localFeedback = message;
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
       },
     });
+  }
+
+  private notasValidas(): boolean {
+    const invalida = this.students.some(
+      (student) =>
+        student.nota !== null &&
+        (!Number.isFinite(student.nota) || student.nota < 0 || student.nota > 10),
+    );
+    if (!invalida) {
+      return true;
+    }
+
+    const message = 'As notas devem estar entre 0 e 10.';
+    this.localFeedback = message;
+    this.notifications.error(message);
+    this.changeDetectorRef.detectChanges();
+    return false;
   }
 
   private loadTurmas(): void {
@@ -129,12 +166,24 @@ export class GradesManagementComponent implements OnInit {
   }
 
   private loadMatriculas(): void {
+    const requestId = ++this.matriculasRequestId;
+
     this.matriculaService.list().subscribe({
       next: (matriculas) => {
+        if (requestId !== this.matriculasRequestId) {
+          return;
+        }
+
         this.matriculas = matriculas;
+        // Reconstroi a lista mesmo que as notas ja tenham chegado antes das matriculas.
+        this.buildStudentList();
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.matriculasRequestId) {
+          return;
+        }
+
         this.notifications.error('Erro ao carregar matrículas.');
       },
     });
@@ -145,18 +194,35 @@ export class GradesManagementComponent implements OnInit {
       return;
     }
 
+    const turmaId = this.selectedTurma.idTurma;
+    const prova = this.prova;
+    const requestId = ++this.notasRequestId;
+
     this.loadingNotas = true;
-    this.notaService.listByTurma(this.selectedTurma.idTurma, this.prova).subscribe({
+    this.loadFailed = false;
+    this.localFeedback = null;
+    this.notaService.listByTurma(turmaId, prova).subscribe({
       next: (notas) => {
+        if (requestId !== this.notasRequestId) {
+          return;
+        }
+
         this.notasExistentes = notas;
         this.buildStudentList();
         this.loadingNotas = false;
+        this.loadFailed = false;
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
+        if (requestId !== this.notasRequestId) {
+          return;
+        }
+
         this.notasExistentes = [];
         this.buildStudentList();
         this.loadingNotas = false;
+        this.loadFailed = true;
+        this.localFeedback = 'Não foi possível carregar as notas. Recarregue a tela antes de salvar.';
         this.notifications.error('Erro ao carregar notas.');
         this.changeDetectorRef.detectChanges();
       },

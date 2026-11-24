@@ -1,6 +1,7 @@
 <main class="users-management">
   <header class="users-management__topbar">
     <div>
+      <span class="eyebrow">Administração</span>
       <h1>Equipe ABACO</h1>
       <p>Painel administrativo para cadastro e gestao de permissao de usuarios.</p>
     </div>
@@ -12,6 +13,7 @@
   <section class="users-management__layout">
     <app-usuarios-list
       [usuarios]="pagedUsuarios"
+      [canManageDiretoria]="canAssignDiretoria"
       [loading]="loadingList || saving"
       [currentPage]="currentPage"
       [totalPages]="totalPages"
@@ -27,6 +29,8 @@
       [mode]="formMode"
       [usuario]="selectedUsuario"
       [loading]="saving"
+      [canAssignDiretoria]="canAssignDiretoria"
+      [existingEmails]="existingEmails"
       (save)="onSave($event)"
       (cancel)="closePanel()"
     ></app-usuario-form>

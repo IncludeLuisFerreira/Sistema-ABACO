@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { CargoNivel, Usuario, UsuarioCreatePayload, UsuarioUpdatePayload } from '../../../../core/models/usuario.model';
+import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { UsuarioService } from '../../../../core/services/usuario.service';
@@ -33,15 +34,20 @@ export class UsersManagementComponent implements OnInit {
   saving = false;
   deletingUserId: number | null = null;
   localFeedback: string | null = null;
+  canAssignDiretoria = false;
 
   constructor(
     private readonly usuarioService: UsuarioService,
+    private readonly auth: AuthService,
     private readonly dialog: DialogService,
     private readonly notifications: NotificationService,
     private readonly changeDetectorRef: ChangeDetectorRef,
   ) {}
 
+  existingEmails: string[] = [];
+
   ngOnInit(): void {
+    this.canAssignDiretoria = this.auth.getRoleFromToken() === 'DIRECTOR';
     this.loadUsuarios();
   }
 
@@ -69,6 +75,7 @@ export class UsersManagementComponent implements OnInit {
   }
 
   openEdit(usuario: Usuario): void {
+    if (!this.canAssignDiretoria && Number(usuario.cargo) === 1) return;
     this.formMode = 'edit';
     this.selectedUsuario = usuario;
     this.localFeedback = null;
@@ -81,6 +88,14 @@ export class UsersManagementComponent implements OnInit {
   }
 
   onSave(payload: UsuarioFormSubmit): void {
+    if (this.formMode === 'edit' && !this.canAssignDiretoria && Number(this.selectedUsuario?.cargo) === 1) return;
+
+    const cargo = this.normalizeCargo(payload.cargo);
+    if (cargo === null) {
+      this.notifications.error('Nível de acesso inválido. Selecione Diretoria, Professor ou Admin.');
+      return;
+    }
+
     this.saving = true;
     this.localFeedback = null;
 
@@ -90,7 +105,8 @@ export class UsersManagementComponent implements OnInit {
         telefone: payload.telefone,
         email: payload.email,
         senha: payload.senha ?? '',
-        cargo: payload.cargo,
+        cargo,
+        endereco: payload.endereco,
       };
 
       this.usuarioService.create(createPayload).subscribe({
@@ -102,8 +118,9 @@ export class UsersManagementComponent implements OnInit {
           this.saving = false;
           this.changeDetectorRef.detectChanges();
         },
-        error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar usuario.';
+        error: (err: HttpErrorResponse) => {
+          const message = err.status === 409 ? 'Este e-mail ja esta cadastrado.'
+            : this.errorMessage(err, 'Erro ao criar usuario.');
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -120,7 +137,8 @@ export class UsersManagementComponent implements OnInit {
     const updatePayload: UsuarioUpdatePayload = {
       nome: payload.nome,
       telefone: payload.telefone,
-      cargo: this.normalizeCargo(payload.cargo),
+      cargo,
+      endereco: payload.endereco,
     };
 
     this.usuarioService.update(this.selectedUsuario.idUsuario, updatePayload).subscribe({
@@ -133,7 +151,7 @@ export class UsersManagementComponent implements OnInit {
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar usuario.';
+        const message = this.errorMessage(err, 'Erro ao atualizar usuario.');
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
@@ -171,11 +189,19 @@ export class UsersManagementComponent implements OnInit {
     });
   }
 
+  private errorMessage(err: HttpErrorResponse, fallback: string): string {
+    const detail = err?.error?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') return detail[0].msg;
+    return err?.message || fallback;
+  }
+
   private loadUsuarios(): void {
     this.loadingList = true;
     this.usuarioService.list().subscribe({
       next: (usuarios) => {
         this.usuarios = usuarios;
+        this.existingEmails = usuarios.map((u) => u.email).filter((email): email is string => typeof email === 'string');
         this.applyFiltersAndPagination();
         this.loadingList = false;
         this.changeDetectorRef.detectChanges();
@@ -195,7 +221,7 @@ export class UsersManagementComponent implements OnInit {
       }
 
       const nome = (usuario.nome ?? '').toLowerCase();
-      const email = usuario.email.toLowerCase();
+      const email = (usuario.email ?? '').toLowerCase();
       return nome.includes(this.searchTerm) || email.includes(this.searchTerm);
     });
 
@@ -207,12 +233,12 @@ export class UsersManagementComponent implements OnInit {
     this.pagedUsuarios = this.filteredUsuarios.slice(start, start + this.pageSize);
   }
 
-  private normalizeCargo(cargo: number | string): CargoNivel {
+  private normalizeCargo(cargo: number | string): CargoNivel | null {
     const num = Number(cargo);
     if (num === 1 || num === 2 || num === 3) {
       return num as CargoNivel;
     }
 
-    return 3;
+    return null;
   }
 }

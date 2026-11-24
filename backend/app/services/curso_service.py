@@ -1,6 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.db.errors import is_unique_violation
 from app.models.curso import Curso
 from app.schemas.curso_schema import CursoCreateSchema, CursoUpdateSchema
 
@@ -13,12 +14,28 @@ class CursoHasDependenciesError(Exception):
     pass
 
 
+class CursoAlreadyExistsError(Exception):
+    pass
+
+
+class CursoIntegrityError(Exception):
+    pass
+
+
 def create_curso(db: Session, payload: CursoCreateSchema) -> Curso:
     curso = Curso(
         nome_curso=payload.nomeCurso,
     )
     db.add(curso)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        if is_unique_violation(exc):
+            raise CursoAlreadyExistsError from exc
+        raise CursoIntegrityError from exc
+
     db.refresh(curso)
     return curso
 

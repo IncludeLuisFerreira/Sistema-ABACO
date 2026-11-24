@@ -1,6 +1,7 @@
 <main class="classes-management">
   <header class="classes-management__topbar">
     <div>
+      <span class="eyebrow">Gestão acadêmica</span>
       <h1>Turmas</h1>
       <p>Painel administrativo para cadastro e gestão de turmas.</p>
     </div>
@@ -66,6 +67,8 @@
       [professores]="professores"
       [allTurmas]="turmas"
       [loading]="saving"
+      [errorMessage]="formError"
+      [duplicate]="isDuplicate"
       (save)="onSave($event)"
       (cancel)="closePanel()"
     ></app-class-form>

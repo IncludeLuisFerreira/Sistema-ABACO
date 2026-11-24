@@ -1,51 +1,56 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { getStoredSession } from '../services/auth.service';
 import { authGuard } from './auth.guard';
-import { AuthService } from '../services/auth.service';
 
-class FakeAuthService {
-  private _authenticated = false;
+const SESSION_KEY = 'abaco_session';
 
-  isAuthenticated() {
-    return this._authenticated;
-  }
-
-  setAuthenticated(value: boolean) {
-    this._authenticated = value;
-  }
+function storeSession(overrides: Record<string, unknown> = {}): void {
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      userId: 1,
+      cargo: 1,
+      role: 'DIRECTOR',
+      primeiroAcesso: false,
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      ...overrides,
+    }),
+  );
 }
 
-describe('authGuard', () => {
-  it('allows access for authenticated users', () => {
-    const authService = new FakeAuthService();
-    authService.setAuthenticated(true);
-
+describe('authGuard (autenticação, não autorização)', () => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
+      providers: [{ provide: Router, useValue: { parseUrl: (url: string) => url } }],
     });
-
-    const result = TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
-
-    expect(result).toBe(true);
+    localStorage.clear();
   });
 
-  it('redirects unauthenticated users to login', () => {
-    const authService = new FakeAuthService();
-    authService.setAuthenticated(false);
+  afterEach(() => localStorage.clear());
 
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: { parseUrl: (url: string) => url } }
-      ]
-    });
+  const run = () => TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
 
-    const result = TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
+  it('permite usuário autenticado (mesmo GUEST — autenticação ≠ autorização)', () => {
+    storeSession({ cargo: null, role: 'GUEST' });
+    expect(run()).toBe(true);
+  });
 
-    expect(result).toBe('/login');
+  it('redireciona para /login sem sessão', () => {
+    expect(run()).toBe('/login');
+  });
+
+  it('redireciona para /login com sessão expirada e limpa o storage', () => {
+    storeSession({ expiresAt: Math.floor(Date.now() / 1000) - 60 });
+    expect(run()).toBe('/login');
+    expect(getStoredSession()).toBeNull();
+  });
+
+  it('redireciona para troca de senha quando o primeiro acesso está pendente', () => {
+    storeSession({ primeiroAcesso: true });
+    expect(
+      TestBed.runInInjectionContext(() => authGuard({} as never, { url: '/admin' } as never)),
+    ).toBe('/alterar-senha');
   });
 });

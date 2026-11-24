@@ -19,7 +19,9 @@ CREATE TABLE usuario (
     telefone TEXT,
     email TEXT UNIQUE,
     senhahash TEXT,
-    cargo INTEGER
+    cargo INTEGER,
+    endereco TEXT,
+    primeiroacesso BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE turma (
@@ -64,6 +66,8 @@ CREATE TABLE estoque (
     unidade TEXT,
     estoqueminimo INTEGER
 );
+
+CREATE UNIQUE INDEX uq_estoque_nomeitem_lower ON estoque (lower(nomeitem));
 
 CREATE TABLE movimentacao_estoque (
     idmovimentacao SERIAL PRIMARY KEY,

@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-09",
+  "applicationCommit": "a4949a607d442912a03b3967b0f05014f325e4b6",
+  "browser": "157.0.8103.38",
+  "viewportDesktop": "1440x1000",
+  "viewportMobile": "390x844",
+  "api": "Respostas simuladas no navegador; sem validação do backend ou login real.",
+  "results": [
+    "Painel vazio mostra orientação; redireciona para turmas e permanece sem loop ou erro.",
+    "Alunos sem turmas mostra a mesma orientação, sem erro.",
+    "Link imediato funciona e o timer do painel não interfere após a navegação.",
+    "Sair do painel cancela o redirecionamento automático.",
+    "HTTP 500 exibe erro no painel, sem onboarding nem redirecionamento.",
+    "HTTP 500 em turmas/alunos é separado do estado vazio.",
+    "Professor com turmas mantém KPIs (1 turma/2 alunos) e atalhos, sem redirecionar.",
+    "Falha de matrículas preserva as turmas e os atalhos da PR #29.",
+    "Turmas sem matrículas exibem o estado Nenhum aluno matriculado.",
+    "Viewport mobile 390x844 mantém a orientação legível e sem overflow horizontal.",
+    "Diretor e Admin mantêm acesso a /admin/turmas e continuam bloqueados na área exclusiva de professor."
+  ],
+  "pageErrors": []
+}

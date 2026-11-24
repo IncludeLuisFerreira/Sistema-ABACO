@@ -1,6 +1,7 @@
 <main class="attendance-management">
   <header class="attendance-management__topbar">
     <div>
+      <span class="eyebrow">Gestão acadêmica</span>
       <h1>Presencas</h1>
       <p>Registre a presenca dos alunos por turma e data.</p>
     </div>
@@ -8,7 +9,7 @@
       type="button"
       class="save-btn"
       (click)="onSave()"
-      [disabled]="saving || !selectedTurma || !dataAula || students.length === 0"
+      [disabled]="saving || !selectedTurma || !dataAula || students.length === 0 || loadingPresencas || loadFailed"
     >
       <span *ngIf="saving" class="spinner" aria-hidden="true"></span>
       {{ saving ? 'Salvando...' : 'Salvar presencas' }}

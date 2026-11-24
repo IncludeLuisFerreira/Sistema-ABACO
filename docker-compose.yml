@@ -30,17 +30,25 @@ services:
       - "${PORT:-8000}:8000"
     environment:
       PORT: ${PORT:-8000}
+      APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://postgres:postgres@database:5432/sga_abacos}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:-}
       ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-}
+      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_PROFESSOR_PASSWORD: ${SEED_PROFESSOR_PASSWORD:-}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-120}
-      RESET_TOKEN_EXPIRE_MINUTES: ${RESET_TOKEN_EXPIRE_MINUTES:-15}
+      RESET_TOKEN_EXPIRE_MINUTES: ${RESET_TOKEN_EXPIRE_MINUTES:-30}
+      FIRST_ACCESS_TOKEN_EXPIRE_MINUTES: ${FIRST_ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       SMTP_HOST: ${SMTP_HOST:-localhost}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@abaco.org.br}
+      SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-15}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      EMAIL_SENDER_NAME: ${EMAIL_SENDER_NAME:-SGA ABACO}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:4200,http://localhost:8000}
     depends_on:
@@ -49,7 +57,7 @@ services:
     networks:
       - sga_network
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; r = urllib.request.urlopen('http://localhost:8000/api/health'); assert r.status == 200; assert b'ok' in r.read()\""]
+      test: ["CMD-SHELL", "python -c \"import json, urllib.request; r = urllib.request.urlopen('http://localhost:8000/api/health/ready', timeout=4); body = json.load(r); assert r.status == 200; assert body['database'] == 'connected'\""]
       interval: 10s
       timeout: 5s
       retries: 5

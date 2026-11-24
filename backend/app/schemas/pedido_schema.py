@@ -5,8 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 class ItemPedidoCreateSchema(BaseModel):
     nomeItem: str
-    quantidade: int | None = None
-    idItemEstoque: int | None = None
+    quantidade: int = Field(gt=0)
+    idItemEstoque: int = Field(gt=0)
     precoUnitario: float | None = None
 
 
@@ -18,7 +18,7 @@ class PedidoCreateSchema(BaseModel):
 
 class ItemPedidoCompraSchema(BaseModel):
     idItemPedido: int
-    quantidade: int
+    quantidade: int = Field(gt=0)
 
 
 class PedidoCompraSchema(BaseModel):

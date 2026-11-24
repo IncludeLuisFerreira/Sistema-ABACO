@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.authorization import enforce_turma_access, require_diretor_para_aprovacao
 from app.core.dependencies import verify_cargo
 from app.db.database import get_db
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoResponseSchema, PedidoUpdateSchema
 from app.services.pedido_service import (
+    EstoqueNotFoundForPedidoError,
     PedidoCannotBeDeliveredError,
     PedidoHasDependenciesError,
     PedidoInvalidTransitionError,
+    PedidoItemInvalidoError,
     PedidoNotFoundError,
     TurmaNotFoundForPedidoError,
     aprovar_pedido,
@@ -23,15 +26,26 @@ from app.services.pedido_service import (
 router = APIRouter(prefix="/api/v1/pedidos", tags=["pedidos"])
 
 
+def _solicitante_filter(current_user: dict) -> int | None:
+    """Professor (cargo 2) só enxerga os próprios pedidos; diretoria e admin veem todos."""
+    if int(current_user.get("cargo", 0) or 0) == 2:
+        return int(current_user.get("sub", 0) or 0)
+    return None
+
+
 @router.get("")
-def read_pedidos(_current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
-    return [PedidoResponseSchema.model_validate(pedido) for pedido in list_pedidos(db)]
+def read_pedidos(current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+    solicitante_id = _solicitante_filter(current_user)
+    return [
+        PedidoResponseSchema.model_validate(pedido)
+        for pedido in list_pedidos(db, solicitante_id)
+    ]
 
 
 @router.get("/{pedido_id}")
-def read_pedido(pedido_id: int, _current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+def read_pedido(pedido_id: int, current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
     try:
-        pedido = get_pedido_by_id(db, pedido_id)
+        pedido = get_pedido_by_id(db, pedido_id, _solicitante_filter(current_user))
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     return PedidoResponseSchema.model_validate(pedido)
@@ -39,18 +53,37 @@ def read_pedido(pedido_id: int, _current_user: dict = Depends(verify_cargo(1, 2,
 
 @router.post("")
 def create_pedidos(payload: PedidoCreateSchema, current_user: dict = Depends(verify_cargo(1, 2, 3)), db: Session = Depends(get_db)):
+    try:
+        enforce_turma_access(db, payload.idTurma, current_user)
+    except HTTPException as exc:
+        # Preserva o contrato do endpoint: turma inexistente continua 400.
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Turma informada não existe") from exc
+        raise
     usuario_id = int(current_user.get("sub", 0))
     try:
         pedido = create_pedido(db, payload, usuario_id)
     except TurmaNotFoundForPedidoError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Turma informada não existe") from exc
+    except (EstoqueNotFoundForPedidoError, PedidoItemInvalidoError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PedidoHasDependenciesError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Não foi possível criar o pedido",
+        ) from exc
     return PedidoResponseSchema.model_validate(pedido)
 
 
 @router.put("/{pedido_id}/aprovar")
-def aprovar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def aprovar_pedido_endpoint(
+    pedido_id: int,
+    background_tasks: BackgroundTasks,
+    _current_user: dict = Depends(verify_cargo(1)),
+    db: Session = Depends(get_db),
+):
     try:
-        pedido = aprovar_pedido(db, pedido_id)
+        pedido = aprovar_pedido(db, pedido_id, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoInvalidTransitionError:
@@ -61,9 +94,9 @@ def aprovar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify
 
 
 @router.put("/{pedido_id}/comprar")
-def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, background_tasks: BackgroundTasks, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     try:
-        pedido = comprar_pedido(db, pedido_id, payload)
+        pedido = comprar_pedido(db, pedido_id, payload, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoInvalidTransitionError:
@@ -74,9 +107,15 @@ def comprar_pedido_endpoint(pedido_id: int, payload: PedidoCompraSchema, _curren
 
 
 @router.put("/{pedido_id}")
-def update_pedidos(pedido_id: int, payload: PedidoUpdateSchema, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def update_pedidos(
+    pedido_id: int,
+    payload: PedidoUpdateSchema,
+    background_tasks: BackgroundTasks,
+    _current_user: dict = Depends(require_diretor_para_aprovacao),
+    db: Session = Depends(get_db),
+):
     try:
-        pedido = update_pedido_status(db, pedido_id, payload)
+        pedido = update_pedido_status(db, pedido_id, payload, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoInvalidTransitionError:
@@ -87,9 +126,9 @@ def update_pedidos(pedido_id: int, payload: PedidoUpdateSchema, _current_user: d
 
 
 @router.put("/{pedido_id}/entregar")
-def entregar_pedido_endpoint(pedido_id: int, _current_user: dict = Depends(verify_cargo(1)), db: Session = Depends(get_db)):
+def entregar_pedido_endpoint(pedido_id: int, background_tasks: BackgroundTasks, _current_user: dict = Depends(verify_cargo(1, 3)), db: Session = Depends(get_db)):
     try:
-        pedido = entregar_pedido(db, pedido_id)
+        pedido = entregar_pedido(db, pedido_id, background_tasks)
     except PedidoNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido não encontrado") from exc
     except PedidoCannotBeDeliveredError as exc:

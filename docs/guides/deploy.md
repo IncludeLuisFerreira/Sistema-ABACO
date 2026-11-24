@@ -48,12 +48,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES=120
 ADMIN_SEED_EMAIL=admin@abaco.org.br
 ADMIN_SEED_PASSWORD=<SENHA_ADMIN>
 
-# SMTP — configure para enviar emails de recuperação
+# E-mail — Gmail (recomendado para dev/homologação)
+# 1. Ative a verificação em duas etapas na conta Google
+# 2. Gere uma "Senha de app" em https://myaccount.google.com/apppasswords
+# 3. Use o mesmo endereço em SMTP_USER e SMTP_FROM (o Gmail rejeita From de outro domínio)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=seu-email@gmail.com
 SMTP_PASSWORD=<SENHA_APP_GMAIL>
-SMTP_FROM=noreply@abaco.org.br
+SMTP_FROM=seu-email@gmail.com
+SMTP_TIMEOUT_SECONDS=15
+EMAIL_SENDER_NAME=SGA ABACO
 
 # Frontend URL (domínio da aplicação)
 FRONTEND_URL=https://sga.abaco.org.br
@@ -69,6 +74,30 @@ RATE_LIMIT_DEFAULT=60/minute
 PORT=8000
 ```
 
+### 2.1.1 E-mail: Gmail ou Brevo
+
+O backend escolhe o provedor nesta ordem: **Brevo > SMTP > console (log)**.
+
+**Opção A — Gmail (SMTP)**
+
+1. Ative a verificação em duas etapas na conta Google.
+2. Gere uma **"Senha de app"** em https://myaccount.google.com/apppasswords (a senha normal da conta não funciona no SMTP).
+3. Preencha `SMTP_USER` e `SMTP_PASSWORD` com essa senha de 16 caracteres.
+4. Use **o mesmo endereço** em `SMTP_USER` e `SMTP_FROM`. O Gmail responde `553` quando o `From` não pertence à conta autenticada.
+5. Sem `SMTP_USER` preenchido, o backend não usa SMTP e apenas registra o link no log.
+
+**Opção B — Brevo (API HTTP)**
+
+```ini
+BREVO_API_KEY=<CHAVE_BREVO>
+SMTP_FROM=no-reply@seudominio.com
+EMAIL_SENDER_NAME=SGA ABACO
+```
+
+- O remetente (ou domínio) precisa estar **verificado na Brevo** (Senders & IP). Sem isso a API responde `400` e nenhum e-mail é entregue.
+- Com `BREVO_API_KEY` preenchida, o SMTP é ignorado.
+- `SMTP_TIMEOUT_SECONDS` (padrão `15`) limita o tempo das conexões SMTP, evitando requisições penduradas.
+
 ### 2.2 Subir a aplicação
 
 ```bash
@@ -80,7 +109,13 @@ docker compose up --build -d
 ```bash
 curl http://localhost:8000/api/health
 # {"status":"ok","database":"connected"}
+
+curl http://localhost:8000/api/health/email
+# {"status":"ok","provider":"smtp","password_reset":{"attempts":0,"failures":0,...}}
 ```
+
+Falhas no envio de recuperação de senha ficam visíveis no endpoint acima, no log
+`password_reset_email_failed` e no guia `docs/guides/email-observability.md`.
 
 ---
 
@@ -127,11 +162,22 @@ docker exec -i sga_database psql -U postgres sga_abacos < backup_20260621.sql
 ## 5. Atualização
 
 ```bash
-git pull origin dev
+git pull origin develop
 docker compose up --build -d
 ```
 
 As migrations Alembic rodam automaticamente no startup do backend.
+
+> **Importante:** sempre use `--build` ao atualizar o código ou trocar de branch. Sem ele, os containers continuam com a imagem antiga, mesmo que o repositório já tenha as mudanças. Isso já causou o dashboard do professor aparecer zerado por falta da rota `GET /api/v1/matriculas/me` na imagem em execução.
+
+Após o rebuild, valide como professor autenticado:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/turmas/me
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/matriculas/me
+```
+
+Esperado: **200** e somente dados das turmas vinculadas ao professor. Se `/matriculas/me` retornar **403**, a imagem do backend provavelmente está desatualizada — rode novamente com `--build`.
 
 ---
 
@@ -141,7 +187,7 @@ As migrations Alembic rodam automaticamente no startup do backend.
 |----------|---------|
 | Banco não sobe | Verifique se `database-schema.sql` existe (não é uma pasta vazia) |
 | Backend não conecta ao banco | Confirme `DATABASE_URL` no `.env` |
-| Emails não chegam | Sem SMTP configurado, links aparecem no log do container: `docker logs sga_backend` |
+| Emails não chegam | Confira `SMTP_USER`/`SMTP_PASSWORD` (senha de app do Gmail) e se `SMTP_FROM` é o mesmo endereço; com Brevo, confirme o remetente verificado. Consulte `GET /api/health/email` e o log `password_reset_email_failed` (ver `docs/guides/email-observability.md`). Sem provedor, os links aparecem no log: `docker logs sga_backend` |
 | CORS bloqueado | Adicione o domínio em `CORS_ORIGINS` no `.env` |
 | Rate limit atingido | Aumente `RATE_LIMIT_AUTH` no `.env` |
 

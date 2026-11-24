@@ -214,9 +214,9 @@ ABACO_Sistema/
 - **Lazy Loading**: rotas carregadas sob demanda (`loadComponent` / `loadChildren`)
 - **Signals**: `authState` como signal para estado reativo de autenticação
 - **Serviços com cache**: `TurmaService` e `MatriculaService` utilizam cache em memória com `Observable` para evitar requisições duplicadas
-- **Guards**: `authGuard` (token válido), `roleGuard([cargos])` (permissão por cargo), `directorGuard`, `adminGuard`
+- **Guards**: `authGuard` (token válido), `roleGuard([cargos])` (permissão por cargo), `adminGuard`
 - **Interceptors**: `TokenInterceptor` (injeção de Bearer), `ErrorInterceptor` (tratamento de 401/403/409)
-- **Responsividade**: sidebar com menu hamburger em mobile (≤768px), tabelas com scroll horizontal
+- **Responsividade**: matriz canônica — mobile `≤768px`, desktop `≥769px`; painéis laterais colapsam em `≤1023px`. Sidebar com menu hambúrguer/overlay em mobile, alvos de toque de navegação `≥44px` (botões de linha de tabela permanecem em `36px`) e tabelas com scroll horizontal.
 
 ---
 
@@ -269,11 +269,11 @@ ABACO_Sistema/
 |-------|------|-----------|
 | **1** | DIRETOR | Acesso total: dashboard, usuários, acadêmico, logístico, aprovação de pedidos |
 | **2** | PROFESSOR | Acesso restrito às suas turmas: presenças, notas, alunos, pedidos de material |
-| **3** | ADMIN | Acesso acadêmico e logístico completo, exceto dashboard e gestão de usuários |
+| **3** | ADMIN | Acesso acadêmico, logístico, dashboard e gestão de usuários; não pode gerenciar usuários de cargo 1 nem alterar o próprio cargo |
 
 **No backend**: o decorator `@verify_cargo(1, 2, 3)` valida os cargos permitidos por endpoint. Exemplo: `verify_cargo(1)` = apenas diretores.
 
-**No frontend**: os guards `authGuard`, `roleGuard([cargos])`, `directorGuard` e `adminGuard` protegem as rotas. Usuários sem permissão são redirecionados para `/acesso-negado`.
+**No frontend**: os guards `authGuard`, `roleGuard([cargos])` e `adminGuard` protegem as rotas. Usuários sem permissão são redirecionados para `/acesso-negado`.
 
 ### Recuperação de Senha
 
@@ -627,8 +627,21 @@ O rebuild completo garante que o banco é recriado, as migrações Alembic são 
 | `JWT_SECRET` | Chave secreta para tokens JWT | (obrigatório) |
 | `ADMIN_SEED_EMAIL` | Email do admin inicial | `admin@abaco.org.br` |
 | `ADMIN_SEED_PASSWORD` | Senha do admin inicial | `admin123` |
+| `SEED_ON_STARTUP` | Roda o seed de dados de teste no boot (default do código `false`; compose e `.env.example` usam `true`; produção nunca roda no boot) | `false` |
+| `SEED_ADMIN_PASSWORD` | Senha do usuário de teste `admin2@abaco.org.br` | (vazio, usuário é pulado) |
+| `SEED_PROFESSOR_PASSWORD` | Senha dos professores de teste | (vazio, usuários são pulados) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do token JWT | `120` |
+| `RESET_TOKEN_EXPIRE_MINUTES` | Expiração do link de recuperação de senha | `30` |
+| `FIRST_ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do link de primeiro acesso | `1440` |
 | `FRONTEND_URL` | URL do frontend (para links de email) | `http://localhost:3000` |
+| `SMTP_HOST` | Host do servidor SMTP | `localhost` |
+| `SMTP_PORT` | Porta do servidor SMTP (`465` usa SSL, demais usam STARTTLS) | `587` |
+| `SMTP_USER` | Usuário/remetente SMTP; se preenchido, habilita o provedor SMTP | (vazio) |
+| `SMTP_PASSWORD` | Senha SMTP (no Gmail, senha de app de 16 caracteres) | (vazio) |
+| `SMTP_FROM` | Remetente dos e-mails (no Gmail, deve ser igual a `SMTP_USER`) | `noreply@abaco.org.br` |
+| `SMTP_TIMEOUT_SECONDS` | Timeout das conexões SMTP | `15` |
+| `EMAIL_SENDER_NAME` | Nome exibido do remetente | `SGA ABACO` |
+| `BREVO_API_KEY` | Chave da API Brevo; se preenchida, tem prioridade sobre o SMTP | (vazio) |
 
 ---
 
@@ -696,21 +709,49 @@ cd backend && pytest
 cd frontend && npm test
 ```
 
+### Rebuild após trocar de branch ou atualizar o código
+
+As imagens Docker **não** são atualizadas automaticamente quando o código muda. Ao trocar de branch, dar `git pull` ou aplicar correções no backend/frontend, reconstrua os containers antes de testar:
+
+```bash
+git switch minha-branch
+docker compose up -d --build backend frontend
+```
+
+Sem o `--build`, o container pode continuar rodando uma imagem antiga (por exemplo, sem a rota `GET /api/v1/matriculas/me`) e o frontend exibirá erros ou dados zerados.
+
+Para confirmar que o backend em execução está atualizado, autentique-se como professor e verifique:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/turmas/me
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/api/v1/matriculas/me
+```
+
+Ambos devem retornar **200** com apenas as turmas/matrículas vinculadas ao professor. Para recriar tudo do zero (incluindo o banco), use `./rebuild.sh`.
+
 ### Credenciais de Teste (Seed Automático)
 
 | Perfil | Email | Senha |
 |--------|-------|-------|
-| Diretor(a) | `admin@abaco.org.br` | `admin123` |
-| Administrador(a) | `admin2@abaco.org.br` | `admin123` |
-| Professor(a) | `maria@abaco.org.br` | `prof12345` |
-| Professor(a) | `joao@abaco.org.br` | `prof12345` |
-| Professor(a) | `ana@abaco.org.br` | `prof12345` |
-| Professor(a) | `paulo@abaco.org.br` | `prof12345` |
+| Diretor(a) | `admin@abaco.org.br` | `ADMIN_SEED_PASSWORD` (`admin123`) |
+| Administrador(a) | `admin2@abaco.org.br` | `SEED_ADMIN_PASSWORD` (`admin123`) |
+| Professor(a) | `maria@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
+| Professor(a) | `joao@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
+| Professor(a) | `ana@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
+| Professor(a) | `paulo@abaco.org.br` | `SEED_PROFESSOR_PASSWORD` (`prof12345`) |
 
-Ao iniciar com o banco vazio, o sistema popula automaticamente:
+As senhas dos usuários de teste vêm do `.env`: sem `SEED_ADMIN_PASSWORD` e `SEED_PROFESSOR_PASSWORD`
+definidas, `admin2` e os professores **não** são criados (e, sem professor, as turmas, matrículas e
+pedidos dependentes também ficam de fora). O seed roda no boot quando `SEED_ON_STARTUP=true`
+(padrão no `docker-compose.yml` e no `.env.example`; o default do código é `false` e produção nunca
+roda seed no boot); sem ele, rode sob demanda com `docker compose exec backend python -m app.db.seed`.
+O seed é idempotente: bancos parcialmente populados recebem apenas o que falta.
+
+Com `ADMIN_SEED_*`, `SEED_ADMIN_PASSWORD` e `SEED_PROFESSOR_PASSWORD` preenchidos e o banco vazio,
+o sistema popula automaticamente:
 
 - **5 Cursos**: Informática Básica, Corte e Costura, Administração, Inglês Básico, Espanhol
-- **5 Usuários**: 1 admin (cargo 3) + 4 professores (cargo 2) + admin do .env (cargo 1)
+- **6 Usuários**: 1 admin (cargo 3) + 4 professores (cargo 2) + admin do .env (cargo 1)
 - **12 Alunos**: com dados completos (nome, telefone, endereço)
 - **6 Turmas**: distribuídas entre cursos e professores, com avaliações configuradas
 - **12 Matrículas**: vinculando alunos às turmas

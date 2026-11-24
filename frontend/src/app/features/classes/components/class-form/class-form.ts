@@ -1,6 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { merge } from 'rxjs';
 
 import { Curso } from '../../../../core/models/curso.model';
 import { Turma } from '../../../../core/models/turma.model';
@@ -8,18 +19,51 @@ import { getStatusTurma } from '../turma-card/turma-card';
 import { Usuario } from '../../../../core/models/usuario.model';
 
 export interface ClassFormSubmit {
-  capacidade: number | null;
-  dataInicio: string | null;
-  dataFim: string | null;
+  capacidade: number;
+  dataInicio: string;
+  dataFim: string;
   idCurso: number;
-  idProfessor: number | null;
-  diasAula: string | null;
+  idProfessor: number;
+  diasAula: string;
   avaliacoes: { nome: string; tipo: string; peso: number }[] | null;
+  avaliacoesChanged: boolean;
 }
 
 interface DiaSemana {
   label: string;
   value: number;
+}
+
+function normalizarNome(value: unknown): string {
+  return typeof value === 'string' ? value : value == null ? '' : String(value);
+}
+
+function atLeastOneDayValidator(control: AbstractControl): ValidationErrors | null {
+  const days = control.value as boolean[] | null;
+  return days?.some(Boolean) ? null : { atLeastOneDay: true };
+}
+
+function dateRangeValidator(control: AbstractControl): ValidationErrors | null {
+  const inicio = control.get('dataInicio')?.value as string;
+  const fim = control.get('dataFim')?.value as string;
+  if (!inicio || !fim) {
+    return null;
+  }
+  return fim < inicio ? { dateRange: true } : null;
+}
+
+function parseDiasAula(value: string | null | undefined): Set<number> {
+  return new Set(
+    (value ?? '')
+      .split(',')
+      .map((dia) => Number(dia.trim()))
+      .filter((dia) => Number.isInteger(dia) && dia >= 0 && dia <= 6),
+  );
+}
+
+function diasAulaSobrepoem(a: string | null, b: string | null): boolean {
+  const diasA = parseDiasAula(a);
+  return [...parseDiasAula(b)].some((dia) => diasA.has(dia));
 }
 
 @Component({
@@ -31,6 +75,7 @@ interface DiaSemana {
 })
 export class ClassFormComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() turma: Turma | null = null;
@@ -38,6 +83,8 @@ export class ClassFormComponent implements OnChanges {
   @Input() professores: Usuario[] = [];
   @Input() allTurmas: Turma[] = [];
   @Input() loading = false;
+  @Input() errorMessage: string | null = null;
+  @Input() duplicate = false;
 
   @Output() readonly save = new EventEmitter<ClassFormSubmit>();
   @Output() readonly cancel = new EventEmitter<void>();
@@ -56,15 +103,30 @@ export class ClassFormComponent implements OnChanges {
     { label: 'Sab', value: 6 },
   ];
 
-  readonly form = this.fb.nonNullable.group({
-    idCurso: [0, [Validators.required, Validators.min(1)]],
-    idProfessor: [0],
-    capacidade: [0],
-    dataInicio: [''],
-    dataFim: [''],
-    diasAula: this.fb.array(this.diasSemana.map(() => false)),
-    avaliacoes: this.fb.array<FormGroup>([]),
-  });
+  readonly form = this.fb.nonNullable.group(
+    {
+      idCurso: [0, [Validators.required, Validators.min(1)]],
+      idProfessor: [0, [Validators.required, Validators.min(1)]],
+      capacidade: [0, [Validators.required, Validators.min(1)]],
+      dataInicio: ['', [Validators.required]],
+      dataFim: ['', [Validators.required]],
+      diasAula: this.fb.array(this.diasSemana.map(() => false), [atLeastOneDayValidator]),
+      avaliacoes: this.fb.array<FormGroup>([]),
+    },
+    { validators: [dateRangeValidator] },
+  );
+
+  constructor() {
+    merge(
+      this.form.controls.idCurso.valueChanges,
+      this.form.controls.idProfessor.valueChanges,
+      this.form.controls.dataInicio.valueChanges,
+      this.form.controls.dataFim.valueChanges,
+      this.form.controls.diasAula.valueChanges,
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.updateContexto());
+  }
 
   get diasAulaArray(): FormArray {
     return this.form.controls.diasAula as FormArray;
@@ -87,32 +149,26 @@ export class ClassFormComponent implements OnChanges {
 
   addAvaliacao(): void {
     this.avaliacoesArray.push(this.fb.nonNullable.group({
-      nome: [''],
-      tipo: ['prova'],
-      peso: [10],
+      nome: ['', [Validators.required, Validators.pattern(/\S/)]],
+      tipo: ['prova', [Validators.required]],
+      peso: [10, [Validators.required, Validators.min(0.01)]],
     }));
+    this.avaliacoesArray.markAsDirty();
   }
 
   removeAvaliacao(index: number): void {
     this.avaliacoesArray.removeAt(index);
+    this.avaliacoesArray.markAsDirty();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['mode'] || changes['turma']) {
+    if (changes['mode'] || changes['turma'] || changes['duplicate']) {
       this.patchForm();
     }
 
     if (changes['loading']) {
       this.toggleFormState();
     }
-  }
-
-  onCursoChange(): void {
-    this.updateContexto();
-  }
-
-  onProfessorChange(): void {
-    this.updateContexto();
   }
 
   updateContexto(): void {
@@ -149,11 +205,11 @@ export class ClassFormComponent implements OnChanges {
         if (this.mode === 'edit' && this.turma && t.idTurma === this.turma.idTurma) return false;
         if (!t.dataInicio || !t.dataFim || !t.diasAula) return false;
         const sobrepoe = inicio <= t.dataFim && fim >= t.dataInicio;
-        return sobrepoe && t.diasAula === diasAulaStr;
+        return sobrepoe && diasAulaSobrepoem(t.diasAula, diasAulaStr);
       });
 
       if (conflitos.length > 0) {
-        this.conflitoLabel = `Atenção: o professor já tem ${conflitos.length} ${conflitos.length === 1 ? 'turma' : 'turmas'} no mesmo período e dias`;
+        this.conflitoLabel = `Atenção: o professor já tem ${conflitos.length} ${conflitos.length === 1 ? 'turma' : 'turmas'} no mesmo período e com dias de aula em comum`;
       }
     }
   }
@@ -167,18 +223,21 @@ export class ClassFormComponent implements OnChanges {
     const value = this.form.getRawValue();
     const payload: ClassFormSubmit = {
       idCurso: value.idCurso,
-      idProfessor: value.idProfessor > 0 ? value.idProfessor : null,
-      capacidade: value.capacidade > 0 ? value.capacidade : null,
-      dataInicio: value.dataInicio || null,
-      dataFim: value.dataFim || null,
-      diasAula: this.diasAulaString,
+      idProfessor: value.idProfessor,
+      capacidade: value.capacidade,
+      dataInicio: value.dataInicio,
+      dataFim: value.dataFim,
+      diasAula: this.diasAulaString ?? '',
       avaliacoes: this.avaliacoesArray.value.length > 0
         ? this.avaliacoesArray.value.map((a: { nome: string; tipo: string; peso: number }) => ({
-            nome: a.nome || `Avaliação`,
-            tipo: a.tipo || 'prova',
-            peso: a.peso || 10,
+            nome: normalizarNome(a.nome).trim(),
+            tipo: a.tipo,
+            peso: a.peso,
           }))
-        : null,
+        : this.mode === 'edit'
+          ? []
+          : null,
+      avaliacoesChanged: this.avaliacoesArray.dirty,
     };
 
     this.save.emit(payload);
@@ -187,28 +246,36 @@ export class ClassFormComponent implements OnChanges {
   private patchForm(): void {
     this.avaliacoesArray.clear();
 
-    if (this.mode === 'edit' && this.turma) {
-      const diasSelecionados = (this.turma.diasAula ?? '').split(',').map(Number);
+    if (this.turma && (this.mode === 'edit' || this.duplicate)) {
+      const duplicating = this.mode === 'create' && this.duplicate;
+      const diasSelecionados = (this.turma.diasAula ?? '')
+        .split(',')
+        .filter((dia) => dia.trim() !== '')
+        .map(Number);
       const diasArray = this.diasSemana.map((d) => diasSelecionados.includes(d.value));
 
       this.form.reset({
         idCurso: this.turma.idCurso,
         idProfessor: this.turma.idProfessor ?? 0,
         capacidade: this.turma.capacidade ?? 0,
-        dataInicio: this.turma.dataInicio ?? '',
-        dataFim: this.turma.dataFim ?? '',
+        dataInicio: duplicating ? '' : (this.turma.dataInicio ?? ''),
+        dataFim: duplicating ? '' : (this.turma.dataFim ?? ''),
       });
       this.diasAulaArray.patchValue(diasArray);
 
-      if (this.turma.avaliacoes?.length) {
+      if (Array.isArray(this.turma.avaliacoes)) {
         for (const a of this.turma.avaliacoes) {
+          if (!a || typeof a !== 'object') {
+            continue;
+          }
           this.avaliacoesArray.push(this.fb.nonNullable.group({
-            nome: [a.nome || ''],
-            tipo: [a.tipo || 'prova'],
-            peso: [a.peso || 10],
+            nome: [normalizarNome(a.nome), [Validators.required, Validators.pattern(/\S/)]],
+            tipo: [a.tipo || 'prova', [Validators.required]],
+            peso: [a.peso || 10, [Validators.required, Validators.min(0.01)]],
           }));
         }
       }
+      this.avaliacoesArray.markAsPristine();
       return;
     }
 
@@ -220,6 +287,7 @@ export class ClassFormComponent implements OnChanges {
       dataFim: '',
     });
     this.diasAulaArray.patchValue(this.diasSemana.map(() => false));
+    this.avaliacoesArray.markAsPristine();
   }
 
   private toggleFormState(): void {

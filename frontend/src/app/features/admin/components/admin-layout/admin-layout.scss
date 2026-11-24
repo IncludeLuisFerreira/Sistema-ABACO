@@ -45,6 +45,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 1rem;
+    /* Altura consumida pelo painel do sino (shared) como --mobile-topbar-height. */
+    --mobile-topbar-height: calc(1.2rem + 44px);
     background: #0f172a;
     color: #fff;
     position: sticky;
@@ -60,8 +62,8 @@
     padding: 4px;
     flex-direction: column;
     gap: 5px;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     justify-content: center;
     align-items: center;
   }
@@ -114,8 +116,8 @@
     color: #94a3b8;
     font-size: 1.8rem;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     line-height: 1;
   }
@@ -127,6 +129,23 @@
 }
 
 /* ========== ESTILOS COMUNS ========== */
+.mobile-topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 44px;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mobile-topbar__brand:focus-visible {
+  outline: 2px solid var(--abaco-gold);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 .mobile-topbar__logo {
   width: 28px;
   height: 28px;
@@ -136,6 +155,10 @@
   font-weight: 700;
   font-size: 0.95rem;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hamburger span {
@@ -154,6 +177,8 @@
   padding: 0 1.25rem 1.5rem;
   border-bottom: 1px solid #1e293b;
   margin-bottom: 1rem;
+  text-decoration: none;
+  color: inherit;
 }
 
 .admin-nav__logo {
@@ -187,7 +212,9 @@
 }
 
 .admin-nav__links a {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   color: #94a3b8;
@@ -202,8 +229,22 @@
 }
 
 .admin-nav__links a.active {
-  background: #0f766e;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
+}
+
+.admin-nav__badge {
+  margin-left: auto;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #dc2626;
   color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4rem;
+  text-align: center;
 }
 
 .admin-nav__user {
@@ -214,46 +255,8 @@
   gap: 0.5rem;
 }
 
-.admin-nav__notification {
-  background: transparent;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  color: #94a3b8;
-  padding: 0.5rem 1rem;
-  width: 100%;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.15s, color 0.15s;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-decoration: none;
-}
-
-.admin-nav__notification:hover {
-  background: #1e293b;
-  color: #e2e8f0;
-}
-
-.bell-icon {
-  font-size: 1.2rem;
-}
-
-.notification-badge {
-  background: #dc2626;
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  min-width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.25rem;
-  line-height: 1;
+.admin-nav__user app-notificacao-sino {
+  display: block;
 }
 
 .admin-nav__logout {
@@ -262,6 +265,7 @@
   border-radius: 8px;
   color: #94a3b8;
   padding: 0.5rem 1rem;
+  min-height: 44px;
   width: 100%;
   cursor: pointer;
   font-weight: 600;

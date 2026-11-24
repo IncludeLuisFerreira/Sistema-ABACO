@@ -1,21 +1,23 @@
 <div class="notas-page">
   <header class="notas-header">
+    <span class="eyebrow">Área do professor</span>
     <h1>Notas</h1>
+    <p class="page-subtitle">Lance e acompanhe as notas das suas turmas.</p>
   </header>
 
-  <div class="filters">
-    <label>
-      Turma:
-      <select [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
+  <div class="abaco-field-card">
+    <label class="abaco-field-card__field">
+      <span class="abaco-field-card__label">Turma</span>
+      <select class="abaco-select" [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
         <option value="" disabled>Selecione uma turma</option>
         <option *ngFor="let turma of turmas" [value]="turma.idTurma">
           #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }}
         </option>
       </select>
     </label>
-    <label *ngIf="selectedTurma">
-      Prova:
-      <select [ngModel]="prova" (ngModelChange)="onProvaChange($event)">
+    <label class="abaco-field-card__field" *ngIf="selectedTurma">
+      <span class="abaco-field-card__label">Prova</span>
+      <select class="abaco-select" [ngModel]="prova" (ngModelChange)="onProvaChange($event)">
         <option *ngFor="let opt of provaOptions" [value]="opt.value">{{ opt.label }} {{ opt.peso ? '(peso ' + opt.peso + ')' : '' }}</option>
       </select>
     </label>

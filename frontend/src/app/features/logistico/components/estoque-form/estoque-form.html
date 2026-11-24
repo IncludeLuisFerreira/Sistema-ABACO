@@ -1,7 +1,18 @@
 <section class="form-card" aria-label="Formulario de item de estoque">
-  <header>
-    <h2>{{ mode === 'create' ? 'Novo item' : 'Editar item' }}</h2>
-    <p>{{ mode === 'create' ? 'Cadastre um novo item no estoque.' : 'Atualize os dados do item.' }}</p>
+  <header class="form-card__header">
+    <div class="form-card__heading">
+      <h2 id="estoque-form-title">{{ mode === 'create' ? 'Novo item' : 'Editar item' }}</h2>
+      <p>{{ mode === 'create' ? 'Cadastre um novo item no estoque.' : 'Atualize os dados do item.' }}</p>
+    </div>
+    <button
+      type="button"
+      class="close-btn"
+      aria-label="Fechar formulario"
+      (click)="cancel.emit()"
+      [disabled]="loading"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
   </header>
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -13,7 +24,8 @@
 
     <label>
       <span>Quantidade disponivel</span>
-      <input formControlName="quantidadeDisponivel" type="number" placeholder="Quantidade" />
+      <input formControlName="quantidadeDisponivel" type="number" min="0" placeholder="Quantidade" />
+      <small class="error" *ngIf="form.controls.quantidadeDisponivel.errors?.['min'] && form.controls.quantidadeDisponivel.touched">Quantidade nao pode ser negativa.</small>
     </label>
 
     <label>
@@ -23,7 +35,8 @@
 
     <label>
       <span>Estoque minimo</span>
-      <input formControlName="estoqueMinimo" type="number" placeholder="Quantidade para alerta" />
+      <input formControlName="estoqueMinimo" type="number" min="0" placeholder="Quantidade para alerta" />
+      <small class="error" *ngIf="form.controls.estoqueMinimo.errors?.['min'] && form.controls.estoqueMinimo.touched">Estoque minimo nao pode ser negativo.</small>
       <small>Quando o saldo atingir este valor, um alerta sera exibido.</small>
     </label>
 

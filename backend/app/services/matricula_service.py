@@ -38,38 +38,25 @@ def _resolve_aluno(db: Session, aluno_id: int) -> None:
         raise AlunoNotFoundForMatriculaError
 
 
-def _resolve_turma(db: Session, turma_id: int) -> None:
-    from app.models.turma import Turma
-
+def _resolve_turma(db: Session, turma_id: int) -> Turma:
     turma = db.query(Turma).filter(Turma.id_turma == turma_id).first()
     if not turma:
         raise TurmaNotFoundForMatriculaError
+    return turma
 
 
-def _check_turma_lotada(db: Session, turma_id: int) -> None:
-    from app.models.turma import Turma
-
-    turma = db.query(Turma).filter(Turma.id_turma == turma_id).first()
-    if turma and turma.capacidade:
-        count = db.query(Matricula).filter(
-            Matricula.id_turma == turma_id, Matricula.status == 0
-        ).count()
-        if count >= turma.capacidade:
+def _check_turma_lotada(db: Session, turma: Turma, exclude_id: int | None = None) -> None:
+    if turma.capacidade:
+        query = db.query(Matricula).filter(
+            Matricula.id_turma == turma.id_turma, Matricula.status == 0
+        )
+        if exclude_id is not None:
+            query = query.filter(Matricula.id_matricula != exclude_id)
+        if query.count() >= turma.capacidade:
             raise TurmaLotadaError
 
 
-def _get_turma_curso_id(db: Session, turma_id: int) -> int:
-    from app.models.turma import Turma
-    turma = db.query(Turma).filter(Turma.id_turma == turma_id).first()
-    if not turma:
-        raise TurmaNotFoundForMatriculaError
-    return turma.id_curso
-
-
-def _check_matricula_duplicada(db: Session, aluno_id: int, turma_id: int, exclude_id: int | None = None) -> None:
-    from app.models.turma import Turma
-
-    curso_id = _get_turma_curso_id(db, turma_id)
+def _check_matricula_duplicada(db: Session, aluno_id: int, curso_id: int, exclude_id: int | None = None) -> None:
     turmas_mesmo_curso = db.query(Turma.id_turma).filter(Turma.id_curso == curso_id).subquery()
 
     query = db.query(Matricula).filter(
@@ -87,9 +74,9 @@ def _check_matricula_duplicada(db: Session, aluno_id: int, turma_id: int, exclud
 
 def create_matricula(db: Session, payload: MatriculaCreateSchema) -> Matricula:
     _resolve_aluno(db, payload.idAluno)
-    _resolve_turma(db, payload.idTurma)
-    _check_turma_lotada(db, payload.idTurma)
-    _check_matricula_duplicada(db, payload.idAluno, payload.idTurma)
+    turma = _resolve_turma(db, payload.idTurma)
+    _check_turma_lotada(db, turma)
+    _check_matricula_duplicada(db, payload.idAluno, turma.id_curso)
 
     matricula = Matricula(
         id_aluno=payload.idAluno,
@@ -127,19 +114,24 @@ def get_matricula_by_id(db: Session, matricula_id: int) -> Matricula:
 def update_matricula(db: Session, matricula_id: int, payload: MatriculaUpdateSchema) -> Matricula:
     matricula = get_matricula_by_id(db, matricula_id)
 
+    novo_aluno_id = payload.idAluno if payload.idAluno is not None else matricula.id_aluno
+    nova_turma_id = payload.idTurma if payload.idTurma is not None else matricula.id_turma
+    turma_mudou = nova_turma_id != matricula.id_turma
+    ativando = payload.status == 0 and matricula.status != 0
+
     if payload.idAluno is not None:
-        _resolve_aluno(db, payload.idAluno)
-        matricula.id_aluno = payload.idAluno
+        _resolve_aluno(db, novo_aluno_id)
 
-    turma_id = payload.idTurma if payload.idTurma is not None else matricula.id_turma
+    turma = _resolve_turma(db, nova_turma_id)
 
-    if payload.idAluno is not None or payload.idTurma is not None:
-        _check_matricula_duplicada(db, matricula.id_aluno, turma_id, exclude_id=matricula_id)
+    if turma_mudou or ativando:
+        _check_turma_lotada(db, turma, exclude_id=matricula_id)
 
-    if payload.idTurma is not None:
-        _resolve_turma(db, payload.idTurma)
-        _check_turma_lotada(db, payload.idTurma)
-        matricula.id_turma = payload.idTurma
+    if novo_aluno_id != matricula.id_aluno or turma_mudou or ativando:
+        _check_matricula_duplicada(db, novo_aluno_id, turma.id_curso, exclude_id=matricula_id)
+
+    matricula.id_aluno = novo_aluno_id
+    matricula.id_turma = nova_turma_id
 
     if payload.dataMatricula is not None:
         matricula.data_matricula = payload.dataMatricula

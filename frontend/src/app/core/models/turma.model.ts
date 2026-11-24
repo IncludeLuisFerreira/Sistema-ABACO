@@ -29,12 +29,12 @@ export interface Turma {
 }
 
 export interface TurmaCreatePayload {
-  capacidade: number | null;
-  dataInicio: string | null;
-  dataFim: string | null;
+  capacidade: number;
+  dataInicio: string;
+  dataFim: string;
   idCurso: number;
-  idProfessor: number | null;
-  diasAula: string | null;
+  idProfessor: number;
+  diasAula: string;
   avaliacoes: Avaliacao[] | null;
 }
 

@@ -1,8 +1,16 @@
 <div class="academico-shell">
   <!-- Top bar (mobile) -->
   <div class="mobile-topbar">
-    <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
-    <span class="mobile-topbar__title">SGA ABACO</span>
+    <a
+      class="mobile-topbar__brand"
+      routerLink="/academico"
+      (click)="menuOpen = false"
+      aria-label="Ir para a página inicial"
+    >
+      <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
+      <span class="mobile-topbar__title">SGA ABACO</span>
+    </a>
+    <app-notificacao-sino />
     <button class="hamburger" (click)="menuOpen = !menuOpen" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'">
       <span></span><span></span><span></span>
     </button>
@@ -14,10 +22,10 @@
   <!-- Sidebar -->
   <nav class="academico-nav" [class.academico-nav--open]="menuOpen">
     <button class="academico-nav__close" (click)="menuOpen = false" aria-label="Fechar menu">&times;</button>
-    <div class="academico-nav__brand">
+    <a class="academico-nav__brand" routerLink="/academico" (click)="menuOpen = false">
       <img src="/Logo_ABACO.png" alt="ABACO" class="academico-nav__logo" />
       <span class="academico-nav__title">SGA ABACO</span>
-    </div>
+    </a>
 
     <ul class="academico-nav__links">
       <li>
@@ -66,6 +74,7 @@
     </ul>
 
     <div class="academico-nav__user">
+      <app-notificacao-sino variant="sidebar" />
       <button type="button" class="academico-nav__logout" (click)="logout()">
         Sair
       </button>

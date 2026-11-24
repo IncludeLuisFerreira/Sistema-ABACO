@@ -1,8 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ChartComponent } from 'ng-apexcharts';
-import type { ApexChart, ApexDataLabels, ApexFill, ApexPlotOptions, ApexYAxis } from 'ng-apexcharts';
+import type {
+  ApexChart,
+  ApexDataLabels,
+  ApexFill,
+  ApexPlotOptions,
+  ApexResponsive,
+  ApexXAxis,
+  ApexYAxis,
+} from 'ng-apexcharts';
 
+import { ABACO_PALETTE } from '../../../../core/constants/palette';
 import { MediaTurma } from '../../../../core/models/nota.model';
 import { NotaService } from '../../../../core/services/nota.service';
 
@@ -24,15 +33,40 @@ export class GradesAverageChartComponent implements OnChanges {
 
   chartConfig: ApexChart = {
     type: 'bar',
+    width: '100%',
     height: 300,
     toolbar: { show: false },
+    redrawOnParentResize: true,
+    redrawOnWindowResize: true,
   };
+
+  responsive: ApexResponsive[] = [
+    {
+      breakpoint: 768,
+      options: {
+        chart: { width: '100%', height: 260 },
+        plotOptions: { bar: { columnWidth: '65%' } },
+        dataLabels: { style: { fontSize: '11px' } },
+      },
+    },
+  ];
 
   plotOptions: ApexPlotOptions = {
     bar: {
       columnWidth: '50%',
       borderRadius: 6,
       borderRadiusApplication: 'end',
+    },
+  };
+
+  xaxis: ApexXAxis = {
+    categories: [],
+    labels: {
+      rotate: -45,
+      rotateAlways: false,
+      trim: true,
+      maxHeight: 90,
+      style: { fontSize: '11px' },
     },
   };
 
@@ -56,7 +90,7 @@ export class GradesAverageChartComponent implements OnChanges {
   };
 
   fill: ApexFill = {
-    colors: ['#2563eb'],
+    colors: [ABACO_PALETTE.gold],
   };
 
   constructor(private readonly notaService: NotaService) {}
@@ -75,6 +109,7 @@ export class GradesAverageChartComponent implements OnChanges {
     this.notaService.getMediaTurma(this.turmaId).subscribe({
       next: (data: MediaTurma) => {
         this.categories = data.medias.map((m) => `Prova ${m.prova}`);
+        this.xaxis = { ...this.xaxis, categories: this.categories };
         this.series = [
           {
             name: 'Média',
@@ -86,6 +121,7 @@ export class GradesAverageChartComponent implements OnChanges {
       error: () => {
         this.series = [];
         this.categories = [];
+        this.xaxis = { ...this.xaxis, categories: [] };
         this.loading = false;
       },
     });

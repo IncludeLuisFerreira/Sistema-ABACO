@@ -1,8 +1,9 @@
 <section class="table-card">
   <header class="table-card__header">
-    <div>
-      <h1>Pedidos de Materiais</h1>
-      <p>Visualize e gerencie as solicitacoes de materiais.</p>
+    <div class="table-card__heading">
+      <span class="eyebrow">Solicitações</span>
+      <h1>Pedidos de materiais</h1>
+      <p>Visualize e gerencie as solicitações de materiais.</p>
     </div>
   </header>
 
@@ -16,7 +17,7 @@
           <th>Data</th>
           <th>Itens</th>
           <th>Status</th>
-          <th class="actions-col">Acoes</th>
+          <th class="actions-col">Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -38,13 +39,7 @@
               <div class="purchase-items">
                 <div *ngFor="let item of pedido.itens; trackBy: trackById" class="purchase-item">
                   <span class="purchase-item-name">{{ item.nomeItem ?? item.itemEstoque?.nomeItem ?? 'Item #' + item.idItemEstoque }}</span>
-                  <input
-                    type="number"
-                    class="qtd-input"
-                    [(ngModel)]="purchaseQtys[item.idItemPedido]"
-                    min="0"
-                    placeholder="Qtd"
-                  />
+                  <span class="purchase-item-qty">{{ purchaseQtys[item.idItemPedido] }} {{ item.itemEstoque?.unidade ?? '' }}</span>
                 </div>
               </div>
             </ng-template>
@@ -63,7 +58,7 @@
               </button>
 
               <button
-                *ngIf="canPurchase(pedido.status) && isDirector()"
+                *ngIf="canPurchase(pedido.status) && canManagePedidos()"
                 type="button"
                 class="btn btn--purchase"
                 (click)="startPurchase(pedido)"
@@ -73,7 +68,7 @@
               </button>
 
               <button
-                *ngIf="canDeliver(pedido.status) && isDirector()"
+                *ngIf="canDeliver(pedido.status) && canManagePedidos()"
                 type="button"
                 class="btn btn--deliver"
                 (click)="deliver.emit(pedido)"
@@ -83,6 +78,7 @@
               </button>
 
               <button
+                *ngIf="canManagePedidos() && canDelete(pedido.status)"
                 type="button"
                 class="btn btn--danger"
                 (click)="remove.emit(pedido)"
@@ -91,6 +87,7 @@
                 Excluir
               </button>
             </ng-container>
+            <span *ngIf="!hasActions(pedido.status)">-</span>
             <ng-template #purchaseActions>
               <button
                 type="button"

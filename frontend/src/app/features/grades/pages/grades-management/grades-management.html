@@ -1,6 +1,7 @@
 <main class="grades-management">
   <header class="grades-management__topbar">
     <div>
+      <span class="eyebrow">Gestão acadêmica</span>
       <h1>Notas</h1>
       <p>Lance as notas dos alunos por turma e prova.</p>
     </div>
@@ -8,7 +9,7 @@
       type="button"
       class="btn btn--primary"
       (click)="onSave()"
-      [disabled]="saving || !selectedTurma || students.length === 0"
+      [disabled]="saving || !selectedTurma || students.length === 0 || loadingNotas || loadFailed"
     >
       <span *ngIf="saving" class="spinner" aria-hidden="true"></span>
       {{ saving ? 'Salvando...' : 'Salvar notas' }}

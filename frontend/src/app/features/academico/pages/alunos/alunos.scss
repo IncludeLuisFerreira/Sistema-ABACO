@@ -1,12 +1,14 @@
-.alunos-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
+:host {
+  display: block;
+  min-height: 100%;
+  background: var(--abaco-canvas-glow);
+}
+
+.alunos-page { padding: 2.5rem 1rem 3rem; max-width: 1240px; margin: 0 auto; }
 .alunos-header { margin-bottom: 1.5rem; }
-.alunos-header h1 { margin: 0; font-size: 1.5rem; }
+.alunos-header h1 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--abaco-ink); }
 .loading { color: #64748b; }
 .error { color: #d93025; }
-
-.filter-turma { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1.5rem; max-width: 300px; }
-.filter-turma span { font-weight: 600; color: #475569; font-size: 0.82rem; }
-.filter-turma select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
 
 .empty-state { text-align: center; padding: 3rem 1rem; }
 .empty-state__title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 0.4rem; }
@@ -16,15 +18,17 @@
 
 .aluno-card {
   display: flex; gap: 1rem;
-  background: #fff; border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  background: var(--abaco-surface);
+  border: 1px solid var(--abaco-line);
+  border-radius: 18px;
+  box-shadow: var(--abaco-shadow);
   padding: 1.25rem; transition: box-shadow 0.2s, transform 0.15s;
 }
-.aluno-card:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1); transform: translateY(-2px); }
+.aluno-card:hover { box-shadow: var(--abaco-shadow-hover); transform: translateY(-2px); }
 
 .aluno-card__avatar {
   width: 48px; height: 48px; border-radius: 12px;
-  background: #e0f2fe; color: #0369a1;
+  background: var(--abaco-gold-soft); color: var(--abaco-gold-text);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.3rem; font-weight: 800; flex-shrink: 0;
 }
@@ -43,7 +47,7 @@
 .aluno-card__status--concluida { background: #f0fdf4; color: #15803d; }
 
 @media (max-width: 768px) {
-  .alunos-page { padding: 1rem; }
-  .alunos-header h1 { font-size: 1.25rem; }
-  .alunos-grid { grid-template-columns: 1fr; }
+  .alunos-page { padding: 1.25rem 1rem 2rem; }
+  .alunos-header h1 { font-size: 1.4rem; }
+  .alunos-grid { grid-template-columns: minmax(0, 1fr); }
 }

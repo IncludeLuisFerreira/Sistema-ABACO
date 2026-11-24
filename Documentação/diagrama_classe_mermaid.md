@@ -227,7 +227,7 @@ classDiagram
     }
 
     namespace dependencies {
-        class AuthDependencies { <<Utility>> +get_current_user(authorization?) dict ; +verify_cargo(*cargos) callable ; +verify_director_role() dict }
+        class AuthDependencies { <<Utility>> +get_current_user(authorization?) dict ; +verify_cargo(*cargos) callable }
     }
 
     namespace limiter {

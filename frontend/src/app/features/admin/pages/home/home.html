@@ -1,6 +1,7 @@
 <div class="admin-home">
   <header class="admin-home__header">
     <div>
+      <span class="eyebrow">Painel institucional</span>
       <h1>{{ isDirector ? 'Painel Gerencial' : 'Painel Administrativo' }}</h1>
       <p>{{ hoje | date:'EEEE, d \'de\' MMMM' | titlecase }} — Bem-vindo ao sistema de gestão ABACO.</p>
     </div>
@@ -120,8 +121,8 @@
       </div>
     </section>
 
-    <!-- Gráficos - só Diretora -->
-    <ng-container *ngIf="isDirector && donutSeries.length > 0">
+    <!-- Gráficos - Diretoria e Administrador -->
+    <ng-container *ngIf="canSeeCharts && donutSeries.length > 0">
       <section class="home-section">
         <h2 class="home-section__title">Visão Acadêmica</h2>
         <div class="charts-grid">
@@ -129,7 +130,7 @@
             <apx-chart [series]="donutSeries" [chart]="donutChart" [labels]="donutLabels" [dataLabels]="donutDataLabels" [legend]="donutLegend" [responsive]="donutResponsive"></apx-chart>
           </div>
           <div class="chart-box">
-            <apx-chart [series]="barSeries" [chart]="barChart" [xaxis]="barXaxis" [dataLabels]="barDataLabels" [plotOptions]="barPlotOptions" [fill]="fill" [title]="barTitle"></apx-chart>
+            <apx-chart [series]="barSeries" [chart]="barChart" [xaxis]="barXaxis" [dataLabels]="barDataLabels" [plotOptions]="barPlotOptions" [fill]="fill" [title]="barTitle" [responsive]="barResponsive"></apx-chart>
           </div>
         </div>
       </section>
