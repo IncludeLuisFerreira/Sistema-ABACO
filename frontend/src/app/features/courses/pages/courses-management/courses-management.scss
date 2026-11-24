@@ -54,10 +54,10 @@
 }
 
 .local-feedback {
-  background: #fdeaea;
-  border: 1px solid #f5c2c2;
-  border-left: 4px solid #dc2626;
-  color: #991b1b;
+  background: var(--abaco-danger-soft);
+  border: 1px solid var(--abaco-danger-line);
+  border-left: 4px solid var(--abaco-danger);
+  color: var(--abaco-danger-text);
   padding: 0.8rem 1rem;
   border-radius: 12px;
 }
@@ -74,24 +74,6 @@
 
 .courses-management__layout {
   display: block;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.modal-card {
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
 }
 
 @media (max-width: 768px) {

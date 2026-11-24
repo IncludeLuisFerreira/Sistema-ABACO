@@ -36,6 +36,9 @@
 	--abaco-row-head: #f8fafc;
 	--abaco-row-hover: #fcfaf5;
 	--abaco-input-line: #d5dce6;
+	--abaco-danger-soft: #fdeaea;
+	--abaco-danger-line: #f5c2c2;
+	--abaco-danger-text: #991b1b;
 }
 
 html,
@@ -159,6 +162,56 @@ body {
 	.abaco-input {
 		min-width: 0;
 		width: 100%;
+	}
+}
+
+/* Modal sobreposto: acima da topbar/sidebar (800-1000), abaixo do painel de notificações (1200). */
+.abaco-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	background: rgba(15, 23, 42, 0.5);
+}
+
+.abaco-modal-card {
+	width: 100%;
+	max-width: 560px;
+	max-height: 90vh;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.abaco-modal-card:focus-visible {
+	outline: 2px solid var(--abaco-focus);
+	outline-offset: 2px;
+}
+
+.error--block {
+	margin: 0 0 0.85rem;
+	padding: 0.7rem 0.85rem;
+	background: var(--abaco-danger-soft);
+	border: 1px solid var(--abaco-danger-line);
+	border-radius: 10px;
+	font-size: 0.85rem;
+	color: var(--abaco-danger-text);
+}
+
+body.abaco-modal-open {
+	overflow: hidden;
+}
+
+@media (max-width: 768px) {
+	.abaco-modal-overlay {
+		align-items: flex-start;
+		padding-top: 4.5rem;
+	}
+
+	.abaco-modal-card {
+		max-height: calc(100vh - 5.5rem);
 	}
 }
 

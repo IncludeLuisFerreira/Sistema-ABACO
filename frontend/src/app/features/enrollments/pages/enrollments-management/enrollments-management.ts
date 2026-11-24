@@ -1,5 +1,13 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 
@@ -13,6 +21,8 @@ import { TurmaService } from '../../../../core/services/turma.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { EnrollmentFormComponent, EnrollmentFormSubmit } from '../../components/enrollment-form/enrollment-form';
 import { EnrollmentCardComponent } from '../../components/enrollment-card/enrollment-card';
+import { trapFocus } from '../../../../core/utils/modal-focus';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 
 @Component({
   selector: 'app-enrollments-management',
@@ -21,7 +31,7 @@ import { EnrollmentCardComponent } from '../../components/enrollment-card/enroll
   templateUrl: './enrollments-management.html',
   styleUrls: ['./enrollments-management.scss'],
 })
-export class EnrollmentsManagementComponent implements OnInit {
+export class EnrollmentsManagementComponent implements OnInit, OnDestroy {
   matriculas: Matricula[] = [];
   filteredMatriculas: Matricula[] = [];
 
@@ -38,6 +48,10 @@ export class EnrollmentsManagementComponent implements OnInit {
   saving = false;
   deletingMatriculaId: number | null = null;
   localFeedback: string | null = null;
+  formError: string | null = null;
+
+  @ViewChild('modalCard') private modalCard?: ElementRef<HTMLElement>;
+  private previouslyFocused: HTMLElement | null = null;
 
   constructor(
     private readonly router: Router,
@@ -55,6 +69,10 @@ export class EnrollmentsManagementComponent implements OnInit {
     this.loadTurmas();
   }
 
+  ngOnDestroy(): void {
+    document.body.classList.remove('abaco-modal-open');
+  }
+
   onSearchInput(event: Event): void {
     this.onSearch((event.target as HTMLInputElement).value);
   }
@@ -68,19 +86,46 @@ export class EnrollmentsManagementComponent implements OnInit {
     this.formMode = 'create';
     this.selectedMatricula = null;
     this.localFeedback = null;
-    this.panelOpen = true;
+    this.formError = null;
+    this.openModal();
   }
 
   openEdit(matricula: Matricula): void {
     this.formMode = 'edit';
     this.selectedMatricula = matricula;
     this.localFeedback = null;
-    this.panelOpen = true;
+    this.formError = null;
+    this.openModal();
   }
 
   closePanel(): void {
     this.panelOpen = false;
     this.selectedMatricula = null;
+    this.formError = null;
+    document.body.classList.remove('abaco-modal-open');
+    this.previouslyFocused?.focus();
+    this.previouslyFocused = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.panelOpen) {
+      this.closePanel();
+    }
+  }
+
+  onModalKeydown(event: KeyboardEvent): void {
+    trapFocus(event, this.modalCard?.nativeElement);
+  }
+
+  private openModal(): void {
+    if (!this.panelOpen) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null;
+    }
+    this.panelOpen = true;
+    document.body.classList.add('abaco-modal-open');
+    this.changeDetectorRef.detectChanges();
+    this.modalCard?.nativeElement.focus();
   }
 
   onViewGrades(matriculaId: number): void {
@@ -94,6 +139,7 @@ export class EnrollmentsManagementComponent implements OnInit {
   onSave(payload: EnrollmentFormSubmit): void {
     this.saving = true;
     this.localFeedback = null;
+    this.formError = null;
 
     if (this.formMode === 'create') {
       const createPayload: MatriculaCreatePayload = {
@@ -107,13 +153,14 @@ export class EnrollmentsManagementComponent implements OnInit {
         next: () => {
           this.notifications.clear();
           this.notifications.success('Matrícula criada com sucesso.');
+          this.saving = false;
           this.closePanel();
           this.loadMatriculas();
-          this.saving = false;
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar matricula.';
+          const message = getApiErrorMessage(err, 'Erro ao criar matrícula.');
+          this.formError = message;
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -138,13 +185,14 @@ export class EnrollmentsManagementComponent implements OnInit {
       next: () => {
         this.notifications.clear();
         this.notifications.success('Matrícula atualizada com sucesso.');
+        this.saving = false;
         this.closePanel();
         this.loadMatriculas();
-        this.saving = false;
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar matricula.';
+        const message = getApiErrorMessage(err, 'Erro ao atualizar matrícula.');
+        this.formError = message;
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();

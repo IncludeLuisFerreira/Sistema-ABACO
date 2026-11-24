@@ -57,10 +57,10 @@
 }
 
 .local-feedback {
-  background: #fdeaea;
-  border: 1px solid #f5c2c2;
-  border-left: 4px solid #dc2626;
-  color: #991b1b;
+  background: var(--abaco-danger-soft);
+  border: 1px solid var(--abaco-danger-line);
+  border-left: 4px solid var(--abaco-danger);
+  color: var(--abaco-danger-text);
   padding: 0.8rem 1rem;
   border-radius: 12px;
 }
