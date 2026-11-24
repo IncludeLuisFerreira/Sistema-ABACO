@@ -181,3 +181,37 @@ describe('GradesManagementComponent - carregamento', () => {
     expect(component.saving).toBe(false);
   });
 });
+
+describe('GradesManagementComponent - rótulo de turma', () => {
+  it('lista as turmas no formato #id — Curso', async () => {
+    await TestBed.configureTestingModule({
+      imports: [GradesManagementComponent],
+      providers: [
+        { provide: TurmaService, useValue: { list: vi.fn().mockReturnValue(of([turma, turma2])) } },
+        { provide: MatriculaService, useValue: { list: vi.fn().mockReturnValue(of([])) } },
+        {
+          provide: NotaService,
+          useValue: {
+            listByTurma: vi.fn().mockReturnValue(of([])),
+            create: vi.fn(),
+            getMediaTurma: vi.fn().mockReturnValue(of({ idTurma: 1, medias: [] })),
+          },
+        },
+        {
+          provide: NotificationService,
+          useValue: { success: vi.fn(), error: vi.fn(), clear: vi.fn() },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GradesManagementComponent);
+    fixture.detectChanges();
+
+    const labels = Array.from(
+      fixture.nativeElement.querySelectorAll('select option') as NodeListOf<HTMLOptionElement>,
+    ).map((option) => option.textContent?.trim());
+
+    expect(labels).toContain('#1 — Curso Teste');
+    expect(labels).toContain('#2 — Curso Teste');
+  });
+});

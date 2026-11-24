@@ -5,6 +5,8 @@
   </header>
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <p class="error error--block" *ngIf="errorMessage">{{ errorMessage }}</p>
+
     <label>
       <span>Aluno *</span>
       <select formControlName="idAluno">
@@ -18,7 +20,7 @@
       <span>Turma *</span>
       <select formControlName="idTurma">
         <option [value]="0" disabled>Selecione uma turma</option>
-        <option *ngFor="let turma of turmas" [value]="turma.idTurma">#{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }} — {{ turma.professor?.nome ?? 'Sem professor' }} {{ turma.dataInicio ? '(' + (turma.dataInicio | slice:0:10) + ')' : '' }}</option>
+        <option *ngFor="let turma of turmas" [value]="turma.idTurma">#{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }}</option>
       </select>
       <small class="error" *ngIf="form.controls.idTurma.invalid && form.controls.idTurma.touched">Turma e obrigatoria.</small>
     </label>

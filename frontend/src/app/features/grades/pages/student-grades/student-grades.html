@@ -2,9 +2,10 @@
   <ab-breadcrumb [items]="breadcrumbs"></ab-breadcrumb>
   <header class="student-grades__topbar">
     <div>
+      <span class="eyebrow">Gestão acadêmica</span>
       <h1>Notas do Aluno</h1>
-      <p *ngIf="alunoNome">Aluno: <strong>{{ alunoNome }}</strong></p>
-      <p *ngIf="turmaNome">Turma: <strong>{{ turmaNome }}</strong></p>
+      <p *ngIf="alunoNome" class="page-subtitle">Aluno: <strong>{{ alunoNome }}</strong></p>
+      <p *ngIf="turmaNome" class="page-subtitle">Turma: <strong>{{ turmaNome }}</strong></p>
     </div>
     <a class="btn btn--ghost" routerLink="/admin/matriculas">Voltar</a>
   </header>

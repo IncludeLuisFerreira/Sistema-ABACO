@@ -7,7 +7,7 @@
 .attendance-management {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 2.5rem 1rem 3rem;
 }
 
 .attendance-management__topbar {
@@ -15,71 +15,71 @@
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .attendance-management__topbar h1 {
   margin: 0;
-  font-size: 1.8rem;
-}
-
-.attendance-management__topbar p {
-  margin: 0.4rem 0 0;
-  color: #475569;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--abaco-ink);
 }
 
 .save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  border-radius: 10px;
-  background: var(--abaco-gold);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--abaco-gold-light) 0%, var(--abaco-gold) 100%);
   color: var(--abaco-ink);
-  font-weight: 700;
-  padding: 0.8rem 1rem;
+  font-weight: 800;
+  padding: 0.8rem 1.15rem;
   cursor: pointer;
+  box-shadow: var(--abaco-shadow-gold);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.save-btn:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow: var(--abaco-shadow-gold-hover);
+  filter: brightness(1.02);
 }
 
 .save-btn[disabled] {
   opacity: 0.7;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .local-feedback {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-  padding: 0.7rem 0.9rem;
-  border-radius: 10px;
+  background: var(--abaco-danger-soft);
+  border: 1px solid var(--abaco-danger-line);
+  border-left: 4px solid var(--abaco-danger);
+  color: var(--abaco-danger-text);
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
 }
 
 .attendance-management__controls {
-  margin-bottom: 1rem;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-  padding: 1.5rem;
-}
-
-.attendance-management__controls label {
-  display: grid;
-  gap: 0.35rem;
-  max-width: 400px;
-}
-
-.attendance-management__controls label span {
-  font-size: 0.85rem;
-  color: #0f172a;
-}
-
-.attendance-management__controls select {
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
+  align-items: flex-end;
 }
 
 .dias-aula-info {
-  margin: 0.75rem 0 0;
+  margin: 0;
   font-size: 0.9rem;
-  color: #475569;
+  color: var(--abaco-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-btn {
+    transition: none;
+  }
+
+  .save-btn:hover:not([disabled]) {
+    transform: none;
+  }
 }
 
 .spinner {
@@ -101,9 +101,8 @@
 }
 
 @media (max-width: 768px) {
-  .attendance-management { padding: 1rem; }
+  .attendance-management { padding: 1.25rem 1rem 2rem; }
   .attendance-management__topbar { flex-direction: column; }
-  .attendance-management__topbar h1 { font-size: 1.3rem; }
-  .attendance-management__controls { padding: 1rem; }
-  .attendance-management__controls label { max-width: 100%; }
+  .attendance-management__topbar h1 { font-size: 1.4rem; }
+  .save-btn { width: 100%; min-height: 44px; }
 }

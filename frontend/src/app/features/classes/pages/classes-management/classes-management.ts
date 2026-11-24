@@ -1,9 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { Curso } from '../../../../core/models/curso.model';
-import { Turma, TurmaCreatePayload, TurmaUpdatePayload, Avaliacao } from '../../../../core/models/turma.model';
+import {
+  Turma,
+  TurmaCreatePayload,
+  TurmaUpdatePayload,
+  Avaliacao,
+} from '../../../../core/models/turma.model';
 import { Usuario } from '../../../../core/models/usuario.model';
 import { CursoService } from '../../../../core/services/curso.service';
 import { DialogService } from '../../../../core/services/dialog.service';
@@ -14,6 +27,7 @@ import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { ClassFormComponent, ClassFormSubmit } from '../../components/class-form/class-form';
 import { TurmaGrupoComponent, TurmaGrupo } from '../../components/turma-grupo/turma-grupo';
 import { getStatusTurma } from '../../components/turma-card/turma-card';
+import { trapFocus } from '../../../../core/utils/modal-focus';
 
 @Component({
   selector: 'app-classes-management',
@@ -22,7 +36,7 @@ import { getStatusTurma } from '../../components/turma-card/turma-card';
   templateUrl: './classes-management.html',
   styleUrls: ['./classes-management.scss'],
 })
-export class ClassesManagementComponent implements OnInit {
+export class ClassesManagementComponent implements OnInit, OnDestroy {
   turmas: Turma[] = [];
   filteredTurmas: Turma[] = [];
   grupos: TurmaGrupo[] = [];
@@ -46,6 +60,9 @@ export class ClassesManagementComponent implements OnInit {
   deletingTurmaId: number | null = null;
   localFeedback: string | null = null;
 
+  @ViewChild('modalCard') private modalCard?: ElementRef<HTMLElement>;
+  private previouslyFocused: HTMLElement | null = null;
+
   constructor(
     private readonly turmaService: TurmaService,
     private readonly cursoService: CursoService,
@@ -60,6 +77,10 @@ export class ClassesManagementComponent implements OnInit {
     this.loadTurmas();
     this.loadCursos();
     this.loadProfessores();
+  }
+
+  ngOnDestroy(): void {
+    document.body.classList.remove('abaco-modal-open');
   }
 
   onSearchInput(event: Event): string {
@@ -114,7 +135,7 @@ export class ClassesManagementComponent implements OnInit {
     this.isDuplicate = false;
     this.localFeedback = null;
     this.formError = null;
-    this.panelOpen = true;
+    this.openModal();
   }
 
   openEdit(turma: Turma): void {
@@ -123,7 +144,7 @@ export class ClassesManagementComponent implements OnInit {
     this.isDuplicate = false;
     this.localFeedback = null;
     this.formError = null;
-    this.panelOpen = true;
+    this.openModal();
   }
 
   closePanel(): void {
@@ -131,6 +152,30 @@ export class ClassesManagementComponent implements OnInit {
     this.selectedTurma = null;
     this.isDuplicate = false;
     this.formError = null;
+    document.body.classList.remove('abaco-modal-open');
+    this.previouslyFocused?.focus();
+    this.previouslyFocused = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.panelOpen) {
+      this.closePanel();
+    }
+  }
+
+  onModalKeydown(event: KeyboardEvent): void {
+    trapFocus(event, this.modalCard?.nativeElement);
+  }
+
+  private openModal(): void {
+    if (!this.panelOpen) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null;
+    }
+    this.panelOpen = true;
+    document.body.classList.add('abaco-modal-open');
+    this.changeDetectorRef.detectChanges();
+    this.modalCard?.nativeElement.focus();
   }
 
   onSave(payload: ClassFormSubmit): void {
@@ -153,9 +198,9 @@ export class ClassesManagementComponent implements OnInit {
         next: () => {
           this.notifications.clear();
           this.notifications.success('Turma criada com sucesso.');
+          this.saving = false;
           this.closePanel();
           this.loadTurmas();
-          this.saving = false;
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
@@ -188,9 +233,9 @@ export class ClassesManagementComponent implements OnInit {
       next: () => {
         this.notifications.clear();
         this.notifications.success('Turma atualizada com sucesso.');
+        this.saving = false;
         this.closePanel();
         this.loadTurmas();
-        this.saving = false;
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
@@ -209,38 +254,41 @@ export class ClassesManagementComponent implements OnInit {
     this.isDuplicate = true;
     this.localFeedback = null;
     this.formError = null;
-    this.panelOpen = true;
+    this.openModal();
   }
 
   onDelete(turma: Turma): void {
     const displayName = turma.curso?.nomeCurso ?? `Turma #${turma.idTurma}`;
-    this.dialog.confirm({ message: `Excluir a turma de ${displayName}?`, confirmLabel: 'Excluir' }).subscribe(shouldDelete => {
-      if (!shouldDelete) {
-        return;
-      }
+    this.dialog
+      .confirm({ message: `Excluir a turma de ${displayName}?`, confirmLabel: 'Excluir' })
+      .subscribe((shouldDelete) => {
+        if (!shouldDelete) {
+          return;
+        }
 
-      this.deletingTurmaId = turma.idTurma;
-      this.localFeedback = null;
+        this.deletingTurmaId = turma.idTurma;
+        this.localFeedback = null;
 
-      this.turmaService.delete(turma.idTurma).subscribe({
-        next: () => {
-          this.notifications.clear();
-          this.notifications.success('Turma excluída com sucesso.');
-          this.loadTurmas();
-          this.deletingTurmaId = null;
-          this.changeDetectorRef.detectChanges();
-        },
-        error: (error: HttpErrorResponse) => {
-          if (error.status === 409) {
-            const message = 'Esta turma possui matriculas ou pedidos vinculados e nao pode ser excluida.';
-            this.localFeedback = message;
-            this.notifications.error(message);
-          }
-          this.deletingTurmaId = null;
-          this.changeDetectorRef.detectChanges();
-        },
+        this.turmaService.delete(turma.idTurma).subscribe({
+          next: () => {
+            this.notifications.clear();
+            this.notifications.success('Turma excluída com sucesso.');
+            this.loadTurmas();
+            this.deletingTurmaId = null;
+            this.changeDetectorRef.detectChanges();
+          },
+          error: (error: HttpErrorResponse) => {
+            if (error.status === 409) {
+              const message =
+                'Esta turma possui matriculas ou pedidos vinculados e nao pode ser excluida.';
+              this.localFeedback = message;
+              this.notifications.error(message);
+            }
+            this.deletingTurmaId = null;
+            this.changeDetectorRef.detectChanges();
+          },
+        });
       });
-    });
   }
 
   private loadTurmas(): void {
@@ -307,9 +355,8 @@ export class ClassesManagementComponent implements OnInit {
       encerrada: 2,
     };
 
-    const semestreAlvo = this.semestreSelecionado === 'atual'
-      ? this.getSemestreAtual()
-      : this.semestreSelecionado;
+    const semestreAlvo =
+      this.semestreSelecionado === 'atual' ? this.getSemestreAtual() : this.semestreSelecionado;
 
     this.filteredTurmas = this.turmas
       .filter((turma) => {

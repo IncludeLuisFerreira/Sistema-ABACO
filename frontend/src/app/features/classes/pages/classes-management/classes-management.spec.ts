@@ -153,9 +153,18 @@ describe('ClassesManagementComponent', () => {
 
     component.onSave({ ...payload, avaliacoes, avaliacoesChanged: true });
 
-    expect(turmaService.update).toHaveBeenCalledWith(
-      1,
-      expect.objectContaining({ avaliacoes }),
-    );
+    expect(turmaService.update).toHaveBeenCalledWith(1, expect.objectContaining({ avaliacoes }));
+  });
+
+  it('fecha o modal com ESC e libera o scroll do fundo', () => {
+    component.openCreate();
+    fixture.detectChanges();
+    expect(document.body.classList.contains('abaco-modal-open')).toBe(true);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(component.panelOpen).toBe(false);
+    expect(document.body.classList.contains('abaco-modal-open')).toBe(false);
   });
 });

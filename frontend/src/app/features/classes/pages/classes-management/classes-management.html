@@ -3,50 +3,104 @@
     <div>
       <span class="eyebrow">Gestão acadêmica</span>
       <h1>Turmas</h1>
-      <p>Painel administrativo para cadastro e gestão de turmas.</p>
+      <p class="page-subtitle">Painel administrativo para cadastro e gestão de turmas.</p>
     </div>
     <button type="button" class="new-class-btn" (click)="openCreate()" [disabled]="saving || loadingList">Nova turma</button>
   </header>
 
-  <div class="classes-management__filters">
+  <section class="classes-management__filters" aria-label="Filtros de turmas">
     <label class="classes-management__search">
-      <span>Pesquisar</span>
-      <input
-        type="search"
-        placeholder="Buscar por curso ou professor"
-        (input)="onSearch(onSearchInput($event))"
-        [disabled]="loadingList"
-      />
+      <span class="classes-management__filter-label">Pesquisar</span>
+      <span class="classes-search__control">
+        <svg
+          class="classes-search__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          type="search"
+          placeholder="Buscar por curso ou professor"
+          (input)="onSearch(onSearchInput($event))"
+          [disabled]="loadingList"
+        />
+      </span>
     </label>
 
     <div class="classes-management__semestre" *ngIf="semestres.length > 0">
       <span class="classes-management__filter-label">Semestre</span>
-      <div class="semestre-pills">
+      <div class="semestre-pills" role="group" aria-label="Filtrar por semestre">
         <button
           *ngFor="let sem of semestres"
           type="button"
           class="semestre-pill"
           [class.semestre-pill--active]="semestreSelecionado === sem.value"
+          [attr.aria-pressed]="semestreSelecionado === sem.value"
           (click)="onSemestreChange(sem.value)"
         >
           {{ sem.label }}
         </button>
       </div>
     </div>
-  </div>
+  </section>
 
   <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
+
+  <div class="classes-management__toolbar" *ngIf="!loadingList && grupos.length > 0">
+    <p class="classes-management__summary">
+      <strong>{{ filteredTurmas.length }}</strong>
+      {{ filteredTurmas.length === 1 ? 'turma' : 'turmas' }}
+      <span aria-hidden="true">·</span>
+      <strong>{{ grupos.length }}</strong>
+      {{ grupos.length === 1 ? 'curso' : 'cursos' }}
+    </p>
+
+    <div class="grupos-actions">
+      <button type="button" class="btn btn--ghost" (click)="expandirTodos()">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m7 13 5 5 5-5" />
+          <path d="m7 6 5 5 5-5" />
+        </svg>
+        Expandir todos
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="recolherTodos()">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m7 18 5-5 5 5" />
+          <path d="m7 11 5-5 5 5" />
+        </svg>
+        Recolher todos
+      </button>
+    </div>
+  </div>
 
   <section class="classes-management__layout">
     <p *ngIf="loadingList" class="loading">Carregando turmas...</p>
 
     <div *ngIf="!loadingList && filteredTurmas.length === 0" class="empty">
       Nenhuma turma encontrada para o filtro aplicado.
-    </div>
-
-    <div *ngIf="!loadingList && grupos.length > 0" class="grupos-actions">
-      <button type="button" class="btn btn--ghost" (click)="expandirTodos()">Expandir todos</button>
-      <button type="button" class="btn btn--ghost" (click)="recolherTodos()">Recolher todos</button>
     </div>
 
     <app-turma-grupo
@@ -58,19 +112,31 @@
       (remove)="onDelete($event)"
       (duplicate)="onDuplicate($event)"
     ></app-turma-grupo>
-
-    <app-class-form
-      *ngIf="panelOpen"
-      [mode]="formMode"
-      [turma]="selectedTurma"
-      [cursos]="cursos"
-      [professores]="professores"
-      [allTurmas]="turmas"
-      [loading]="saving"
-      [errorMessage]="formError"
-      [duplicate]="isDuplicate"
-      (save)="onSave($event)"
-      (cancel)="closePanel()"
-    ></app-class-form>
   </section>
+
+  <div class="abaco-modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
+    <div
+      class="abaco-modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Formulário de turma"
+      tabindex="-1"
+      #modalCard
+      (click)="$event.stopPropagation()"
+      (keydown)="onModalKeydown($event)"
+    >
+      <app-class-form
+        [mode]="formMode"
+        [turma]="selectedTurma"
+        [cursos]="cursos"
+        [professores]="professores"
+        [allTurmas]="turmas"
+        [loading]="saving"
+        [errorMessage]="formError"
+        [duplicate]="isDuplicate"
+        (save)="onSave($event)"
+        (cancel)="closePanel()"
+      ></app-class-form>
+    </div>
+  </div>
 </main>

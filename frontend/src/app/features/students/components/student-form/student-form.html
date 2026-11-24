@@ -5,6 +5,8 @@
   </header>
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <p class="error error--block" *ngIf="errorMessage">{{ errorMessage }}</p>
+
     <label>
       <span>Nome *</span>
       <input formControlName="nome" type="text" placeholder="Nome completo" />

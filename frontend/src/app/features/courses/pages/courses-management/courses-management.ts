@@ -1,13 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { Curso, CursoCreatePayload, CursoUpdatePayload } from '../../../../core/models/curso.model';
 import { CursoService } from '../../../../core/services/curso.service';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { CourseFormComponent, CourseFormSubmit } from '../../components/course-form/course-form';
 import { CourseListComponent } from '../../components/course-list/course-list';
+import { trapFocus } from '../../../../core/utils/modal-focus';
 
 @Component({
   selector: 'app-courses-management',
@@ -16,7 +26,7 @@ import { CourseListComponent } from '../../components/course-list/course-list';
   templateUrl: './courses-management.html',
   styleUrls: ['./courses-management.scss'],
 })
-export class CoursesManagementComponent implements OnInit {
+export class CoursesManagementComponent implements OnInit, OnDestroy {
   cursos: Curso[] = [];
   filteredCursos: Curso[] = [];
   pagedCursos: Curso[] = [];
@@ -33,6 +43,10 @@ export class CoursesManagementComponent implements OnInit {
   saving = false;
   deletingCursoId: number | null = null;
   localFeedback: string | null = null;
+  formError: string | null = null;
+
+  @ViewChild('modalCard') private modalCard?: ElementRef<HTMLElement>;
+  private previouslyFocused: HTMLElement | null = null;
 
   constructor(
     private readonly cursoService: CursoService,
@@ -43,6 +57,10 @@ export class CoursesManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCursos();
+  }
+
+  ngOnDestroy(): void {
+    document.body.classList.remove('abaco-modal-open');
   }
 
   get totalPages(): number {
@@ -65,24 +83,52 @@ export class CoursesManagementComponent implements OnInit {
     this.formMode = 'create';
     this.selectedCurso = null;
     this.localFeedback = null;
-    this.panelOpen = true;
+    this.formError = null;
+    this.openModal();
   }
 
   openEdit(curso: Curso): void {
     this.formMode = 'edit';
     this.selectedCurso = curso;
     this.localFeedback = null;
-    this.panelOpen = true;
+    this.formError = null;
+    this.openModal();
   }
 
   closePanel(): void {
     this.panelOpen = false;
     this.selectedCurso = null;
+    this.formError = null;
+    document.body.classList.remove('abaco-modal-open');
+    this.previouslyFocused?.focus();
+    this.previouslyFocused = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.panelOpen) {
+      this.closePanel();
+    }
+  }
+
+  onModalKeydown(event: KeyboardEvent): void {
+    trapFocus(event, this.modalCard?.nativeElement);
+  }
+
+  private openModal(): void {
+    if (!this.panelOpen) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null;
+    }
+    this.panelOpen = true;
+    document.body.classList.add('abaco-modal-open');
+    this.changeDetectorRef.detectChanges();
+    this.modalCard?.nativeElement.focus();
   }
 
   onSave(payload: CourseFormSubmit): void {
     this.saving = true;
     this.localFeedback = null;
+    this.formError = null;
 
     if (this.formMode === 'create') {
       const createPayload: CursoCreatePayload = {
@@ -93,13 +139,14 @@ export class CoursesManagementComponent implements OnInit {
         next: () => {
           this.notifications.clear();
           this.notifications.success('Curso criado com sucesso.');
+          this.saving = false;
           this.closePanel();
           this.loadCursos();
-          this.saving = false;
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar curso.';
+          const message = getApiErrorMessage(err, 'Erro ao criar curso.');
+          this.formError = message;
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -121,13 +168,14 @@ export class CoursesManagementComponent implements OnInit {
       next: () => {
         this.notifications.clear();
         this.notifications.success('Curso atualizado com sucesso.');
+        this.saving = false;
         this.closePanel();
         this.loadCursos();
-        this.saving = false;
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar curso.';
+        const message = getApiErrorMessage(err, 'Erro ao atualizar curso.');
+        this.formError = message;
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();

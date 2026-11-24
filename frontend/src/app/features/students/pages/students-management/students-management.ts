@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { Aluno, AlunoCreatePayload, AlunoUpdatePayload } from '../../../../core/models/aluno.model';
@@ -8,6 +16,8 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { StudentFormComponent, StudentFormSubmit } from '../../components/student-form/student-form';
 import { StudentCardComponent } from '../../components/student-card/student-card';
+import { getApiErrorMessage } from '../../../../core/utils/api-error';
+import { trapFocus } from '../../../../core/utils/modal-focus';
 
 @Component({
   selector: 'app-students-management',
@@ -16,7 +26,7 @@ import { StudentCardComponent } from '../../components/student-card/student-card
   templateUrl: './students-management.html',
   styleUrls: ['./students-management.scss'],
 })
-export class StudentsManagementComponent implements OnInit {
+export class StudentsManagementComponent implements OnInit, OnDestroy {
   alunos: Aluno[] = [];
   filteredAlunos: Aluno[] = [];
 
@@ -30,6 +40,10 @@ export class StudentsManagementComponent implements OnInit {
   saving = false;
   deletingAlunoId: number | null = null;
   localFeedback: string | null = null;
+  formError: string | null = null;
+
+  @ViewChild('modalCard') private modalCard?: ElementRef<HTMLElement>;
+  private previouslyFocused: HTMLElement | null = null;
 
   constructor(
     private readonly alunoService: AlunoService,
@@ -40,6 +54,10 @@ export class StudentsManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAlunos();
+  }
+
+  ngOnDestroy(): void {
+    document.body.classList.remove('abaco-modal-open');
   }
 
   onSearchInput(event: Event): void {
@@ -55,24 +73,52 @@ export class StudentsManagementComponent implements OnInit {
     this.formMode = 'create';
     this.selectedAluno = null;
     this.localFeedback = null;
-    this.panelOpen = true;
+    this.formError = null;
+    this.openModal();
   }
 
   openEdit(aluno: Aluno): void {
     this.formMode = 'edit';
     this.selectedAluno = aluno;
     this.localFeedback = null;
-    this.panelOpen = true;
+    this.formError = null;
+    this.openModal();
   }
 
   closePanel(): void {
     this.panelOpen = false;
     this.selectedAluno = null;
+    this.formError = null;
+    document.body.classList.remove('abaco-modal-open');
+    this.previouslyFocused?.focus();
+    this.previouslyFocused = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.panelOpen) {
+      this.closePanel();
+    }
+  }
+
+  onModalKeydown(event: KeyboardEvent): void {
+    trapFocus(event, this.modalCard?.nativeElement);
+  }
+
+  private openModal(): void {
+    if (!this.panelOpen) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null;
+    }
+    this.panelOpen = true;
+    document.body.classList.add('abaco-modal-open');
+    this.changeDetectorRef.detectChanges();
+    this.modalCard?.nativeElement.focus();
   }
 
   onSave(payload: StudentFormSubmit): void {
     this.saving = true;
     this.localFeedback = null;
+    this.formError = null;
 
     if (this.formMode === 'create') {
       const createPayload: AlunoCreatePayload = {
@@ -88,13 +134,14 @@ export class StudentsManagementComponent implements OnInit {
         next: () => {
           this.notifications.clear();
           this.notifications.success('Aluno criado com sucesso.');
+          this.saving = false;
           this.closePanel();
           this.loadAlunos();
-          this.saving = false;
           this.changeDetectorRef.detectChanges();
         },
         error: (err) => {
-          const message = err?.error?.detail || err?.message || 'Erro ao criar aluno.';
+          const message = getApiErrorMessage(err, 'Erro ao criar aluno.');
+          this.formError = message;
           this.notifications.error(message);
           this.saving = false;
           this.changeDetectorRef.detectChanges();
@@ -121,13 +168,14 @@ export class StudentsManagementComponent implements OnInit {
       next: () => {
         this.notifications.clear();
         this.notifications.success('Aluno atualizado com sucesso.');
+        this.saving = false;
         this.closePanel();
         this.loadAlunos();
-        this.saving = false;
         this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
-        const message = err?.error?.detail || err?.message || 'Erro ao atualizar aluno.';
+        const message = getApiErrorMessage(err, 'Erro ao atualizar aluno.');
+        this.formError = message;
         this.notifications.error(message);
         this.saving = false;
         this.changeDetectorRef.detectChanges();
