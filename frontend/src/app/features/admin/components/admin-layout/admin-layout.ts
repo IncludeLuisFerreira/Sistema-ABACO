@@ -24,6 +24,14 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
 
   menuOpen = false;
 
+  get alertaEstoqueTexto(): string | null {
+    const total = this.estoqueService.alertasCount();
+    if (total <= 0) {
+      return null;
+    }
+    return total === 1 ? '1 item com estoque baixo' : `${total} itens com estoque baixo`;
+  }
+
   ngOnInit(): void {
     this.estoqueService.loadAlertasCount();
     // TODO: polling a cada 30s sem error handler; considerar SSE/refresh sob demanda
