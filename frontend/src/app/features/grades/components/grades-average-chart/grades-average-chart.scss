@@ -7,9 +7,10 @@
 .chart-card {
   min-width: 0;
   overflow: hidden;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  background: var(--abaco-surface);
+  border: 1px solid var(--abaco-line);
+  border-radius: 18px;
+  box-shadow: var(--abaco-shadow);
   padding: 1.5rem;
 }
 
@@ -19,13 +20,13 @@
   h2 {
     margin: 0;
     font-size: 1.15rem;
-    color: #1e293b;
+    color: var(--abaco-ink);
   }
 
   p {
     margin: 0.25rem 0 0;
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--abaco-muted);
   }
 }
 
