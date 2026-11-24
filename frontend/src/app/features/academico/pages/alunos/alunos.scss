@@ -7,48 +7,8 @@
 .alunos-page { padding: 2.5rem 1rem 3rem; max-width: 1240px; margin: 0 auto; }
 .alunos-header { margin-bottom: 1.5rem; }
 .alunos-header h1 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-weight: 800; letter-spacing: -0.02em; color: var(--abaco-ink); }
-.page-subtitle { margin: 0.4rem 0 0; color: var(--abaco-body); }
 .loading { color: #64748b; }
 .error { color: #d93025; }
-
-.filters {
-  display: inline-flex;
-  align-items: flex-end;
-  max-width: 100%;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  background: var(--abaco-surface);
-  border: 1px solid var(--abaco-line);
-  border-radius: 14px;
-  box-shadow: var(--abaco-shadow);
-}
-.filter-field { display: grid; gap: 0.35rem; min-width: 0; }
-.filter-field__label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--abaco-muted); }
-.filter-field__select {
-  appearance: none;
-  min-width: 230px;
-  min-height: 44px;
-  border: 1px solid #d5dce6;
-  border-radius: 10px;
-  padding: 0.55rem 2.4rem 0.55rem 0.85rem;
-  background-color: var(--abaco-surface);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d98b1f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.85rem center;
-  background-size: 14px;
-  color: var(--abaco-ink);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.filter-field__select:hover { border-color: var(--abaco-gold-line); }
-.filter-field__select:focus-visible {
-  outline: 2px solid var(--abaco-focus);
-  outline-offset: 2px;
-  border-color: var(--abaco-gold);
-  box-shadow: 0 0 0 3px var(--abaco-focus-ring);
-}
 
 .empty-state { text-align: center; padding: 3rem 1rem; }
 .empty-state__title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 0.4rem; }
@@ -89,8 +49,5 @@
 @media (max-width: 768px) {
   .alunos-page { padding: 1.25rem 1rem 2rem; }
   .alunos-header h1 { font-size: 1.4rem; }
-  .filters { display: flex; width: 100%; padding: 0.75rem; }
-  .filter-field { width: 100%; }
-  .filter-field__select { min-width: 0; width: 100%; }
   .alunos-grid { grid-template-columns: minmax(0, 1fr); }
 }

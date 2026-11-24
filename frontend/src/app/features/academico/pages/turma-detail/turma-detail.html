@@ -35,7 +35,7 @@
       <div class="chart-section__header">
         <h2>Distribuição de Notas</h2>
         <label class="prova-select">
-          <select [ngModel]="provaSelecionada" (ngModelChange)="onProvaChange($event)">
+          <select class="abaco-select" [ngModel]="provaSelecionada" (ngModelChange)="onProvaChange($event)">
             <option *ngFor="let p of provasDisponiveis" [value]="p.value">{{ p.label }}</option>
           </select>
         </label>

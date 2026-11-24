@@ -5,19 +5,19 @@
     <p class="page-subtitle">Registre a presença dos alunos por data de aula.</p>
   </header>
 
-  <div class="filters">
-    <label class="filter-field">
-      <span class="filter-field__label">Turma</span>
-      <select class="filter-field__select" [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
+  <div class="abaco-field-card">
+    <label class="abaco-field-card__field">
+      <span class="abaco-field-card__label">Turma</span>
+      <select class="abaco-select" [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
         <option value="" disabled>Selecione uma turma</option>
         <option *ngFor="let turma of turmas" [value]="turma.idTurma">
           #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }}
         </option>
       </select>
     </label>
-    <label class="filter-field" *ngIf="selectedTurma">
-      <span class="filter-field__label">Data</span>
-      <input class="filter-field__input" type="date" [ngModel]="dataAula" (ngModelChange)="onDataChange($event)" />
+    <label class="abaco-field-card__field" *ngIf="selectedTurma">
+      <span class="abaco-field-card__label">Data</span>
+      <input class="abaco-input" type="date" [ngModel]="dataAula" (ngModelChange)="onDataChange($event)" />
     </label>
   </div>
 

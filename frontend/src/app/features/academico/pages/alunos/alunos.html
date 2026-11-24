@@ -8,10 +8,10 @@
   <p *ngIf="loading" class="loading">Carregando seus alunos...</p>
   <p *ngIf="error" class="error" role="alert">{{ error }}</p>
 
-  <div class="filters" *ngIf="!loading && turmas.length > 0">
-    <label class="filter-field">
-      <span class="filter-field__label">Filtrar por turma</span>
-      <select class="filter-field__select" [(ngModel)]="filtroTurma" (ngModelChange)="onFiltroChange($event)">
+  <div class="abaco-field-card" *ngIf="!loading && turmas.length > 0">
+    <label class="abaco-field-card__field">
+      <span class="abaco-field-card__label">Filtrar por turma</span>
+      <select class="abaco-select" [(ngModel)]="filtroTurma" (ngModelChange)="onFiltroChange($event)">
         <option [value]="0">Todas as turmas</option>
         <option *ngFor="let t of turmas" [value]="t.idTurma">
           #{{ t.idTurma }} {{ t.curso?.nomeCurso }}
