@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  inject,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Aluno } from '../../../../core/models/aluno.model';
@@ -26,6 +34,7 @@ export class StudentFormComponent implements OnChanges {
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() aluno: Aluno | null = null;
   @Input() loading = false;
+  @Input() errorMessage: string | null = null;
 
   @Output() readonly save = new EventEmitter<StudentFormSubmit>();
   @Output() readonly cancel = new EventEmitter<void>();

@@ -3,7 +3,7 @@
     <div>
       <span class="eyebrow">Gestão acadêmica</span>
       <h1>Matrículas</h1>
-      <p>Painel administrativo para cadastro e gestão de matrículas.</p>
+      <p class="page-subtitle">Painel administrativo para cadastro e gestão de matrículas.</p>
     </div>
     <button type="button" class="new-enrollment-btn" (click)="openCreate()" [disabled]="saving || loadingList">Nova matrícula</button>
   </header>
@@ -32,14 +32,24 @@
   </div>
 
   <!-- Modal overlay para o formulário -->
-  <div class="modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+  <div class="abaco-modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
+    <div
+      class="abaco-modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Formulário de matrícula"
+      tabindex="-1"
+      #modalCard
+      (click)="$event.stopPropagation()"
+      (keydown)="onModalKeydown($event)"
+    >
       <app-enrollment-form
         [mode]="formMode"
         [matricula]="selectedMatricula"
         [alunos]="alunos"
         [turmas]="turmas"
         [loading]="saving"
+        [errorMessage]="formError"
         (save)="onSave($event)"
         (cancel)="closePanel()"
       ></app-enrollment-form>

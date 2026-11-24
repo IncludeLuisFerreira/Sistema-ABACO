@@ -3,7 +3,7 @@
     <div>
       <span class="eyebrow">Gestão acadêmica</span>
       <h1>Cursos</h1>
-      <p>Painel administrativo para cadastro e gestao de cursos.</p>
+      <p class="page-subtitle">Painel administrativo para cadastro e gestão de cursos.</p>
     </div>
     <button type="button" class="new-course-btn" (click)="openCreate()" [disabled]="saving || loadingList">Novo curso</button>
   </header>
@@ -22,14 +22,27 @@
       (remove)="onDelete($event)"
       (pageChange)="onPageChange($event)"
     ></app-course-list>
-
-    <app-course-form
-      *ngIf="panelOpen"
-      [mode]="formMode"
-      [curso]="selectedCurso"
-      [loading]="saving"
-      (save)="onSave($event)"
-      (cancel)="closePanel()"
-    ></app-course-form>
   </section>
+
+  <div class="abaco-modal-overlay" *ngIf="panelOpen" (click)="closePanel()">
+    <div
+      class="abaco-modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Formulário de curso"
+      tabindex="-1"
+      #modalCard
+      (click)="$event.stopPropagation()"
+      (keydown)="onModalKeydown($event)"
+    >
+      <app-course-form
+        [mode]="formMode"
+        [curso]="selectedCurso"
+        [loading]="saving"
+        [errorMessage]="formError"
+        (save)="onSave($event)"
+        (cancel)="closePanel()"
+      ></app-course-form>
+    </div>
+  </div>
 </main>

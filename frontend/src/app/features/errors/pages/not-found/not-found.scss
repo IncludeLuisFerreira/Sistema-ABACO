@@ -37,6 +37,7 @@
   margin: 0 0 1.5rem;
   color: #475569;
   font-size: 0.95rem;
+  overflow-wrap: break-word;
 }
 
 .error-card__actions {
@@ -62,4 +63,18 @@
 
 .error-card__btn--primary:hover {
   background: var(--abaco-gold-strong);
+}
+
+@media (max-width: 768px) {
+  .error-card {
+    padding: 2rem 1.25rem;
+  }
+
+  .error-card__code {
+    font-size: 3.25rem;
+  }
+
+  .error-card__title {
+    font-size: 1.3rem;
+  }
 }

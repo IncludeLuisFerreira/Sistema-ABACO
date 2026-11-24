@@ -21,6 +21,7 @@ export class CourseFormComponent implements OnChanges {
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() curso: Curso | null = null;
   @Input() loading = false;
+  @Input() errorMessage: string | null = null;
 
   @Output() readonly save = new EventEmitter<CourseFormSubmit>();
   @Output() readonly cancel = new EventEmitter<void>();

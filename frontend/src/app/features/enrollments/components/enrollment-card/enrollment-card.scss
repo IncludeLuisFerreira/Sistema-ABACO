@@ -1,12 +1,13 @@
 .enrollment-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  background: var(--abaco-surface);
+  border: 1px solid var(--abaco-line);
+  border-radius: 18px;
+  box-shadow: var(--abaco-shadow);
   padding: 1.25rem;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .enrollment-card:hover {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  box-shadow: var(--abaco-shadow-hover);
   transform: translateY(-2px);
 }
 
@@ -34,7 +35,7 @@
 .enrollment-card__aluno {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
-  color: #0f172a;
+  color: var(--abaco-ink);
 }
 
 .enrollment-card__turma {
@@ -43,8 +44,8 @@
   margin-bottom: 0.75rem;
   font-size: 0.88rem;
 }
-.enrollment-card__label { color: #64748b; }
-.enrollment-card__value { color: #334155; font-weight: 600; text-align: right; }
+.enrollment-card__label { color: var(--abaco-muted); }
+.enrollment-card__value { color: var(--abaco-ink-soft); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
 
 .enrollment-card__actions {
   display: flex;
