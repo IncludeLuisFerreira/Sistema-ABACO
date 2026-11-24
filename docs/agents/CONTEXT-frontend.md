@@ -57,8 +57,9 @@ Matriz canônica (não introduza outros breakpoints para shell/navegação):
 - **Painéis laterais**: colapsam em `≤1023px` quando o layout do módulo tiver painel lateral.
 
 Alvos de toque de navegação (links do menu, hambúrguer, fechar, ações da nav) devem ter área mínima
-de `44x44px`. Botões de ação em linha de tabela permanecem em `36px`. Não remova `overflow-x: hidden`
-de shells de layout sem issue específica.
+de `44x44px`. Botões de ação em linha de tabela ficam em `36px` no desktop e sobem para `44px` no
+mobile para preservar o alvo de toque. Não remova `overflow-x: hidden` de shells de layout sem issue
+específica.
 
 ## Receita: nova página em uma feature
 
