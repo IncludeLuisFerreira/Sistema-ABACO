@@ -83,6 +83,23 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
     expect(brand?.getAttribute('href')).toBe('/admin/home');
   });
 
+  it('marca do topbar mobile leva para a home e fecha o menu', async () => {
+    await setup('ADMIN');
+    const el = fixture.nativeElement as HTMLElement;
+    const brand = el.querySelector('.mobile-topbar__brand');
+
+    expect(brand?.tagName).toBe('A');
+    expect(brand?.getAttribute('href')).toBe('/admin/home');
+    expect(brand?.getAttribute('aria-label')).toBe('Ir para a página inicial');
+    expect(brand?.querySelector('img')?.getAttribute('alt')).toBe('ABACO');
+
+    fixture.componentInstance.menuOpen = true;
+    brand?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.menuOpen).toBe(false);
+  });
+
   it('exibe um único sino na sidebar e mantém o da topbar mobile', async () => {
     await setup('ADMIN');
     const el = fixture.nativeElement as HTMLElement;

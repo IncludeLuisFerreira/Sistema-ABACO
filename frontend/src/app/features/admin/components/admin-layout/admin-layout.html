@@ -1,8 +1,15 @@
 ﻿<div class="admin-shell">
   <!-- Top bar (mobile) -->
   <div class="mobile-topbar">
-    <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
-    <span class="mobile-topbar__title">SGA ABACO</span>
+    <a
+      class="mobile-topbar__brand"
+      routerLink="/admin/home"
+      (click)="menuOpen = false"
+      aria-label="Ir para a página inicial"
+    >
+      <img src="/Logo_ABACO.png" alt="ABACO" class="mobile-topbar__logo" />
+      <span class="mobile-topbar__title">SGA ABACO</span>
+    </a>
     <app-notificacao-sino />
     <button class="hamburger" (click)="menuOpen = !menuOpen" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'">
       <span></span><span></span><span></span>
