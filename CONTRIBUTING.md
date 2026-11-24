@@ -122,7 +122,7 @@ hotfix/vX.Y.Z    ← sai da main, volta para a develop depois da tag
 
 | Branch | Propósito | Push direto | Merge via PR | Aprovações mínimas |
 |--------|-----------|-------------|--------------|-------------------|
-| `main` | Versões estáveis | ❌ Proibido | ✅ Obrigatório | 1 (não pode ser o autor) |
+| `main` | Versões estáveis | ❌ Proibido | ✅ Obrigatório | 2 (nenhuma do autor) |
 | `develop` | Versão mais recente | ❌ Proibido | ✅ Obrigatório | 1 (não pode ser o autor) |
 
 - **`develop`** é a base para todo desenvolvimento. Toda branch de feature/fix deve ser criada a partir dela.
@@ -154,14 +154,16 @@ sozinhos. Se não houver `fix`, `perf`, `feat` ou breaking change pendente, não
 
 A tag é a fonte única da versão. Não sincronize `frontend/package.json` nem `/api/health` com ela.
 
+Os comandos abaixo seguem o modelo de fork das seções [Convenção de Branches](#6-convenção-de-branches) e [Implementando uma Feature ou Bugfix](#9-implementando-uma-feature-ou-bugfix): `origin` é o seu fork e `upstream` é o repositório principal (`IncludeLuisFerreira/Sistema-ABACO`). Em clone direto, troque `upstream` por `origin`.
+
 ### Abrindo uma release
 
 1. Confirme que a `develop` está verde no CI e que não há PR pendente que deveria entrar na versão.
 2. Atualize sua `develop` local a partir da base remota e crie a branch de release:
 
 ```bash
-git fetch origin
-git switch -c release/v1.0.1 origin/develop
+git fetch upstream
+git switch -c release/v1.0.1 upstream/develop
 git push -u origin release/v1.0.1
 ```
 
@@ -177,9 +179,10 @@ gh pr create --base main --title "release: v1.0.1" --body "Closes #<issue>"
 6. Na `main`, crie a tag anotada e publique o GitHub Release com notas geradas dos commits:
 
 ```bash
-git switch main && git pull
+git switch main
+git pull --ff-only upstream main
 git tag -a v1.0.1 -m "release: v1.0.1"
-git push origin v1.0.1
+git push upstream v1.0.1
 gh release create v1.0.1 --generate-notes --title "v1.0.1"
 ```
 
@@ -194,8 +197,8 @@ para a tag anterior como contenção; o código se corrige com um novo patch.
 1. Crie a branch a partir da `main`:
 
 ```bash
-git fetch origin
-git switch -c hotfix/v1.0.2 origin/main
+git fetch upstream
+git switch -c hotfix/v1.0.2 upstream/main
 ```
 
 2. Abra o PR `hotfix/v1.0.2 → main` com o mesmo ritual de aprovação do release (2 aprovações).
