@@ -11,15 +11,16 @@ Leia com atenção antes de abrir sua primeira issue ou Pull Request.
 1. [Pré-requisitos](#1-pré-requisitos)
 2. [Configuração do Ambiente](#2-configuração-do-ambiente)
 3. [Modelo de Branches](#3-modelo-de-branches)
-4. [Fluxo de Trabalho Completo](#4-fluxo-de-trabalho-completo)
-5. [Convenção de Branches](#5-convenção-de-branches)
-6. [Convenção de Commits](#6-convenção-de-commits)
-7. [Abrindo uma Issue](#7-abrindo-uma-issue)
-8. [Implementando uma Feature ou Bugfix](#8-implementando-uma-feature-ou-bugfix)
-9. [Padrões de Código](#9-padrões-de-código)
-10. [Testes](#10-testes)
-11. [Abrindo um Pull Request](#11-abrindo-um-pull-request)
-12. [Processo de Code Review](#12-processo-de-code-review)
+4. [Modelo de Releases](#4-modelo-de-releases)
+5. [Fluxo de Trabalho Completo](#5-fluxo-de-trabalho-completo)
+6. [Convenção de Branches](#6-convenção-de-branches)
+7. [Convenção de Commits](#7-convenção-de-commits)
+8. [Abrindo uma Issue](#8-abrindo-uma-issue)
+9. [Implementando uma Feature ou Bugfix](#9-implementando-uma-feature-ou-bugfix)
+10. [Padrões de Código](#10-padrões-de-código)
+11. [Testes](#11-testes)
+12. [Abrindo um Pull Request](#12-abrindo-um-pull-request)
+13. [Processo de Code Review](#13-processo-de-code-review)
 
 ---
 
@@ -107,11 +108,14 @@ ng serve
 O projeto usa um modelo baseado em **Git Flow simplificado** com duas branches protegidas:
 
 ```
-main        ← versões estáveis e testadas (releases)
-  └── develop   ← integração contínua, sempre a versão mais recente
-        └── feature/nome    ← seu trabalho acontece aqui (no seu fork)
-        └── fix/nome
+main        ← versões estáveis em produção (cada merge recebe tag vX.Y.Z)
+  └── develop   ← ambiente de desenvolvimento e teste, integração contínua
+        ├── feature/nome    ← seu trabalho acontece aqui (no seu fork)
+        ├── fix/nome
         └── docs/nome
+
+release/vX.Y.Z   ← sai da develop, entra na main, vira tag
+hotfix/vX.Y.Z    ← sai da main, volta para a develop depois da tag
 ```
 
 ### Regras das branches protegidas
@@ -122,12 +126,93 @@ main        ← versões estáveis e testadas (releases)
 | `develop` | Versão mais recente | ❌ Proibido | ✅ Obrigatório | 1 (não pode ser o autor) |
 
 - **`develop`** é a base para todo desenvolvimento. Toda branch de feature/fix deve ser criada a partir dela.
-- **`main`** recebe merges apenas da `develop`, quando a versão estiver estável e testada.
+- **`main`** é a versão estável em produção. Recebe apenas PRs de `release/vX.Y.Z` (a partir da `develop`) ou de `hotfix/vX.Y.Z` (a partir da própria `main`), conforme a seção [Modelo de Releases](#4-modelo-de-releases).
+- **`develop`** é o ambiente de desenvolvimento e teste: tudo é integrado e validado aqui antes de virar release.
 - Nenhum membro pode aprovar o próprio Pull Request.
 
 ---
 
-## 4. Fluxo de Trabalho Completo
+## 4. Modelo de Releases
+
+`main` é a **versão estável em produção**. Não recebe commits de feature: recebe apenas releases
+versionadas, sempre vindas da `develop`. `develop` é o **ambiente de desenvolvimento e teste** —
+tudo é integrado e validado nela primeiro.
+
+### Versionamento (SemVer)
+
+Toda release recebe uma tag anotada `vX.Y.Z` na `main`. O número não é escolhido por opinião: ele
+sai dos commits acumulados na `develop` desde a última tag.
+
+| O que entrou desde a última tag | Bump | Exemplo |
+|---------------------------------|------|---------|
+| Apenas `fix` / `perf` | patch | `v1.0.0` → `v1.0.1` |
+| Pelo menos um `feat` | minor | `v1.0.1` → `v1.1.0` |
+| Breaking change (`!` ou `BREAKING CHANGE`) | major | `v1.1.0` → `v2.0.0` |
+
+`docs`, `style`, `test`, `chore` e `refactor` sem mudança de comportamento **não geram release**
+sozinhos. Se não houver `fix`, `perf`, `feat` ou breaking change pendente, não há release.
+
+A tag é a fonte única da versão. Não sincronize `frontend/package.json` nem `/api/health` com ela.
+
+### Abrindo uma release
+
+1. Confirme que a `develop` está verde no CI e que não há PR pendente que deveria entrar na versão.
+2. Atualize sua `develop` local a partir da base remota e crie a branch de release:
+
+```bash
+git fetch origin
+git switch -c release/v1.0.1 origin/develop
+git push -u origin release/v1.0.1
+```
+
+3. Abra o PR de release para a `main`:
+
+```bash
+gh pr create --base main --title "release: v1.0.1" --body "Closes #<issue>"
+```
+
+4. O PR de release exige **2 aprovações**, nenhuma do autor. Só quem tem permissão de manutenção no
+   repositório aprova release; contribuidores sem essa permissão participam da discussão.
+5. Faça merge com **merge commit**, nunca squash — o histórico de releases precisa ficar legível.
+6. Na `main`, crie a tag anotada e publique o GitHub Release com notas geradas dos commits:
+
+```bash
+git switch main && git pull
+git tag -a v1.0.1 -m "release: v1.0.1"
+git push origin v1.0.1
+gh release create v1.0.1 --generate-notes --title "v1.0.1"
+```
+
+7. Faça o back-merge da `main` para a `develop` (PR `main → develop`) para que o ambiente de
+   desenvolvimento não fique atrás da produção.
+
+### Hotfix (bug em produção)
+
+Bug na `main` **não** se resolve desfazendo histórico. Se o incidente for grave, o deploy volta
+para a tag anterior como contenção; o código se corrige com um novo patch.
+
+1. Crie a branch a partir da `main`:
+
+```bash
+git fetch origin
+git switch -c hotfix/v1.0.2 origin/main
+```
+
+2. Abra o PR `hotfix/v1.0.2 → main` com o mesmo ritual de aprovação do release (2 aprovações).
+3. Faça merge, crie a tag `v1.0.2` e publique o GitHub Release.
+4. **Back-merge obrigatório** para a `develop` (PR `main → develop`), referenciando o PR da `main`.
+   Sem isso a correção volta como bug no próximo release.
+
+### O que é proibido
+
+- Reescrever, mover ou apagar tag já publicada (`git tag -d` seguido de novo push, `--force` em tag).
+- Usar `git revert` de uma release para "voltar de versão" — versão publicada é imutável.
+- Mergear na `main` fora do fluxo de release ou de hotfix.
+- Abrir PR de feature ou fix direto para a `main`.
+
+---
+
+## 5. Fluxo de Trabalho Completo
 
 ```
 1. Abra uma Issue descrevendo o que será feito
@@ -142,7 +227,7 @@ main        ← versões estáveis e testadas (releases)
 
 ---
 
-## 5. Convenção de Branches
+## 6. Convenção de Branches
 
 Use o padrão `tipo/descricao-curta-em-kebab-case`:
 
@@ -167,7 +252,7 @@ git checkout -b feature/nome-da-sua-feature
 
 ---
 
-## 6. Convenção de Commits
+## 7. Convenção de Commits
 
 Siga o padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/):
 
@@ -205,7 +290,7 @@ git commit -m "refactor(turma-service): extrai validação de capacidade para m�
 
 ---
 
-## 7. Abrindo uma Issue
+## 8. Abrindo uma Issue
 
 Toda tarefa — feature, bug ou melhoria — deve ter uma issue **antes** de qualquer código ser escrito.
 
@@ -230,7 +315,7 @@ Use o template `.github/ISSUE_TEMPLATE/feature.md`. Inclua:
 
 ---
 
-## 8. Implementando uma Feature ou Bugfix
+## 9. Implementando uma Feature ou Bugfix
 
 ### Passo a passo
 
@@ -264,7 +349,7 @@ alembic revision --autogenerate -m "descricao_da_mudanca"
 
 **5. Escreva e execute os testes**
 
-Toda nova feature **obrigatoriamente** deve vir acompanhada de testes cobrindo o comportamento implementado. PRs sem testes para a nova funcionalidade serão recusados no review. Veja a seção [Testes](#10-testes) para detalhes.
+Toda nova feature **obrigatoriamente** deve vir acompanhada de testes cobrindo o comportamento implementado. PRs sem testes para a nova funcionalidade serão recusados no review. Veja a seção [Testes](#11-testes) para detalhes.
 
 ```bash
 # Backend
@@ -292,7 +377,7 @@ git push origin feature/nome-da-feature
 
 ---
 
-## 9. Padrões de Código
+## 10. Padrões de Código
 
 ### Backend (Python / FastAPI)
 
@@ -322,7 +407,7 @@ git push origin feature/nome-da-feature
 
 ---
 
-## 10. Testes
+## 11. Testes
 
 O projeto possui **107 testes automatizados** no backend (pytest) e testes unitários no frontend (Vitest + jsdom).
 
@@ -365,7 +450,7 @@ npm test -- --reporter=verbose
 
 ---
 
-## 11. Abrindo um Pull Request
+## 12. Abrindo um Pull Request
 
 Quando sua branch estiver pronta:
 
@@ -385,7 +470,7 @@ Quando sua branch estiver pronta:
 
 ---
 
-## 12. Processo de Code Review
+## 13. Processo de Code Review
 
 ### Para quem abre o PR
 
