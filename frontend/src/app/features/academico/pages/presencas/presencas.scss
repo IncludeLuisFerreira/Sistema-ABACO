@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  min-height: 100%;
+  background: var(--abaco-canvas-glow);
+}
+
 .presencas-page { padding: 2rem; max-width: 1240px; margin: 0 auto; }
 .presencas-header { margin-bottom: 1.5rem; }
 .presencas-header h1 { margin: 0; font-size: 1.5rem; }
@@ -21,8 +27,8 @@
 .presente-btn--on { background: #16a34a; color: #fff; }
 .presente-btn--off { background: #e2e8f0; color: #475569; }
 
-.save-btn { margin-top: 1rem; padding: 0.6rem 1.5rem; background: #0f766e; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-.save-btn:hover { background: #0d6b63; }
+.save-btn { margin-top: 1rem; padding: 0.6rem 1.5rem; background: var(--abaco-gold); color: var(--abaco-ink); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.save-btn:hover { background: var(--abaco-gold-strong); }
 .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (max-width: 768px) {

@@ -67,9 +67,13 @@
   transition: border-color 0.2s;
 
   &:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    border-color: var(--abaco-gold);
+    box-shadow: 0 0 0 3px var(--abaco-focus-ring);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--abaco-focus);
+    outline-offset: 2px;
   }
 
   &:disabled {

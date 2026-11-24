@@ -11,6 +11,7 @@ import type {
   ApexYAxis,
 } from 'ng-apexcharts';
 
+import { ABACO_PALETTE } from '../../../../core/constants/palette';
 import { MediaTurma } from '../../../../core/models/nota.model';
 import { NotaService } from '../../../../core/services/nota.service';
 
@@ -89,7 +90,7 @@ export class GradesAverageChartComponent implements OnChanges {
   };
 
   fill: ApexFill = {
-    colors: ['#2563eb'],
+    colors: [ABACO_PALETTE.gold],
   };
 
   constructor(private readonly notaService: NotaService) {}

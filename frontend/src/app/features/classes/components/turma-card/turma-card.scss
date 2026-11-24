@@ -73,14 +73,14 @@
 
 .turma-card__progresso-fill {
   height: 100%;
-  background: #0f766e;
+  background: var(--abaco-gold);
   border-radius: 3px;
   transition: width 0.3s;
 }
 
 .turma-card__vagas-fill {
   height: 100%;
-  background: #3b82f6;
+  background: var(--abaco-ink-soft);
   border-radius: 3px;
   transition: width 0.3s;
 }
@@ -111,12 +111,12 @@
 }
 
 .turma-card__btn--alunos {
-  background: #f0f9ff;
-  color: #0369a1;
+  background: var(--abaco-gold-soft);
+  color: var(--abaco-gold-text);
 }
 
 .turma-card__btn--alunos:hover {
-  background: #e0f2fe;
+  background: var(--abaco-gold-soft);
 }
 
 .turma-card__btn--dup {

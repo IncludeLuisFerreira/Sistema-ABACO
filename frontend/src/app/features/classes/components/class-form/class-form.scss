@@ -44,7 +44,7 @@ select {
 }
 
 .hint {
-  color: #0f766e;
+  color: var(--abaco-gold-text);
   font-size: 0.8rem;
   margin-top: 0.2rem;
 }
@@ -136,8 +136,8 @@ select {
 }
 
 .avaliacoes__add:hover {
-  border-color: #0f766e;
-  color: #0f766e;
+  border-color: var(--abaco-gold);
+  color: var(--abaco-gold-text);
 }
 
 .error {
@@ -212,8 +212,8 @@ footer {
 }
 
 .btn--primary {
-  background: #0f766e;
-  color: #fff;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
 }
 
 .btn--ghost {

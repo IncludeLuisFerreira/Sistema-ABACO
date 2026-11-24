@@ -1,7 +1,7 @@
 :host {
   display: block;
-  min-height: 100vh;
-  background: radial-gradient(circle at top right, #e0f2fe, #f8fafc 55%);
+  min-height: 100%;
+  background: var(--abaco-canvas-glow);
 }
 
 .attendance-management {
@@ -31,8 +31,8 @@
 .save-btn {
   border: 0;
   border-radius: 10px;
-  background: #0f766e;
-  color: #fff;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
   font-weight: 700;
   padding: 0.8rem 1rem;
   cursor: pointer;
