@@ -213,15 +213,16 @@
 }
 
 .semestre-pill:hover {
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--abaco-ink);
+  background: var(--abaco-gold-soft);
+  border-color: var(--abaco-gold-line);
+  color: var(--abaco-gold-text);
 }
 
 .semestre-pill--active {
-  background: var(--abaco-surface);
-  border-color: var(--abaco-line);
-  color: var(--abaco-gold-text);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  background: var(--abaco-gold);
+  border-color: var(--abaco-gold-strong);
+  color: var(--abaco-ink);
+  box-shadow: var(--abaco-shadow-gold);
 }
 
 .classes-management__toolbar {
