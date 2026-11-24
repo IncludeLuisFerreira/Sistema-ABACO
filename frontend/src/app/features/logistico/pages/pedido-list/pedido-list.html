@@ -15,7 +15,7 @@
 
   <label class="pedido-filter">
     <span class="pedido-filter__label">Exibir</span>
-    <select class="pedido-filter__select" [value]="activeTab" (change)="onTabChange($event)">
+    <select class="abaco-select" [value]="activeTab" (change)="onTabChange($event)">
       <option value="todos">Todos os Pedidos</option>
       <option value="lista-compras">Lista de Compras ({{ approvedPedidos.length }})</option>
     </select>

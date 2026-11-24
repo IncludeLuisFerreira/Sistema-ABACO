@@ -31,6 +31,11 @@
 	--abaco-canvas-glow: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%),
 		linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
 	--abaco-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+	--abaco-shadow-hover: 0 24px 48px rgba(15, 23, 42, 0.1);
+	--abaco-line-soft: #f1f4f8;
+	--abaco-row-head: #f8fafc;
+	--abaco-row-hover: #fcfaf5;
+	--abaco-input-line: #d5dce6;
 }
 
 html,
@@ -64,6 +69,97 @@ body {
 .abaco-field:focus-visible {
 	outline: 2px solid var(--abaco-focus);
 	outline-offset: 2px;
+}
+
+.page-subtitle {
+	margin: 0.4rem 0 0;
+	color: var(--abaco-body);
+}
+
+.abaco-field-card {
+	display: inline-flex;
+	align-items: flex-end;
+	gap: 1rem;
+	flex-wrap: wrap;
+	max-width: 100%;
+	padding: 1rem;
+	margin-bottom: 1.5rem;
+	background: var(--abaco-surface);
+	border: 1px solid var(--abaco-line);
+	border-radius: 14px;
+	box-shadow: var(--abaco-shadow);
+}
+
+.abaco-field-card__field {
+	display: grid;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.abaco-field-card__label {
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--abaco-muted);
+}
+
+.abaco-select,
+.abaco-input {
+	min-width: 230px;
+	min-height: 44px;
+	border: 1px solid var(--abaco-input-line);
+	border-radius: 10px;
+	padding: 0.55rem 0.85rem;
+	background-color: var(--abaco-surface);
+	color: var(--abaco-ink);
+	font-size: 0.9rem;
+	font-weight: 700;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.abaco-select {
+	appearance: none;
+	padding-right: 2.4rem;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d98b1f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.85rem center;
+	background-size: 14px;
+	cursor: pointer;
+}
+
+.abaco-input {
+	cursor: pointer;
+}
+
+.abaco-select:hover,
+.abaco-input:hover {
+	border-color: var(--abaco-gold-line);
+}
+
+.abaco-select:focus-visible,
+.abaco-input:focus-visible {
+	outline: 2px solid var(--abaco-focus);
+	outline-offset: 2px;
+	border-color: var(--abaco-gold);
+	box-shadow: 0 0 0 3px var(--abaco-focus-ring);
+}
+
+@media (max-width: 768px) {
+	.abaco-field-card {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+		gap: 0.75rem;
+		padding: 0.75rem;
+	}
+
+	.abaco-select,
+	.abaco-input {
+		min-width: 0;
+		width: 100%;
+	}
 }
 
 input,

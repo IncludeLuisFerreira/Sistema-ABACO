@@ -59,14 +59,15 @@
 
 .turma-header__curso {
   margin: 0 0 0.25rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--abaco-ink);
 }
 
 .turma-header__professor {
   margin: 0 0 1rem;
-  color: #64748b;
+  color: var(--abaco-body);
   font-size: 0.9rem;
 }
 
@@ -108,17 +109,9 @@
 .chart-section__header h2 {
   margin: 0;
   font-size: 1.15rem;
-  color: #0f172a;
-}
-
-.prova-select select {
-  padding: 0.4rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: #334155;
-  background: #fff;
-  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--abaco-ink);
 }
 
 /* --- Média Card --- */
@@ -194,6 +187,11 @@
 }
 
 /* --- Tabela --- */
+.notas-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .notas-table-wrapper h3 {
   margin: 0 0 0.75rem;
   font-size: 1rem;
@@ -202,23 +200,31 @@
 
 .notas-table {
   width: 100%;
+  min-width: 320px;
   border-collapse: collapse;
 }
 
 .notas-table th,
 .notas-table td {
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--abaco-line-soft);
   font-size: 0.88rem;
 }
 
 .notas-table th {
-  color: #94a3b8;
-  font-weight: 600;
-  font-size: 0.75rem;
+  background: var(--abaco-row-head);
+  color: var(--abaco-muted);
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  border-bottom: 1px solid var(--abaco-line);
 }
+
+.notas-table td:first-child { font-weight: 600; color: var(--abaco-ink); }
+.notas-table tbody tr { transition: background 0.15s ease; }
+.notas-table tbody tr:hover { background: var(--abaco-row-hover); }
 
 .nota-badge {
   display: inline-block;
@@ -232,8 +238,28 @@
 .nota-badge--boa   { background: #f0fdf4; color: #16a34a; }
 
 /* --- Responsivo --- */
-@media (max-width: 600px) {
+@media (max-width: 1023px) {
+  .turma-header__info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
   .turma-detail-page { padding: 1rem; }
-  .turma-header__info-grid { flex-direction: column; gap: 0.75rem; }
+  .turma-header,
+  .chart-section { padding: 1.25rem; border-radius: 12px; }
+  .turma-header__curso { font-size: 1.25rem; }
   .chart-section__header { flex-direction: column; align-items: flex-start; }
+  .prova-select { width: 100%; }
+  .prova-select select { width: 100%; }
+  .media-card__alunos { margin-left: 0; width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .turma-detail-page { padding: 0.75rem; }
+  .turma-header,
+  .chart-section { padding: 1rem; }
+  .turma-header__info-grid { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
 }
