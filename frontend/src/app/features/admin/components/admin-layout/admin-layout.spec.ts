@@ -1,6 +1,6 @@
-import { signal, WritableSignal } from '@angular/core';
+import { signal, WritableSignal, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router, Routes, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { Notificacao } from '../../../../core/models/notificacao.model';
@@ -8,6 +8,16 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { EstoqueService } from '../../../../core/services/estoque.service';
 import { NotificacaoService } from '../../../../core/services/notificacao.service';
 import { AdminLayoutComponent } from './admin-layout';
+
+@Component({ template: '' })
+class DummyComponent {}
+
+const rotasLogistico: Routes = [
+  { path: 'admin/logistico', component: DummyComponent },
+  { path: 'admin/logistico/estoque', component: DummyComponent },
+  { path: 'admin/logistico/pedidos', component: DummyComponent },
+  { path: '**', component: DummyComponent },
+];
 
 function mockNotificacoes() {
   return {
@@ -42,7 +52,7 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
     await TestBed.configureTestingModule({
       imports: [AdminLayoutComponent],
       providers: [
-        provideRouter([]),
+        provideRouter(rotasLogistico),
         { provide: AuthService, useValue: auth },
         { provide: EstoqueService, useValue: estoque },
         { provide: NotificacaoService, useValue: notificacoes },
@@ -129,6 +139,35 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
 
     expect(link?.querySelector('.admin-nav__badge')).toBeNull();
     expect(link?.getAttribute('aria-label')).toBeNull();
+  });
+
+  it('destaca apenas o item da rota atual na seção de logística', async () => {
+    await setup('ADMIN');
+    const el = fixture.nativeElement as HTMLElement;
+    const links = Array.from(el.querySelectorAll<HTMLAnchorElement>('a'));
+    const linkVisaoGeral = links.find((a) => a.textContent?.trim() === 'Visão Geral');
+    const linkEstoque = links.find((a) => a.textContent?.trim() === 'Estoque');
+    const linkPedidos = links.find((a) => a.textContent?.trim() === 'Pedidos');
+
+    await TestBed.inject(Router).navigateByUrl('/admin/logistico/estoque');
+    fixture.detectChanges();
+
+    expect(linkVisaoGeral?.classList.contains('active')).toBe(false);
+    expect(linkEstoque?.classList.contains('active')).toBe(true);
+    expect(linkPedidos?.classList.contains('active')).toBe(false);
+  });
+
+  it('destaca Visão Geral somente na rota /admin/logistico', async () => {
+    await setup('ADMIN');
+    const el = fixture.nativeElement as HTMLElement;
+    const linkVisaoGeral = Array.from(el.querySelectorAll<HTMLAnchorElement>('a')).find(
+      (a) => a.textContent?.trim() === 'Visão Geral',
+    );
+
+    await TestBed.inject(Router).navigateByUrl('/admin/logistico');
+    fixture.detectChanges();
+
+    expect(linkVisaoGeral?.classList.contains('active')).toBe(true);
   });
 
   it('inicia o polling de 30 s ao entrar e limpa o estado ao sair', async () => {
