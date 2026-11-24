@@ -26,6 +26,7 @@ menciona Tailwind e deploy em Vercel/Railway: está desatualizado, ignore esses 
 | Assunto | Arquivo |
 |---------|---------|
 | Processo humano: issue, branch, commit, PR, review | `CONTRIBUTING.md` |
+| Release, hotfix e versionamento (SemVer) | `CONTRIBUTING.md` §4 |
 | Setup, portas, credenciais de seed, módulos | `README.md` |
 | Regras do agente, comandos e limites | `AGENTS.md` (este arquivo) |
 | Arquitetura, domínio, papéis, modelo de dados | `docs/agents/CONTEXT.md` |
@@ -78,22 +79,27 @@ que você não entende, pare e peça ajuda em vez de "resolver" escolhendo um la
 ## 4. Regras inegociáveis
 
 1. Nunca faça push direto em `main` ou `develop`. Nunca use `--force` em branch compartilhada.
-2. Um PR = uma issue = uma mudança lógica. O corpo do PR deve conter `Closes #N`.
-3. Não declare tarefa concluída sem rodar a verificação. Feature nova exige teste novo.
-4. Backend: regra de negócio só em `backend/app/services/`. Router não decide regra, não acessa
+2. `main` é produção: só recebe PR de `release/vX.Y.Z` ou de `hotfix/vX.Y.Z`. Nunca merge direto,
+   nunca feature ou fix direto para ela. `develop` é o ambiente de desenvolvimento e teste.
+3. Versão é SemVer derivado dos commits (`fix`/`perf` → patch, `feat` → minor, breaking → major) e
+   registrada em tag anotada `vX.Y.Z` na `main`. Agente não cria tag, não mergeia em `main` e não
+   decide número de versão: prepara o PR de release e o texto das notas, e espera confirmação humana.
+4. Um PR = uma issue = uma mudança lógica. O corpo do PR deve conter `Closes #N`.
+5. Não declare tarefa concluída sem rodar a verificação. Feature nova exige teste novo.
+6. Backend: regra de negócio só em `backend/app/services/`. Router não decide regra, não acessa
    model para lógica e não monta resposta manualmente.
-5. Resposta de API usa schema Pydantic (`model_validate`). Nunca devolva model SQLAlchemy.
-6. Todo endpoint novo ou alterado precisa de autorização explícita: `verify_cargo(...)`,
+7. Resposta de API usa schema Pydantic (`model_validate`). Nunca devolva model SQLAlchemy.
+8. Todo endpoint novo ou alterado precisa de autorização explícita: `verify_cargo(...)`,
    `require_turma_access` ou `enforce_turma_access` / `enforce_matricula_access`.
-7. Mudou o schema do banco? Crie migration Alembic e garanta `alembic heads` com **um único head**.
+9. Mudou o schema do banco? Crie migration Alembic e garanta `alembic heads` com **um único head**.
    Nunca edite migration já aplicada. Nunca edite `database-schema.sql`.
-8. Frontend: chamada HTTP só em `frontend/src/app/core/services/`. Componente não injeta `HttpClient`.
-9. Segredo nunca no código. `.env` nunca é commitado. Não imprima token, senha ou chave em log.
-10. Não remova `# TODO` / `# FIXME` sem resolver o problema descrito.
-11. Não reformate arquivo inteiro: o backend mistura tabs e espaços por arquivo. Preserve o estilo local.
-12. Nenhum `print()` ou `console.log` de debug no diff final.
-13. Não adicione dependência nova sem justificar e sem aprovação explícita do usuário.
-14. Não altere `CONTRIBUTING.md`, `README.md`, CI ou `scripts/` sem pedido explícito.
+10. Frontend: chamada HTTP só em `frontend/src/app/core/services/`. Componente não injeta `HttpClient`.
+11. Segredo nunca no código. `.env` nunca é commitado. Não imprima token, senha ou chave em log.
+12. Não remova `# TODO` / `# FIXME` sem resolver o problema descrito.
+13. Não reformate arquivo inteiro: o backend mistura tabs e espaços por arquivo. Preserve o estilo local.
+14. Nenhum `print()` ou `console.log` de debug no diff final.
+15. Não adicione dependência nova sem justificar e sem aprovação explícita do usuário.
+16. Não altere `CONTRIBUTING.md`, `README.md`, CI ou `scripts/` sem pedido explícito.
 
 ## 5. Comandos canônicos
 
@@ -182,6 +188,10 @@ Formato obrigatório em todo commit:
 | `refactor` | Refatoração sem mudança de comportamento |
 | `test` | Teste novo ou corrigido |
 | `chore` | Manutenção, dependências, CI, scripts |
+
+Release e hotfix usam o mesmo padrão: título do PR `release: vX.Y.Z` (ou `hotfix: vX.Y.Z`), e a
+tag resultante é `vX.Y.Z`. O tipo dos commits desde a última tag determina o bump — ver
+`CONTRIBUTING.md` §4.
 
 Regras:
 
