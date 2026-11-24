@@ -52,6 +52,23 @@ describe('AcademicoLayoutComponent', () => {
     expect(el.querySelectorAll('app-notificacao-sino')).toHaveLength(2);
   });
 
+  it('marca do topbar mobile leva para a home e fecha o menu', async () => {
+    await setup();
+    const el = fixture.nativeElement as HTMLElement;
+    const brand = el.querySelector('.mobile-topbar__brand');
+
+    expect(brand?.tagName).toBe('A');
+    expect(brand?.getAttribute('href')).toBe('/academico');
+    expect(brand?.getAttribute('aria-label')).toBe('Ir para a página inicial');
+    expect(brand?.querySelector('img')?.getAttribute('alt')).toBe('ABACO');
+
+    fixture.componentInstance.menuOpen = true;
+    brand?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.menuOpen).toBe(false);
+  });
+
   it('inicia o polling de 30 s ao entrar e limpa o estado ao sair', async () => {
     await setup();
     expect(notificacoes.iniciarPolling).toHaveBeenCalledWith(30000);
