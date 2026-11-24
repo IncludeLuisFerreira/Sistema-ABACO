@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { signal, WritableSignal, Component, signal} from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, Routes, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -39,10 +39,14 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
   let fixture: ComponentFixture<AdminLayoutComponent>;
   let auth: { authState: ReturnType<typeof vi.fn>; logout: ReturnType<typeof vi.fn> };
   let notificacoes: ReturnType<typeof mockNotificacoes>;
+  let estoque: {
+    loadAlertasCount: ReturnType<typeof vi.fn>;
+    alertasCount: WritableSignal<number>;
+  };
 
   async function setup(role: string) {
     auth = { authState: vi.fn(() => ({ role })), logout: vi.fn() };
-    const estoque = { loadAlertasCount: vi.fn(), alertasCount: () => 0 };
+    estoque = { loadAlertasCount: vi.fn(), alertasCount: signal(0) };
     notificacoes = mockNotificacoes();
 
     await TestBed.configureTestingModule({
@@ -79,10 +83,62 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
     expect(brand?.getAttribute('href')).toBe('/admin/home');
   });
 
-  it('exibe o sino de notificações na sidebar e na topbar mobile', async () => {
+  it('exibe um único sino na sidebar e mantém o da topbar mobile', async () => {
     await setup('ADMIN');
     const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelectorAll('.admin-nav__user app-notificacao-sino')).toHaveLength(1);
     expect(el.querySelectorAll('app-notificacao-sino')).toHaveLength(2);
+    expect(el.querySelector('.admin-nav__notification')).toBeNull();
+  });
+
+  it('exibe badge de estoque baixo no link Estoque com rótulo acessível', async () => {
+    await setup('ADMIN');
+    estoque.alertasCount.set(3);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector(
+      'a[href="/admin/logistico/estoque"]',
+    );
+    expect(link?.querySelector('.admin-nav__badge')?.textContent?.trim()).toBe('3');
+    expect(link?.getAttribute('aria-label')).toBe('Estoque: 3 itens com estoque baixo');
+  });
+
+  it('usa singular no rótulo de estoque com um alerta', async () => {
+    await setup('ADMIN');
+    estoque.alertasCount.set(1);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector(
+      'a[href="/admin/logistico/estoque"]',
+    );
+    expect(link?.getAttribute('aria-label')).toBe('Estoque: 1 item com estoque baixo');
+  });
+
+  it('não exibe badge nem rótulo de estoque quando não há alertas', async () => {
+    await setup('ADMIN');
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector(
+      'a[href="/admin/logistico/estoque"]',
+    );
+    expect(link?.querySelector('.admin-nav__badge')).toBeNull();
+    expect(link?.getAttribute('aria-label')).toBeNull();
+    expect(link?.getAttribute('title')).toBeNull();
+  });
+
+  it('remove o badge quando o polling zera os alertas (transição)', async () => {
+    await setup('ADMIN');
+    estoque.alertasCount.set(3);
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const link = el.querySelector('a[href="/admin/logistico/estoque"]');
+    expect(link?.querySelector('.admin-nav__badge')).not.toBeNull();
+
+    estoque.alertasCount.set(0);
+    fixture.detectChanges();
+
+    expect(link?.querySelector('.admin-nav__badge')).toBeNull();
+    expect(link?.getAttribute('aria-label')).toBeNull();
   });
 
   it('destaca apenas o item da rota atual na seção de logística', async () => {

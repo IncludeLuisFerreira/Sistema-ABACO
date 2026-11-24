@@ -67,6 +67,38 @@ describe('NotificacaoSinoComponent', () => {
     return elemento().querySelector('.notificacao-sino__botao') as HTMLButtonElement;
   }
 
+  // jsdom não aplica media queries no layout; a regra responsiva é verificada via CSSOM.
+  function regrasDeMidia(condicao: string): CSSStyleRule[] {
+    const folhas: CSSRuleList[] = [];
+    for (let i = 0; i < document.styleSheets.length; i += 1) {
+      folhas.push(document.styleSheets[i].cssRules);
+    }
+    const adotadas = (document as Document & { adoptedStyleSheets?: CSSStyleSheet[] })
+      .adoptedStyleSheets;
+    adotadas?.forEach((folha) => folhas.push(folha.cssRules));
+
+    const encontradas: CSSStyleRule[] = [];
+    folhas.forEach((regras) => {
+      Array.from(regras).forEach((regra) => {
+        if (regra instanceof CSSMediaRule && regra.conditionText.includes(condicao)) {
+          Array.from(regra.cssRules).forEach((interna) => {
+            if (interna instanceof CSSStyleRule) {
+              encontradas.push(interna);
+            }
+          });
+        }
+      });
+    });
+    return encontradas;
+  }
+
+  function regraDoPainel(regras: CSSStyleRule[], sidebar: boolean): CSSStyleRule | undefined {
+    return regras.find((regra) => {
+      const seletor = regra.selectorText;
+      return seletor.includes('__painel') && seletor.includes('--sidebar') === sidebar;
+    });
+  }
+
   it('mostra o badge com a quantidade de não lidas e atributos acessíveis', async () => {
     await setup([notificacao(1), notificacao(2, true)]);
 
@@ -157,6 +189,29 @@ describe('NotificacaoSinoComponent', () => {
 
     const painel = elemento().querySelector('.notificacao-sino__painel') as HTMLElement;
     expect(getComputedStyle(painel).right).toBe('0px');
+  });
+
+  it('ancora o painel da topbar à viewport em telas móveis', async () => {
+    await setup([notificacao(1)]);
+
+    const regra = regraDoPainel(regrasDeMidia('max-width: 768px'), false);
+    expect(regra).toBeDefined();
+    expect(regra?.style.position).toBe('fixed');
+    expect(regra?.style.getPropertyValue('top')).toContain('--mobile-topbar-height');
+    expect(regra?.style.getPropertyValue('left')).toBe('12px');
+    expect(regra?.style.getPropertyValue('right')).toBe('12px');
+    expect(regra?.style.getPropertyValue('width')).toBe('auto');
+  });
+
+  it('ancora o painel da sidebar ao drawer em telas móveis', async () => {
+    await setup([notificacao(1)], 'sidebar');
+
+    const regra = regraDoPainel(regrasDeMidia('max-width: 768px'), true);
+    expect(regra).toBeDefined();
+    expect(regra?.style.position).toBe('absolute');
+    expect(regra?.style.getPropertyValue('left')).toBe('0px');
+    expect(regra?.style.getPropertyValue('right')).toBe('0px');
+    expect(regra?.style.getPropertyValue('width')).toBe('auto');
   });
 
   it('marca todas como lidas', async () => {
