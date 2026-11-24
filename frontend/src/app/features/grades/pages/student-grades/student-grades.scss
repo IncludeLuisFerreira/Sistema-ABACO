@@ -7,7 +7,7 @@
 .student-grades {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 2.5rem 1rem 3rem;
 }
 
 .student-grades__topbar {
@@ -15,27 +15,27 @@
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .student-grades__topbar h1 {
   margin: 0;
-  font-size: 1.8rem;
-}
-
-.student-grades__topbar p {
-  margin: 0.4rem 0 0;
-  color: #475569;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--abaco-ink);
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.55rem 1rem;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  display: inline-block;
 }
 
 .btn--ghost {
@@ -44,17 +44,19 @@
 }
 
 .local-feedback {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: #fdeaea;
+  border: 1px solid #f5c2c2;
+  border-left: 4px solid #dc2626;
   color: #991b1b;
-  padding: 0.7rem 0.9rem;
-  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
 }
 
 .table-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  background: var(--abaco-surface);
+  border: 1px solid var(--abaco-line);
+  border-radius: 18px;
+  box-shadow: var(--abaco-shadow);
   padding: 1.5rem;
 }
 
@@ -69,27 +71,60 @@
 .table-card__header h1 {
   margin: 0;
   font-size: 1.4rem;
+  color: var(--abaco-ink);
 }
 
 .table-card__header p {
   margin: 0.4rem 0 0;
-  color: #64748b;
+  color: var(--abaco-muted);
 }
 
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-wrap table {
   width: 100%;
   border-collapse: collapse;
+  background: var(--abaco-surface);
+  border: 1px solid var(--abaco-line);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .table-wrap th,
 .table-wrap td {
   text-align: left;
-  padding: 0.7rem 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--abaco-line-soft);
+}
+
+.table-wrap thead {
+  background: var(--abaco-row-head);
+}
+
+.table-wrap th {
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--abaco-muted);
+  border-bottom: 1px solid var(--abaco-line);
+}
+
+.table-wrap td {
+  font-size: 0.9rem;
+  color: var(--abaco-body);
+}
+
+.table-wrap tbody tr:hover {
+  background: var(--abaco-row-hover);
+}
+
+.table-wrap td:first-child {
+  font-weight: 600;
+  color: var(--abaco-ink);
 }
 
 .grade-col {
@@ -115,9 +150,9 @@
 }
 
 @media (max-width: 768px) {
-  .student-grades { padding: 1rem; }
+  .student-grades { padding: 1.25rem 1rem 2rem; }
   .student-grades__topbar { flex-direction: column; }
-  .student-grades__topbar h1 { font-size: 1.3rem; }
+  .student-grades__topbar h1 { font-size: 1.4rem; }
   .table-card { padding: 1rem; }
   .table-card__header h1 { font-size: 1.15rem; }
 }

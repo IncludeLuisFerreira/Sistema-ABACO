@@ -2,8 +2,8 @@
   <header class="attendance-management__topbar">
     <div>
       <span class="eyebrow">Gestão acadêmica</span>
-      <h1>Presencas</h1>
-      <p>Registre a presenca dos alunos por turma e data.</p>
+      <h1>Presenças</h1>
+      <p class="page-subtitle">Registre a presença dos alunos por turma e data.</p>
     </div>
     <button
       type="button"
@@ -18,13 +18,13 @@
 
   <p class="local-feedback" *ngIf="localFeedback">{{ localFeedback }}</p>
 
-  <section class="attendance-management__controls">
-    <label>
-      <span>Turma *</span>
-      <select (change)="onTurmaChange($event)" [disabled]="loadingTurmas || saving">
-        <option [value]="0" selected>Selecione uma turma</option>
+  <section class="abaco-field-card attendance-management__controls">
+    <label class="abaco-field-card__field">
+      <span class="abaco-field-card__label">Turma</span>
+      <select class="abaco-select" (change)="onTurmaChange($event)" [disabled]="loadingTurmas || saving">
+        <option value="" disabled selected>Selecione uma turma</option>
         <option *ngFor="let turma of turmas" [value]="turma.idTurma">
-          #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }} — {{ turma.professor?.nome ?? 'Sem professor' }} {{ turma.dataInicio ? '(' + (turma.dataInicio | slice:0:10) + ')' : '' }}
+          #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }}
         </option>
       </select>
     </label>

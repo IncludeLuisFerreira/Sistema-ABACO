@@ -7,7 +7,7 @@
 .grades-management {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 2.5rem 1rem 3rem;
 }
 
 .grades-management__topbar {
@@ -15,68 +15,68 @@
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .grades-management__topbar h1 {
   margin: 0;
-  font-size: 1.8rem;
-}
-
-.grades-management__topbar p {
-  margin: 0.4rem 0 0;
-  color: #475569;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--abaco-ink);
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  border-radius: 8px;
-  padding: 0.55rem 1rem;
+  border-radius: 12px;
+  padding: 0.8rem 1.15rem;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 800;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .btn--primary {
-  background: var(--abaco-gold);
+  background: linear-gradient(180deg, var(--abaco-gold-light) 0%, var(--abaco-gold) 100%);
   color: var(--abaco-ink);
+  box-shadow: var(--abaco-shadow-gold);
+}
+
+.btn--primary:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow: var(--abaco-shadow-gold-hover);
+  filter: brightness(1.02);
 }
 
 .btn[disabled] {
   opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .local-feedback {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: #fdeaea;
+  border: 1px solid #f5c2c2;
+  border-left: 4px solid #dc2626;
   color: #991b1b;
-  padding: 0.7rem 0.9rem;
-  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
 }
 
 .grades-management__controls {
-  margin-bottom: 1rem;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-  padding: 1.5rem;
+  align-items: flex-end;
 }
 
-.grades-management__controls label {
-  display: grid;
-  gap: 0.35rem;
-  max-width: 400px;
-}
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
 
-.grades-management__controls label span {
-  font-size: 0.85rem;
-  color: #0f172a;
-}
-
-.grades-management__controls select {
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
+  .btn--primary:hover:not([disabled]) {
+    transform: none;
+  }
 }
 
 .spinner {
@@ -98,9 +98,8 @@
 }
 
 @media (max-width: 768px) {
-  .grades-management { padding: 1rem; }
+  .grades-management { padding: 1.25rem 1rem 2rem; }
   .grades-management__topbar { flex-direction: column; }
-  .grades-management__topbar h1 { font-size: 1.3rem; }
-  .grades-management__controls { padding: 1rem; }
-  .grades-management__controls label { max-width: 100%; }
+  .grades-management__topbar h1 { font-size: 1.4rem; }
+  .btn--primary { width: 100%; min-height: 44px; }
 }
