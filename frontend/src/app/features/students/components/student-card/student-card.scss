@@ -1,14 +1,15 @@
 .student-card {
   display: flex;
   gap: 1rem;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  background: var(--abaco-surface);
+  border: 1px solid var(--abaco-line);
+  border-radius: 18px;
+  box-shadow: var(--abaco-shadow);
   padding: 1.25rem;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .student-card:hover {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  box-shadow: var(--abaco-shadow-hover);
   transform: translateY(-2px);
 }
 
@@ -31,7 +32,7 @@
 .student-card__name {
   margin: 0 0 0.75rem;
   font-size: 1.1rem;
-  color: #0f172a;
+  color: var(--abaco-ink);
 }
 
 .student-card__info {
@@ -40,11 +41,12 @@
   margin-bottom: 0.3rem;
   font-size: 0.88rem;
 }
-.student-card__label { color: #64748b; }
-.student-card__value { color: #334155; font-weight: 600; text-align: right; }
+.student-card__label { color: var(--abaco-muted); }
+.student-card__value { color: var(--abaco-ink-soft); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
 
 .student-card__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.75rem;
   padding-top: 0.75rem;

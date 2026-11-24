@@ -37,6 +37,7 @@
   margin: 0 0 0.5rem;
   color: #475569;
   font-size: 0.95rem;
+  overflow-wrap: break-word;
 }
 
 .error-card__hint {
@@ -77,4 +78,18 @@
 
 .error-card__btn--secondary:hover {
   background: #e2e8f0;
+}
+
+@media (max-width: 768px) {
+  .error-card {
+    padding: 2rem 1.25rem;
+  }
+
+  .error-card__code {
+    font-size: 3.25rem;
+  }
+
+  .error-card__title {
+    font-size: 1.3rem;
+  }
 }

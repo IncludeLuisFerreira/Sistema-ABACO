@@ -7,23 +7,24 @@
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  border: none;
-  background: #fff;
-  border-radius: 12px;
+  border: 1px solid var(--abaco-line);
+  background: var(--abaco-surface);
+  border-radius: 16px;
   padding: 1rem 1.25rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-  transition: background 0.15s;
+  box-shadow: var(--abaco-shadow);
+  transition: background 0.15s, box-shadow 0.15s;
   text-align: left;
 }
 
 .turma-grupo__header:hover {
-  background: #f8fafc;
+  background: var(--abaco-row-hover);
+  box-shadow: var(--abaco-shadow-hover);
 }
 
 .turma-grupo__icon {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--abaco-muted);
   width: 16px;
   text-align: center;
   flex-shrink: 0;
@@ -32,14 +33,16 @@
 .turma-grupo__titulo {
   margin: 0;
   font-size: 1.1rem;
-  color: #0f172a;
+  color: var(--abaco-ink);
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .turma-grupo__count {
   font-size: 0.82rem;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--abaco-gold-text);
+  background: var(--abaco-gold-soft);
   padding: 0.2rem 0.6rem;
   border-radius: 6px;
   font-weight: 600;
@@ -48,7 +51,7 @@
 
 .turma-grupo__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   gap: 1.25rem;
   max-height: 0;
   overflow: hidden;
