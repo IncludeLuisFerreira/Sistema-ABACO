@@ -31,6 +31,11 @@
 	--abaco-canvas-glow: radial-gradient(1100px 520px at 100% -10%, #fde7c2 0%, transparent 55%),
 		linear-gradient(180deg, #fbfcfe 0%, var(--abaco-canvas) 100%);
 	--abaco-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+	--abaco-shadow-hover: 0 24px 48px rgba(15, 23, 42, 0.1);
+	--abaco-line-soft: #f1f4f8;
+	--abaco-row-head: #f8fafc;
+	--abaco-row-hover: #fcfaf5;
+	--abaco-input-line: #d5dce6;
 }
 
 html,
