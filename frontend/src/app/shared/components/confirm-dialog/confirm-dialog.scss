@@ -69,12 +69,12 @@
 }
 
 .confirm-card__btn--default {
-  background: #0f766e;
-  color: #fff;
+  background: var(--abaco-gold);
+  color: var(--abaco-ink);
 }
 
 .confirm-card__btn--default:hover {
-  background: #0d6b63;
+  background: var(--abaco-gold-strong);
 }
 
 .confirm-card__btn:disabled {

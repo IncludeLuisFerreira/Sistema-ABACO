@@ -7,29 +7,29 @@
 }
 
 .breadcrumb__link {
-  color: #64748b;
+  color: var(--abaco-muted);
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
 }
 
 .breadcrumb__link:hover {
-  color: #0f766e;
+  color: var(--abaco-gold-text);
   text-decoration: underline;
 }
 
 .breadcrumb__text {
-  color: #64748b;
+  color: var(--abaco-muted);
   font-size: 0.85rem;
 }
 
 .breadcrumb__text--current {
-  color: #0f172a;
+  color: var(--abaco-ink);
   font-weight: 600;
 }
 
 .breadcrumb__sep {
-  color: #94a3b8;
+  color: var(--abaco-tertiary);
   font-size: 0.85rem;
   user-select: none;
 }
