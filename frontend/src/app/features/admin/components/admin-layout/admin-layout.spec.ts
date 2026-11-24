@@ -1,4 +1,4 @@
-import { signal, WritableSignal, Component, signal} from '@angular/core';
+import { signal, WritableSignal, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, Routes, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
