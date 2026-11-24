@@ -2,21 +2,22 @@
   <header class="presencas-header">
     <span class="eyebrow">Área do professor</span>
     <h1>Presenças</h1>
+    <p class="page-subtitle">Registre a presença dos alunos por data de aula.</p>
   </header>
 
   <div class="filters">
-    <label>
-      Turma:
-      <select [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
+    <label class="filter-field">
+      <span class="filter-field__label">Turma</span>
+      <select class="filter-field__select" [ngModel]="selectedTurma?.idTurma ?? ''" (ngModelChange)="onTurmaChange($event)">
         <option value="" disabled>Selecione uma turma</option>
         <option *ngFor="let turma of turmas" [value]="turma.idTurma">
           #{{ turma.idTurma }} — {{ turma.curso?.nomeCurso ?? 'Sem curso' }}
         </option>
       </select>
     </label>
-    <label *ngIf="selectedTurma">
-      Data:
-      <input type="date" [ngModel]="dataAula" (ngModelChange)="onDataChange($event)" />
+    <label class="filter-field" *ngIf="selectedTurma">
+      <span class="filter-field__label">Data</span>
+      <input class="filter-field__input" type="date" [ngModel]="dataAula" (ngModelChange)="onDataChange($event)" />
     </label>
   </div>
 
