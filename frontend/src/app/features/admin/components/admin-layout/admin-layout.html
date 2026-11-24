@@ -65,7 +65,7 @@
     <div class="admin-nav__section-label">Logistico</div>
     <ul class="admin-nav__links">
       <li>
-        <a routerLink="/admin/logistico" routerLinkActive="active" (click)="menuOpen = false">
+        <a routerLink="/admin/logistico" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="menuOpen = false">
           Visão Geral
         </a>
       </li>
