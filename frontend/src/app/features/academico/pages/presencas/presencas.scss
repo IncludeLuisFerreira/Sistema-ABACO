@@ -15,11 +15,11 @@
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .presencas-table { width: 100%; min-width: 400px; border-collapse: collapse; background: var(--abaco-surface); border: 1px solid var(--abaco-line); border-radius: 16px; overflow: hidden; box-shadow: var(--abaco-shadow); margin-top: 0.75rem; }
 .presencas-table th, .presencas-table td { padding: 0.75rem 0.85rem; text-align: left; }
-.presencas-table thead { background: #f8fafc; }
+.presencas-table thead { background: var(--abaco-row-head); }
 .presencas-table th { font-weight: 800; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--abaco-muted); border-bottom: 1px solid var(--abaco-line); }
-.presencas-table td { font-size: 0.9rem; color: var(--abaco-body); border-bottom: 1px solid #f1f4f8; }
+.presencas-table td { font-size: 0.9rem; color: var(--abaco-body); border-bottom: 1px solid var(--abaco-line-soft); }
 .presencas-table tbody tr { transition: background 0.15s ease; }
-.presencas-table tbody tr:hover { background: #fcfaf5; }
+.presencas-table tbody tr:hover { background: var(--abaco-row-hover); }
 .presencas-table td:first-child { font-weight: 600; color: var(--abaco-ink); }
 
 .presente-btn--on, .presente-btn--off { border: none; border-radius: 9px; padding: 0.45rem 0.9rem; font-weight: 700; font-size: 0.82rem; cursor: pointer; white-space: nowrap; transition: background 0.15s ease; }

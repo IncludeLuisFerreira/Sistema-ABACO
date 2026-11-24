@@ -25,7 +25,7 @@
   border-left: 4px solid transparent;
   transition: box-shadow 0.2s, transform 0.15s;
 }
-.turma-card:hover { box-shadow: 0 24px 48px rgba(15, 23, 42, 0.1); transform: translateY(-2px); }
+.turma-card:hover { box-shadow: var(--abaco-shadow-hover); transform: translateY(-2px); }
 .turma-card--andamento { border-left-color: #dc2626; }
 .turma-card--futura { border-left-color: #f59e0b; }
 .turma-card--encerrada { border-left-color: #94a3b8; }
