@@ -199,11 +199,12 @@
 }
 
 /* Mobile: o sino da topbar não é o último elemento (hamburger à direita), então ancorar o
-   painel ao sino empurra parte dele para fora da viewport. Ancorar à viewport. */
+   painel ao sino empurra parte dele para fora da viewport. Ancorar à viewport. A altura da
+   topbar vem do layout via --mobile-topbar-height; o fallback evita regressão se faltar. */
 @media (max-width: 768px) {
   .notificacao-sino__painel {
     position: fixed;
-    top: calc(1.2rem + 52px);
+    top: calc(var(--mobile-topbar-height, calc(1.2rem + 44px)) + 8px);
     left: 12px;
     right: 12px;
     width: auto;
@@ -224,5 +225,7 @@
     left: 0;
     right: 0;
     width: auto;
+    /* Abre para cima: em telas baixas (landscape) precisa sobrar espaço. */
+    max-height: min(70vh, calc(100vh - 160px));
   }
 }

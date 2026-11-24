@@ -45,6 +45,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 1rem;
+    /* Altura consumida pelo painel do sino (shared) como --mobile-topbar-height. */
+    --mobile-topbar-height: calc(1.2rem + 44px);
     background: #0f172a;
     color: #fff;
     position: sticky;

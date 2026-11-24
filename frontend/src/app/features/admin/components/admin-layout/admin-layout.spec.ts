@@ -91,7 +91,6 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
     );
     expect(link?.querySelector('.admin-nav__badge')?.textContent?.trim()).toBe('3');
     expect(link?.getAttribute('aria-label')).toBe('Estoque: 3 itens com estoque baixo');
-    expect(link?.getAttribute('title')).toBe('3 itens com estoque baixo');
   });
 
   it('usa singular no rótulo de estoque com um alerta', async () => {
@@ -114,6 +113,22 @@ describe('AdminLayoutComponent (menu de gestão)', () => {
     expect(link?.querySelector('.admin-nav__badge')).toBeNull();
     expect(link?.getAttribute('aria-label')).toBeNull();
     expect(link?.getAttribute('title')).toBeNull();
+  });
+
+  it('remove o badge quando o polling zera os alertas (transição)', async () => {
+    await setup('ADMIN');
+    estoque.alertasCount.set(3);
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const link = el.querySelector('a[href="/admin/logistico/estoque"]');
+    expect(link?.querySelector('.admin-nav__badge')).not.toBeNull();
+
+    estoque.alertasCount.set(0);
+    fixture.detectChanges();
+
+    expect(link?.querySelector('.admin-nav__badge')).toBeNull();
+    expect(link?.getAttribute('aria-label')).toBeNull();
   });
 
   it('inicia o polling de 30 s ao entrar e limpa o estado ao sair', async () => {

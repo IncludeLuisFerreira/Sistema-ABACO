@@ -197,6 +197,7 @@ describe('NotificacaoSinoComponent', () => {
     const regra = regraDoPainel(regrasDeMidia('max-width: 768px'), false);
     expect(regra).toBeDefined();
     expect(regra?.style.position).toBe('fixed');
+    expect(regra?.style.getPropertyValue('top')).toContain('--mobile-topbar-height');
     expect(regra?.style.getPropertyValue('left')).toBe('12px');
     expect(regra?.style.getPropertyValue('right')).toBe('12px');
     expect(regra?.style.getPropertyValue('width')).toBe('auto');
