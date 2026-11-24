@@ -28,6 +28,11 @@
 .save-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--abaco-shadow-gold-hover); filter: brightness(1.02); }
 .save-btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
+@media (prefers-reduced-motion: reduce) {
+  .save-btn { transition: none; }
+  .save-btn:hover:not(:disabled) { transform: none; }
+}
+
 @media (max-width: 768px) {
   .notas-page { padding: 1.25rem 1rem 2rem; }
   .notas-header h1 { font-size: 1.4rem; }
