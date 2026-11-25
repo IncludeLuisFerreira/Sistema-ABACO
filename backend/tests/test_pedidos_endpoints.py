@@ -1,12 +1,20 @@
-from datetime import date
-
 import pytest
 
 from app.email import EmailDeliveryError
 from app.models.estoque import Estoque
 from app.models.movimentacao_estoque import MovimentacaoEstoque
 from app.models.pedido import Pedido
-from app.services import pedido_service
+from app.services import notificacao_dispatcher_service as dispatcher
+
+
+def _capturar_emails(monkeypatch):
+    chamadas: list[tuple[str, object]] = []
+    monkeypatch.setattr(
+        dispatcher,
+        "send_email",
+        lambda to_email, mensagem: chamadas.append((to_email, mensagem)),
+    )
+    return chamadas
 
 
 @pytest.fixture
@@ -525,26 +533,18 @@ class TestPedidosEndpoints:
     def test_aprovar_envia_email_ao_solicitante(self, seeded, monkeypatch):
         client = seeded["client"]
         pedido = _criar_pedido(seeded, seeded["professor_headers"], quantidade=2)
-        chamadas = []
-
-        def fake_send(to_email, pedido_id, data_aprovacao, itens):
-            chamadas.append((to_email, pedido_id, data_aprovacao, itens))
-
-        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+        chamadas = _capturar_emails(monkeypatch)
 
         response = client.put(
             f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
             headers=seeded["director_headers"],
         )
         assert response.status_code == 200
-        assert chamadas == [
-            (
-                "prof@abaco.org.br",
-                pedido["idPedido"],
-                date.today(),
-                [("Papel A4", 2)],
-            )
-        ]
+        assert len(chamadas) == 1
+        assert chamadas[0][0] == "prof@abaco.org.br"
+        assert f"Pedido: #{pedido['idPedido']}" in chamadas[0][1].text
+        assert "Papel A4: 2" in chamadas[0][1].text
+        assert "Papel A4: 2" in chamadas[0][1].html
 
     def test_aprovacao_nao_envia_email_quando_baixa_falha(self, seeded, monkeypatch):
         client = seeded["client"]
@@ -559,12 +559,7 @@ class TestPedidosEndpoints:
             quantidade=1,
             item_id=item["idItemEstoque"],
         )
-        chamadas = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: chamadas.append(args),
-        )
+        chamadas = _capturar_emails(monkeypatch)
 
         response = client.put(
             f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
@@ -580,7 +575,7 @@ class TestPedidosEndpoints:
         def fake_send(*args, **kwargs):
             raise EmailDeliveryError("provedor indisponível")
 
-        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+        monkeypatch.setattr(dispatcher, "send_email", fake_send)
 
         response = client.put(
             f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",
@@ -588,18 +583,13 @@ class TestPedidosEndpoints:
         )
         assert response.status_code == 200
         assert response.json()["status"] == 1
-        assert "Falha ao enviar e-mail de aprovação" in caplog.text
+        assert "Falha ao enviar e-mail de notificação" in caplog.text
         assert "provedor indisponível" not in response.text
 
     def test_aprovar_pedido_ja_aprovado_nao_reenvia_email(self, seeded, monkeypatch):
         client = seeded["client"]
         pedido = _criar_pedido(seeded, seeded["director_headers"], quantidade=1)
-        chamadas = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: chamadas.append(args),
-        )
+        chamadas = _capturar_emails(monkeypatch)
 
         assert client.put(
             f"/api/v1/pedidos/{pedido['idPedido']}/aprovar",

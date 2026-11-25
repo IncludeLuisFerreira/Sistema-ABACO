@@ -13,7 +13,7 @@ from app.schemas.pedido_schema import (
     PedidoCreateSchema,
     PedidoUpdateSchema,
 )
-from app.services import pedido_service
+from app.services import notificacao_dispatcher_service as dispatcher, pedido_service
 from app.services.pedido_service import (
     EstoqueNotFoundForPedidoError,
     PedidoCannotBeDeliveredError,
@@ -28,6 +28,16 @@ from app.services.pedido_service import (
     delete_pedido,
     update_pedido_status,
 )
+
+
+def _capturar_emails(monkeypatch):
+    chamadas: list[tuple[str, object]] = []
+    monkeypatch.setattr(
+        dispatcher,
+        "send_email",
+        lambda to_email, mensagem: chamadas.append((to_email, mensagem)),
+    )
+    return chamadas
 
 
 class TestCreatePedido:
@@ -229,12 +239,7 @@ class TestAprovarPedido:
         self, db_session: Session, turma, usuario, estoque_item, monkeypatch
     ):
         pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
-        chamadas = []
-
-        def fake_send(to_email, pedido_id, data_aprovacao, itens):
-            chamadas.append((to_email, pedido_id, itens))
-
-        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+        chamadas = _capturar_emails(monkeypatch)
 
         result = aprovar_pedido(db_session, pedido.id_pedido)
 
@@ -250,20 +255,17 @@ class TestAprovarPedido:
         assert movimentacao.quantidade == -5
         assert f"Pedido #{pedido.id_pedido}" in movimentacao.justificativa
         assert estoque_item.nome_item in movimentacao.justificativa
-        assert chamadas == [
-            (usuario.email, pedido.id_pedido, [(estoque_item.nome_item, 5)])
-        ]
+        assert len(chamadas) == 1
+        assert chamadas[0][0] == usuario.email
+        assert f"Pedido: #{pedido.id_pedido}" in chamadas[0][1].text
+        assert f"{estoque_item.nome_item}: 5" in chamadas[0][1].text
+        assert f"Pedido: #{pedido.id_pedido}" in chamadas[0][1].html
 
     def test_update_status_para_aprovado_reutiliza_o_fluxo(
         self, db_session: Session, turma, usuario, estoque_item, monkeypatch
     ):
         pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 2)
-        chamadas = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: chamadas.append(args),
-        )
+        chamadas = _capturar_emails(monkeypatch)
 
         result = update_pedido_status(db_session, pedido.id_pedido, PedidoUpdateSchema(status=1))
 
@@ -279,12 +281,7 @@ class TestAprovarPedido:
         db_session.commit()
         pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 5)
 
-        chamadas = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: chamadas.append(args),
-        )
+        chamadas = _capturar_emails(monkeypatch)
 
         with pytest.raises(PedidoInvalidTransitionError):
             aprovar_pedido(db_session, pedido.id_pedido)
@@ -305,12 +302,7 @@ class TestAprovarPedido:
         self, db_session: Session, turma, usuario, estoque_item, monkeypatch
     ):
         pedido = _criar_pedido_com_estoque(db_session, turma, usuario, estoque_item, 1)
-        chamadas = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: chamadas.append(args),
-        )
+        chamadas = _capturar_emails(monkeypatch)
 
         aprovar_pedido(db_session, pedido.id_pedido)
 
@@ -327,12 +319,7 @@ class TestAprovarPedido:
         db_session.commit()
         db_session.refresh(sem_email)
         pedido = _criar_pedido_com_estoque(db_session, turma, sem_email, estoque_item, 1)
-        chamadas = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: chamadas.append(args),
-        )
+        chamadas = _capturar_emails(monkeypatch)
 
         result = aprovar_pedido(db_session, pedido.id_pedido)
 
@@ -348,12 +335,12 @@ class TestAprovarPedido:
         def fake_send(*args, **kwargs):
             raise EmailDeliveryError("provedor fora do ar")
 
-        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+        monkeypatch.setattr(dispatcher, "send_email", fake_send)
 
         result = aprovar_pedido(db_session, pedido.id_pedido)
 
         assert result.status == 1
-        assert "Falha ao enviar e-mail de aprovação" in caplog.text
+        assert "Falha ao enviar e-mail de notificação" in caplog.text
 
     def test_erro_inesperado_no_email_nao_reverte_aprovacao(
         self, db_session: Session, turma, usuario, estoque_item, monkeypatch, caplog
@@ -363,20 +350,16 @@ class TestAprovarPedido:
         def fake_send(*args, **kwargs):
             raise RuntimeError("erro interno")
 
-        monkeypatch.setattr(pedido_service, "send_pedido_aprovado_email", fake_send)
+        monkeypatch.setattr(dispatcher, "send_email", fake_send)
 
         result = aprovar_pedido(db_session, pedido.id_pedido)
 
         assert result.status == 1
-        assert "Erro inesperado ao enviar e-mail de aprovação" in caplog.text
+        assert "Erro inesperado ao enviar e-mail de notificação" in caplog.text
 
 class TestIntegridadeCicloPedido:
     def _aprovar(self, db_session, pedido, monkeypatch):
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args, **kwargs: None,
-        )
+        monkeypatch.setattr(dispatcher, "send_email", lambda *_args, **_kwargs: None)
         return aprovar_pedido(db_session, pedido.id_pedido)
 
     def test_compra_com_mesma_quantidade_avanca_status(

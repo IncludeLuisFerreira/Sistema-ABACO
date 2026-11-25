@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from app.email import send_first_access_email, send_pedido_aprovado_email, send_reset_email
 from app.email import service
+from app.email.messages import EmailMessage
 from app.email.providers import brevo, console, smtp
 
 
@@ -65,7 +66,11 @@ def test_send_pedido_aprovado_email_uses_configured_provider(monkeypatch):
     monkeypatch.setattr(
         service,
         "console",
-        SimpleNamespace(send=lambda to, subject, body: sent.update(to=to, subject=subject, body=body)),
+        SimpleNamespace(
+            send=lambda to, subject, body, html=None: sent.update(
+                to=to, subject=subject, body=body, html=html
+            )
+        ),
     )
 
     send_pedido_aprovado_email(
@@ -76,3 +81,29 @@ def test_send_pedido_aprovado_email_uses_configured_provider(monkeypatch):
     assert "Pedido #42" in sent["subject"]
     assert "09/11/2026" in sent["body"]
     assert "Papel A4: 3" in sent["body"]
+    assert "Itens aprovados" in sent["html"]
+    assert "Papel A4: 3" in sent["html"]
+
+
+def test_send_email_entrega_subject_texto_e_html_ao_provedor(monkeypatch):
+    enviados = {}
+    monkeypatch.setattr(service, "get_settings", lambda: _settings())
+    monkeypatch.setattr(
+        service,
+        "console",
+        SimpleNamespace(
+            send=lambda to, subject, body, html=None: enviados.update(
+                to=to, subject=subject, body=body, html=html
+            )
+        ),
+    )
+    mensagem = EmailMessage("Assunto", "Texto", "<p>Texto</p>")
+
+    service.send_email("dest@abaco.org.br", mensagem)
+
+    assert enviados == {
+        "to": "dest@abaco.org.br",
+        "subject": "Assunto",
+        "body": "Texto",
+        "html": "<p>Texto</p>",
+    }
