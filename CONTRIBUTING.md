@@ -135,8 +135,9 @@ hotfix/vX.Y.Z    ← sai da main, volta para a develop depois da tag
 ## 4. Modelo de Releases
 
 `main` é a **versão estável em produção**. Não recebe commits de feature: recebe apenas releases
-versionadas, sempre vindas da `develop`. `develop` é o **ambiente de desenvolvimento e teste** —
-tudo é integrado e validado nela primeiro.
+versionadas (vindas da `develop`) e hotfixes urgentes (vindos da própria `main`), conforme os fluxos
+abaixo. `develop` é o **ambiente de desenvolvimento e teste** — tudo é integrado e validado nela
+primeiro.
 
 ### Versionamento (SemVer)
 
@@ -175,6 +176,11 @@ gh pr create --base main --title "release: v1.0.1" --body "Closes #<issue>"
 
 4. O PR de release exige **2 aprovações**, nenhuma do autor. Só quem tem permissão de manutenção no
    repositório aprova release; contribuidores sem essa permissão participam da discussão.
+
+Os passos 5 a 7 (merge, tag e publicação) são executados por quem tem permissão de manutenção no
+repositório. Se não houver dois mantenedores disponíveis, a release aguarda — não se reduz o número
+de aprovações.
+
 5. Faça merge com **merge commit**, nunca squash — o histórico de releases precisa ficar legível.
 6. Na `main`, crie a tag anotada e publique o GitHub Release com notas geradas dos commits:
 
@@ -199,12 +205,15 @@ para a tag anterior como contenção; o código se corrige com um novo patch.
 ```bash
 git fetch upstream
 git switch -c hotfix/v1.0.2 upstream/main
+git push -u origin hotfix/v1.0.2
 ```
 
-2. Abra o PR `hotfix/v1.0.2 → main` com o mesmo ritual de aprovação do release (2 aprovações).
+2. Abra o PR `hotfix/v1.0.2 → main` com título `hotfix: v1.0.2`, com o mesmo ritual de aprovação do
+   release (2 aprovações).
 3. Faça merge, crie a tag `v1.0.2` e publique o GitHub Release.
-4. **Back-merge obrigatório** para a `develop` (PR `main → develop`), referenciando o PR da `main`.
-   Sem isso a correção volta como bug no próximo release.
+4. **Back-merge obrigatório e imediato** para a `develop` (PR `main → develop`), feito por quem
+   mergeou a correção, referenciando o PR da `main`. Sem isso a correção volta como bug no próximo
+   release.
 
 ### O que é proibido
 
@@ -242,6 +251,8 @@ Use o padrão `tipo/descricao-curta-em-kebab-case`:
 | `refactor/` | Refatoração sem mudança de comportamento | `refactor/service-matricula` |
 | `test/` | Adição ou correção de testes | `test/cobertura-pedido-service` |
 | `chore/` | Configuração, dependências, CI | `chore/atualiza-requirements` |
+| `release/` | Prepara uma release para a `main` | `release/v1.1.0` |
+| `hotfix/` | Corrige bug urgente em produção | `hotfix/v1.0.2` |
 
 ```bash
 # Sempre sincronize com o upstream antes de criar a branch
