@@ -18,8 +18,8 @@ Stack real — não invente versões nem bibliotecas:
 | Frontend | Angular 21.2 (standalone), TypeScript 5.9 (`strict`), RxJS 7.8, ApexCharts + ng-apexcharts, SCSS, Vitest 4 + jsdom |
 | Infra | Docker Compose, Nginx, PostgreSQL 16 |
 
-Não há Tailwind, NgRx, PrimeNG, Material ou biblioteca de UI externa. O `docs/architecture/architecture.md`
-menciona Tailwind e deploy em Vercel/Railway: está desatualizado, ignore esses dois pontos.
+Não há Tailwind, NgRx, PrimeNG, Material ou biblioteca de UI externa: o estilo é SCSS por componente.
+O deploy é via Docker Compose, descrito em `docs/guides/deploy.md`.
 
 ## 2. Fonte de verdade
 
@@ -100,6 +100,12 @@ que você não entende, pare e peça ajuda em vez de "resolver" escolhendo um la
 14. Nenhum `print()` ou `console.log` de debug no diff final.
 15. Não adicione dependência nova sem justificar e sem aprovação explícita do usuário.
 16. Não altere `CONTRIBUTING.md`, `README.md`, CI ou `scripts/` sem pedido explícito.
+17. Branch concluída e já mergeada deve ser encerrada com a skill `finishing-a-development-branch`:
+    exclua a branch local (`git branch -d`) e a remota (`git push <remote> --delete <branch>`).
+    Antes de qualquer exclusão, confirme com o usuário que o merge foi concluído, que você está na
+    branch correta e que nenhum commit exclusivo será perdido.
+18. Toda implementação nova ou alterada precisa manter logs úteis, seguros e suficientes para
+    diagnosticar falhas. Siga a política da §12.
 
 ## 5. Comandos canônicos
 
@@ -214,10 +220,15 @@ assuntos no mesmo commit. O push deve conter commits que passariam sozinhos em u
 ## 10. Definição de pronto
 
 - [ ] Teste novo ou atualizado cobrindo o comportamento
+- [ ] Cobertura de testes da nova feature ou correção ≥ **70%** (backend:
+      `python -m pytest -q --cov=app --cov-report=term-missing`; frontend:
+      `npm run test:coverage -- --watch=false`)
 - [ ] `cd backend && python -m pytest -q` verde
 - [ ] `cd frontend && npm test -- --watch=false` verde (se mexeu no frontend)
 - [ ] `cd frontend && npm run build` verde (se mexeu no frontend)
 - [ ] `cd backend && alembic heads` com um único head (se mexeu no schema)
+- [ ] Logs da feature revisados: eventos relevantes registrados, sem segredo ou dado sensível e
+      consultáveis com `docker compose logs -f backend` (ver §12)
 - [ ] Sem segredo, token, `.env`, `print()` ou `console.log` no diff
 - [ ] Commit no padrão Conventional Commits, em português, até 72 caracteres na primeira linha
 - [ ] PR com issue vinculada, o que muda, por quê, como testar e checklist preenchido
@@ -231,3 +242,46 @@ assuntos no mesmo commit. O push deve conter commits que passariam sozinhos em u
 - Mascarar falha de teste com `skip`, `xfail` ou removendo asserção
 - "Consertar" código não relacionado à issue no mesmo PR
 - Inventar endpoints, tabelas, campos ou variáveis de ambiente que não existem no código
+
+## 12. Logs — política obrigatória
+
+Logs são parte da entrega, não um extra. Uma feature só está pronta se, quando falhar em produção,
+o log permitir responder **o que aconteceu, com qual recurso e por quê** sem precisar reproduzir o
+erro. Ao mesmo tempo, log não é canal de vazamento.
+
+**O que registrar**
+
+- Use `logging` do Python: `logger = logging.getLogger(__name__)`. Nunca `print()`.
+- Registre início e resultado de operações críticas (login, recuperação de senha, envio de e-mail,
+  mudança de status de pedido, movimentação de estoque, migrations e integrações externas).
+- Inclua contexto suficiente para localizar o problema: operação, identificadores do recurso
+  (`id_turma`, `id_matricula`, `id_pedido`), resultado e motivo da falha.
+- Em `except`, use `logger.exception(...)` para preservar o stack trace; não engula a exceção
+  silenciosamente nem registre apenas "erro".
+- Use o nível correto: `INFO` para eventos de negócio, `WARNING` para anomalia recuperável,
+  `ERROR` para falha com impacto, `DEBUG` para detalhe de desenvolvimento.
+
+**O que nunca registrar**
+
+- Senha, hash de senha, token JWT, cookie de sessão, `X-CSRF-Token`, `JWT_SECRET`, chaves de API
+  (`BREVO_API_KEY`) ou conteúdo do `.env`.
+- Payload completo de requisição, dados de cartão ou documentos completos.
+- Dados pessoais além do necessário: quando precisar identificar o usuário, prefira o id; se o
+  e-mail for indispensável, mantenha o padrão já existente e não amplie a exposição.
+
+**Quem pode acessar**
+
+- Logs são somente do servidor. Nunca devolva log, stack trace ou detalhe interno em resposta de
+  API, tela do sistema ou mensagem de erro exibida ao usuário.
+- Não crie endpoint, tela ou arquivo público que exponha logs. O acesso é restrito a quem opera o
+  ambiente (desenvolvedor ou pessoa com permissão de infraestrutura).
+- Em Docker, a inspeção é local e autenticada no host: `docker compose logs -f backend`.
+  Para e-mail, siga `docs/guides/email-observability.md`.
+
+**Na implementação**
+
+- Erro tratado no backend deve ser logado no ponto em que o contexto ainda existe (service ou
+  provider), antes de virar `HTTPException` genérica.
+- Ao alterar um fluxo existente, confirme que os logs antigos continuam corretos e que a mensagem
+  não passou a expor dado novo.
+- Feature nova sem log nos pontos de falha não passa na definição de pronto (§10).
