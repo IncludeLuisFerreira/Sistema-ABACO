@@ -269,6 +269,7 @@ Siga o padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/
 |------|-----------|
 | `feat` | Nova funcionalidade |
 | `fix` | Correção de bug |
+| `perf` | Melhoria de desempenho sem mudança de comportamento |
 | `docs` | Alteração em documentação |
 | `style` | Formatação, espaços, ponto e vírgula (sem lógica) |
 | `refactor` | Refatoração sem mudança de comportamento |

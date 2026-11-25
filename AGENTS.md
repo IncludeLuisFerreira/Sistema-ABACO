@@ -183,6 +183,7 @@ Formato obrigatório em todo commit:
 |------|-----|
 | `feat` | Nova funcionalidade |
 | `fix` | Correção de bug |
+| `perf` | Melhoria de desempenho |
 | `docs` | Documentação |
 | `style` | Formatação sem mudança de lógica |
 | `refactor` | Refatoração sem mudança de comportamento |
