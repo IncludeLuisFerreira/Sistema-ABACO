@@ -14,7 +14,12 @@ from app.schemas.pedido_schema import (
     PedidoCreateSchema,
     PedidoUpdateSchema,
 )
-from app.services import estoque_service, notificacao_eventos_service as eventos, pedido_service
+from app.services import (
+    estoque_service,
+    notificacao_dispatcher_service as dispatcher,
+    notificacao_eventos_service as eventos,
+    pedido_service,
+)
 from app.services.estoque_service import create_estoque, dar_baixa, update_estoque
 from app.services.pedido_service import (
     aprovar_pedido,
@@ -37,6 +42,22 @@ def _usuario(db: Session, nome: str, cargo: int, email: str | None = None, sem_e
     db.commit()
     db.refresh(usuario)
     return usuario
+
+
+def _capturar_emails(monkeypatch):
+    chamadas: list[tuple[str, object]] = []
+    monkeypatch.setattr(
+        dispatcher,
+        "send_email",
+        lambda to_email, mensagem: chamadas.append((to_email, mensagem)),
+    )
+    return chamadas
+
+
+def _emails_estoque(chamadas):
+    return [
+        chamada for chamada in chamadas if "Estoque baixo" in chamada[1].subject
+    ]
 
 
 def _notificacoes(db: Session, usuario_id: int, tipo: str | None = None) -> list[Notificacao]:
@@ -73,14 +94,23 @@ def _criar_pedido(db: Session, turma, usuario, estoque_item=None, quantidade: in
 
 @pytest.fixture
 def sem_email_estoque(monkeypatch):
-    """Impede o envio real durante os testes de notificação de estoque."""
-    chamadas: list[tuple[str, list]] = []
+    """Impede o envio real e devolve só os e-mails de estoque capturados."""
+    chamadas = _capturar_emails(monkeypatch)
 
-    def falso_envio(to_email: str, itens: list) -> None:
-        chamadas.append((to_email, list(itens)))
+    class AlertasEstoque:
+        def __len__(self):
+            return len(_emails_estoque(chamadas))
 
-    monkeypatch.setattr(eventos, "send_estoque_baixo_email", falso_envio)
-    return chamadas
+        def __iter__(self):
+            return iter(_emails_estoque(chamadas))
+
+        def __getitem__(self, indice):
+            return _emails_estoque(chamadas)[indice]
+
+        def __eq__(self, outro):
+            return list(self) == outro
+
+    return AlertasEstoque()
 
 
 @pytest.fixture
@@ -136,12 +166,7 @@ class TestPedidoAprovado:
     ):
         admin = _usuario(db_session, "Admin Aprovacao", 3)
         pedido = _criar_pedido(db_session, turma, usuario_professor, estoque_item, 5)
-        emails: list[tuple] = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args: emails.append(args),
-        )
+        emails = _capturar_emails(monkeypatch)
 
         aprovar_pedido(db_session, pedido.id_pedido)
 
@@ -159,12 +184,7 @@ class TestPedidoAprovado:
     ):
         _usuario(db_session, "Admin Aprovacao", 3)
         pedido = _criar_pedido(db_session, turma, usuario_professor, estoque_item, 5)
-        emails: list[tuple] = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args: emails.append(args),
-        )
+        emails = _capturar_emails(monkeypatch)
 
         update_pedido_status(db_session, pedido.id_pedido, PedidoUpdateSchema(status=1))
 
@@ -175,9 +195,6 @@ class TestPedidoAprovado:
         self, db_session: Session, turma, estoque_item, monkeypatch
     ):
         admin = _usuario(db_session, "Admin Solicitante", 3)
-        monkeypatch.setattr(
-            pedido_service, "send_pedido_aprovado_email", lambda *args: None
-        )
         pedido = _criar_pedido(db_session, turma, admin, estoque_item, 5)
 
         aprovar_pedido(db_session, pedido.id_pedido)
@@ -190,12 +207,7 @@ class TestPedidoAprovado:
         self, db_session: Session, turma, usuario_professor, estoque_item, monkeypatch
     ):
         pedido = _criar_pedido(db_session, turma, usuario_professor, estoque_item, 1)
-        emails: list[tuple] = []
-        monkeypatch.setattr(
-            pedido_service,
-            "send_pedido_aprovado_email",
-            lambda *args: emails.append(args),
-        )
+        emails = _capturar_emails(monkeypatch)
 
         with pytest.raises(pedido_service.PedidoInvalidTransitionError):
             comprar_pedido(db_session, pedido.id_pedido, PedidoCompraSchema(itens=[]))
@@ -212,9 +224,6 @@ class TestPedidoCompradoEEntregue:
     def test_comprar_pelos_dois_caminhos_notifica_solicitante(
         self, db_session: Session, turma, usuario_professor, estoque_item, monkeypatch
     ):
-        monkeypatch.setattr(
-            pedido_service, "send_pedido_aprovado_email", lambda *args: None
-        )
         primeiro = _criar_pedido(db_session, turma, usuario_professor, estoque_item, 1)
         segundo = _criar_pedido(db_session, turma, usuario_professor, estoque_item, 1)
         aprovar_pedido(db_session, primeiro.id_pedido)
@@ -232,9 +241,6 @@ class TestPedidoCompradoEEntregue:
     def test_entregar_notifica_solicitante_e_nao_gera_alerta_de_estoque(
         self, db_session: Session, turma, usuario_professor, estoque_item, monkeypatch, sem_email_estoque
     ):
-        monkeypatch.setattr(
-            pedido_service, "send_pedido_aprovado_email", lambda *args: None
-        )
         estoque_item.quantidade_disponivel = 5
         estoque_item.estoque_minimo = 10
         db_session.commit()
@@ -270,7 +276,7 @@ class TestEstoqueBaixo:
             assert "Teste Item" in notificacoes[0].mensagem
         assert len(sem_email_estoque) == 2
         assert {email for email, _itens in sem_email_estoque} == {diretor.email, admin.email}
-        assert all("Teste Item" in " ".join(item.nome for item in itens) for _email, itens in sem_email_estoque)
+        assert all("Teste Item" in mensagem.text for _email, mensagem in sem_email_estoque)
         assert _notificacoes(db_session, usuario_professor.id_usuario, "estoque_baixo") == []
 
     def test_sem_queda_abaixo_do_minimo_nao_alerta(
@@ -363,9 +369,6 @@ class TestEstoqueBaixo:
     def test_aprovacao_com_varios_itens_gera_um_email_consolidado(
         self, db_session: Session, turma, usuario_professor, estoque_item, monkeypatch, sem_email_estoque, destinatarios_estoque
     ):
-        monkeypatch.setattr(
-            pedido_service, "send_pedido_aprovado_email", lambda *args: None
-        )
         outro_item = create_estoque(
             db_session,
             EstoqueCreateSchema(
@@ -394,7 +397,10 @@ class TestEstoqueBaixo:
         aprovar_pedido(db_session, pedido.id_pedido)
 
         assert len(sem_email_estoque) == 2
-        assert all({item.nome for item in itens} == {"Teste Item", "Segundo Item"} for _email, itens in sem_email_estoque)
+        assert all(
+            "Teste Item" in mensagem.text and "Segundo Item" in mensagem.text
+            for _email, mensagem in sem_email_estoque
+        )
         notificacao = db_session.query(Notificacao).filter(Notificacao.tipo == "estoque_baixo").first()
         assert "2 itens" in notificacao.titulo
 
@@ -408,9 +414,6 @@ class TestEstoqueBaixo:
         sem_email_estoque,
         destinatarios_estoque,
     ):
-        monkeypatch.setattr(
-            pedido_service, "send_pedido_aprovado_email", lambda *args: None
-        )
         estoque_item.quantidade_disponivel = 10
         estoque_item.estoque_minimo = 5
         db_session.commit()
@@ -477,15 +480,15 @@ class TestEstoqueBaixo:
     def test_falha_de_email_nao_reverte_baixa(
         self, db_session: Session, estoque_item, monkeypatch, caplog, destinatarios_estoque
     ):
-        def falha(_email: str, _itens: list) -> None:
+        def falha(_to_email: str, _mensagem) -> None:
             raise email_pkg.EmailDeliveryError("provedor fora do ar")
 
-        monkeypatch.setattr(eventos, "send_estoque_baixo_email", falha)
+        monkeypatch.setattr(dispatcher, "send_email", falha)
 
         resultado = dar_baixa(db_session, estoque_item.id_item_estoque, 95, "Consumo")
 
         assert resultado.quantidade_disponivel == 5
-        assert "Falha ao enviar e-mail de estoque baixo" in caplog.text
+        assert "Falha ao enviar e-mail de notificação" in caplog.text
 
     def test_falha_de_notificacao_in_app_nao_reverte_baixa(
         self, db_session: Session, estoque_item, monkeypatch, caplog, destinatarios_estoque
@@ -493,7 +496,7 @@ class TestEstoqueBaixo:
         def falha(*_args, **_kwargs) -> int:
             raise RuntimeError("inbox indisponível")
 
-        monkeypatch.setattr(eventos, "notificar_usuarios", falha)
+        monkeypatch.setattr(dispatcher, "notificar_usuarios", falha)
 
         resultado = dar_baixa(db_session, estoque_item.id_item_estoque, 95, "Consumo")
 
@@ -504,22 +507,17 @@ class TestEstoqueBaixo:
     def test_background_tasks_sao_usadas_quando_disponiveis(
         self, db_session: Session, estoque_item, monkeypatch, destinatarios_estoque
     ):
-        chamadas: list[tuple[str, list]] = []
-        monkeypatch.setattr(
-            eventos,
-            "send_estoque_baixo_email",
-            lambda email, itens: chamadas.append((email, list(itens))),
-        )
+        chamadas = _capturar_emails(monkeypatch)
         tasks = BackgroundTasks()
 
         dar_baixa(db_session, estoque_item.id_item_estoque, 95, "Consumo", tasks)
 
-        assert chamadas == []
+        assert list(chamadas) == []
         assert len(tasks.tasks) == 2
         for tarefa in tasks.tasks:
             tarefa.func(*tarefa.args, **tarefa.kwargs)
         assert len(chamadas) == 2
-        assert all(itens[0].saldo == 5 for _email, itens in chamadas)
+        assert all("saldo 5" in mensagem.text for _email, mensagem in chamadas)
 
 
 class TestMensagemEmailEstoqueBaixo:
@@ -554,7 +552,11 @@ class TestMensagemEmailEstoqueBaixo:
         monkeypatch.setattr(
             email_service,
             "console",
-            SimpleNamespace(send=lambda to, subject, body: enviados.update(to=to, subject=subject, body=body)),
+            SimpleNamespace(
+                send=lambda to, subject, body, html=None: enviados.update(
+                    to=to, subject=subject, body=body, html=html
+                )
+            ),
         )
 
         email_pkg.send_estoque_baixo_email(
@@ -565,3 +567,48 @@ class TestMensagemEmailEstoqueBaixo:
         assert enviados["to"] == "diretor@abaco.org.br"
         assert "Estoque baixo" in enviados["subject"]
         assert "Papel A4" in enviados["body"]
+        assert "Papel A4" in enviados["html"]
+
+
+class TestDispatcherUnico:
+    def test_todos_eventos_legados_passam_pelo_dispatcher(
+        self, db_session: Session, turma, usuario_professor, estoque_item, monkeypatch
+    ):
+        chamadas = []
+        monkeypatch.setattr(
+            eventos,
+            "disparar_evento",
+            lambda _db, evento, destinatarios, background_tasks=None: chamadas.append(
+                (evento, destinatarios)
+            ),
+        )
+        _usuario(db_session, "Diretora Estoque", 1, "diretora@abaco.org.br")
+
+        pedido = _criar_pedido(db_session, turma, usuario_professor, estoque_item, 1)
+        eventos.notificar_pedido_aprovado(db_session, pedido)
+        eventos.notificar_pedido_comprado(db_session, pedido)
+        eventos.notificar_pedido_entregue(db_session, pedido)
+        eventos.notificar_estoque_baixo(
+            db_session,
+            [eventos.ItemEstoqueBaixo(nome="Papel A4", saldo=2, minimo=5, unidade="cx")],
+        )
+
+        assert [evento.tipo for evento, _ in chamadas] == [
+            "pedido_criado",
+            "pedido_aprovado",
+            "pedido_comprado",
+            "pedido_entregue",
+            "estoque_baixo",
+        ]
+        emails = [evento.email for evento, _ in chamadas if evento.email is not None]
+        assert len(emails) == 2
+        assert "Teste Item: 1" in emails[0].text
+        assert "Ver pedido" in emails[0].html
+        assert "Papel A4" in emails[1].text
+        assert "Ver estoque" in emails[1].html
+        assert all("<a href=" in mensagem.html for mensagem in emails)
+        assert all(
+            any(destinatario.enviar_email for destinatario in destinatarios)
+            for _evento, destinatarios in chamadas
+            if _evento.email is not None
+        )

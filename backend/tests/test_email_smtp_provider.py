@@ -119,3 +119,76 @@ def test_blank_smtp_from_falls_back_to_default():
     settings = Settings(_env_file=None, SMTP_FROM="   ")
 
     assert settings.smtp_from == "noreply@abaco.org.br"
+
+
+def test_envia_texto_e_html_em_alternative(monkeypatch):
+    calls = {}
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout=None):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def ehlo(self):
+            pass
+
+        def starttls(self):
+            pass
+
+        def login(self, user, password):
+            pass
+
+        def send_message(self, msg):
+            calls["msg"] = msg
+
+    monkeypatch.setattr(smtp, "get_settings", lambda: _settings())
+    monkeypatch.setattr(smtp.smtplib, "SMTP", FakeSMTP)
+
+    smtp.send("dest@abaco.org.br", "Assunto", "Corpo texto", "<p>Corpo HTML</p>")
+
+    partes = calls["msg"].get_payload()
+    assert len(partes) == 2
+    assert partes[0].get_content_type() == "text/plain"
+    assert partes[0].get_payload(decode=True).decode() == "Corpo texto"
+    assert partes[1].get_content_type() == "text/html"
+    assert partes[1].get_payload(decode=True).decode() == "<p>Corpo HTML</p>"
+
+
+def test_html_fallback_quando_nao_fornecido(monkeypatch):
+    calls = {}
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout=None):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def ehlo(self):
+            pass
+
+        def starttls(self):
+            pass
+
+        def login(self, user, password):
+            pass
+
+        def send_message(self, msg):
+            calls["msg"] = msg
+
+    monkeypatch.setattr(smtp, "get_settings", lambda: _settings(smtp_port=465))
+    monkeypatch.setattr(smtp.smtplib, "SMTP_SSL", FakeSMTP)
+
+    smtp.send("dest@abaco.org.br", "Assunto", "Corpo texto")
+
+    partes = calls["msg"].get_payload()
+    assert len(partes) == 2
+    assert "Corpo texto" in partes[1].get_payload(decode=True).decode()

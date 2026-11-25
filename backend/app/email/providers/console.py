@@ -16,7 +16,8 @@ def _mask_tokens(body: str) -> str:
     return _TOKEN_RE.sub(lambda match: match.group(1) + _mask_value(match.group(2)), body)
 
 
-def send(to_email: str, subject: str, body: str) -> None:
+def send(to_email: str, subject: str, body: str, html: str | None = None) -> None:
+    """Console só registra o texto: HTML e tokens nunca vão para o log."""
     masked_body = _mask_tokens(body)
     if masked_body == body:
         logger.warning(

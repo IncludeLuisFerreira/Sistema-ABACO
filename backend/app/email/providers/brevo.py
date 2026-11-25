@@ -4,6 +4,7 @@ import httpx
 
 from app.core.config import get_settings
 from app.email.exceptions import EmailDeliveryError
+from app.email.messages import build_email_message
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +13,16 @@ BREVO_TIMEOUT_SECONDS = 15
 MAX_DETAIL_LENGTH = 500
 
 
-def send(to_email: str, subject: str, body: str) -> None:
+def send(to_email: str, subject: str, body: str, html: str | None = None) -> None:
     settings = get_settings()
+    html_content = html or build_email_message(subject, body).html
 
     payload = {
         "sender": {"name": settings.email_sender_name, "email": settings.smtp_from},
         "to": [{"email": to_email}],
         "subject": subject,
         "textContent": body,
+        "htmlContent": html_content,
     }
 
     try:

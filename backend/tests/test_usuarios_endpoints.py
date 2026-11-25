@@ -289,9 +289,9 @@ def test_create_email_and_logs_never_include_password(api_client, director_heade
     monkeypatch.setattr(service, "get_settings", lambda: SimpleNamespace(
         frontend_url="http://localhost:3000", first_access_token_expire_minutes=1440,
         brevo_api_key="", smtp_user=""))
-    def capture(email, subject, body):
+    def capture(email, subject, body, html=None):
         sent["body"] = body
-        console.send(email, subject, body)
+        console.send(email, subject, body, html)
     monkeypatch.setattr(service, "_select_provider", lambda settings: capture)
     password = "Secret-never-email-123"
     with caplog.at_level(logging.INFO):

@@ -1,14 +1,25 @@
 import logging
+from datetime import date
 
 from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
-from app.email import EmailDeliveryError, send_estoque_baixo_email
-from app.email.messages import ItemEstoqueBaixo
+from app.core.config import get_settings
+from app.email.messages import (
+    EmailMessage,
+    ItemEstoqueBaixo,
+    build_email_message,
+    build_estoque_baixo_message,
+    build_pedido_aprovado_message,
+)
 from app.models.estoque import Estoque
 from app.models.pedido import Pedido
 from app.models.usuario import Usuario
-from app.services.notificacao_service import notificar_usuarios
+from app.services.notificacao_dispatcher_service import (
+    DestinatarioNotificacao,
+    EventoNotificacao,
+    disparar_evento,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +36,13 @@ def link_pedidos_para_cargo(cargo: int | None) -> str:
     if cargo == 2:
         return LINK_PEDIDOS_ACADEMICO
     return LINK_PEDIDOS_ADMIN
+
+
+def _link_absoluto(link: str | None) -> str | None:
+    if not link:
+        return None
+    base = (getattr(get_settings(), "frontend_url", "") or "").rstrip("/")
+    return f"{base}{link}" if base else link
 
 
 def _solicitante(db: Session, pedido: Pedido) -> Usuario | None:
@@ -49,26 +67,11 @@ def _destinatarios_por_cargo(
     cargos: tuple[int, ...],
     link: str,
     excluir_id: int | None = None,
-) -> list[tuple[int, str | None]]:
+) -> list[DestinatarioNotificacao]:
     return [
-        (usuario.id_usuario, link)
+        DestinatarioNotificacao(usuario.id_usuario, link)
         for usuario in _usuarios_por_cargo(db, cargos, excluir_id)
     ]
-
-
-def _notificar(
-    db: Session,
-    destinatarios: list[tuple[int, str | None]],
-    tipo: str,
-    titulo: str,
-    mensagem: str,
-) -> int:
-    """Nunca deixa a gravação do inbox interferir na operação de negócio."""
-    try:
-        return notificar_usuarios(db, destinatarios, tipo, titulo, mensagem)
-    except Exception:
-        logger.exception("Falha ao gravar notificação '%s'", titulo)
-        return 0
 
 
 def notificar_pedido_criado(db: Session, pedido: Pedido, usuario_id: int) -> None:
@@ -81,64 +84,125 @@ def notificar_pedido_criado(db: Session, pedido: Pedido, usuario_id: int) -> Non
 
     # Os destinatários são diretores; o link precisa ser o da área administrativa,
     # independentemente do cargo de quem criou o pedido.
-    _notificar(
+    evento = EventoNotificacao(
+        tipo="pedido_criado",
+        titulo="Novo pedido aguardando aprovação",
+        mensagem=(
+            f"Pedido #{pedido.id_pedido} de {nome} - "
+            f"{turma_descricao} aguardando aprovação."
+        ),
+    )
+    disparar_evento(
         db,
+        evento,
         _destinatarios_por_cargo(db, (1,), LINK_PEDIDOS_ADMIN, excluir_id=usuario_id),
-        "pedido_criado",
-        "Novo pedido aguardando aprovação",
-        f"Pedido #{pedido.id_pedido} de {nome} - {turma_descricao} aguardando aprovação.",
     )
 
 
-def notificar_pedido_aprovado(db: Session, pedido: Pedido) -> None:
+def _email_pedido_aprovado(
+    pedido_id: int, link: str, itens: list[tuple[str, int]]
+) -> EmailMessage:
+    subject, texto = build_pedido_aprovado_message(pedido_id, date.today(), itens)
+    return build_email_message(
+        subject, texto, link=_link_absoluto(link), cta_label="Ver pedido"
+    )
+
+
+def notificar_pedido_aprovado(
+    db: Session,
+    pedido: Pedido,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
     solicitante = _solicitante(db, pedido)
     if solicitante is None:
-        logger.warning("Pedido #%s aprovado sem solicitante válido; notificação in-app ignorada", pedido.id_pedido)
+        logger.warning(
+            "Pedido #%s aprovado sem solicitante válido; notificação in-app ignorada",
+            pedido.id_pedido,
+        )
         return
 
-    destinatarios: list[tuple[int, str | None]] = [
-        (solicitante.id_usuario, link_pedidos_para_cargo(solicitante.cargo))
-    ]
-    # notificar_usuarios deduplica por id e mantém o primeiro link: se o solicitante
-    # também for administrador, recebe apenas a notificação com o link admin.
-    destinatarios.extend(_destinatarios_por_cargo(db, (3,), LINK_PEDIDOS_ADMIN))
+    link = link_pedidos_para_cargo(solicitante.cargo)
+    email = (solicitante.email or "").strip()
+    if not email:
+        logger.warning(
+            "Pedido #%s aprovado sem envio de e-mail: solicitante não possui e-mail cadastrado",
+            pedido.id_pedido,
+        )
 
-    _notificar(
-        db,
-        destinatarios,
-        "pedido_aprovado",
-        f"Pedido #{pedido.id_pedido} aprovado",
-        f"Seu pedido #{pedido.id_pedido} foi aprovado.",
+    itens = [
+        (item.nome_item or f"Item #{item.id_item_estoque}", item.quantidade)
+        for item in pedido.itens
+        if item.quantidade is not None
+    ]
+
+    # O solicitante vem primeiro: se também for administrador, o dispatcher
+    # deduplica por usuario_id e mantém o link da área acadêmica/administrativa dele.
+    destinatarios = [
+        DestinatarioNotificacao(
+            solicitante.id_usuario, link, email=email, enviar_email=bool(email)
+        )
+    ]
+    destinatarios.extend(
+        DestinatarioNotificacao(usuario.id_usuario, LINK_PEDIDOS_ADMIN)
+        for usuario in _usuarios_por_cargo(db, (3,))
     )
+
+    evento = EventoNotificacao(
+        tipo="pedido_aprovado",
+        titulo=f"Pedido #{pedido.id_pedido} aprovado",
+        mensagem=f"Seu pedido #{pedido.id_pedido} foi aprovado.",
+        email=_email_pedido_aprovado(pedido.id_pedido, link, itens) if email else None,
+    )
+    disparar_evento(db, evento, destinatarios, background_tasks)
 
 
 def notificar_pedido_comprado(db: Session, pedido: Pedido) -> None:
     solicitante = _solicitante(db, pedido)
     if solicitante is None:
-        logger.warning("Pedido #%s comprado sem solicitante válido; notificação in-app ignorada", pedido.id_pedido)
+        logger.warning(
+            "Pedido #%s comprado sem solicitante válido; notificação in-app ignorada",
+            pedido.id_pedido,
+        )
         return
 
-    _notificar(
+    evento = EventoNotificacao(
+        tipo="pedido_comprado",
+        titulo=f"Pedido #{pedido.id_pedido} comprado",
+        mensagem=f"Seu pedido #{pedido.id_pedido} foi comprado.",
+    )
+    disparar_evento(
         db,
-        [(solicitante.id_usuario, link_pedidos_para_cargo(solicitante.cargo))],
-        "pedido_comprado",
-        f"Pedido #{pedido.id_pedido} comprado",
-        f"Seu pedido #{pedido.id_pedido} foi comprado.",
+        evento,
+        [
+            DestinatarioNotificacao(
+                solicitante.id_usuario, link_pedidos_para_cargo(solicitante.cargo)
+            )
+        ],
     )
 
 
 def notificar_pedido_entregue(db: Session, pedido: Pedido) -> None:
     solicitante = _solicitante(db, pedido)
     if solicitante is None:
-        logger.warning("Pedido #%s entregue sem solicitante válido; notificação in-app ignorada", pedido.id_pedido)
+        logger.warning(
+            "Pedido #%s entregue sem solicitante válido; notificação in-app ignorada",
+            pedido.id_pedido,
+        )
         return
 
-    _notificar(
+    evento = EventoNotificacao(
+        tipo="pedido_entregue",
+        titulo=f"Pedido #{pedido.id_pedido} entregue",
+        mensagem=f"Seu pedido #{pedido.id_pedido} foi entregue.",
+    )
+    disparar_evento(
         db,
-        [(solicitante.id_usuario, link_pedidos_para_cargo(solicitante.cargo))],
-        "pedido_entregue",
-        f"Pedido #{pedido.id_pedido} entregue",
-        f"Seu pedido #{pedido.id_pedido} foi entregue.",
+        evento,
+        [
+            DestinatarioNotificacao(
+                solicitante.id_usuario, link_pedidos_para_cargo(solicitante.cargo)
+            )
+        ],
     )
 
 
@@ -193,13 +257,14 @@ def _montar_mensagem_estoque_baixo(itens: list[ItemEstoqueBaixo]) -> str:
     return mensagem[:MENSAGEM_MAX_LENGTH]
 
 
-def _enviar_email_estoque_baixo(email: str, itens: list[ItemEstoqueBaixo]) -> None:
-    try:
-        send_estoque_baixo_email(email, itens)
-    except EmailDeliveryError:
-        logger.error("Falha ao enviar e-mail de estoque baixo para %s", email)
-    except Exception:
-        logger.exception("Erro inesperado ao enviar e-mail de estoque baixo para %s", email)
+def _email_estoque_baixo(itens: list[ItemEstoqueBaixo]) -> EmailMessage:
+    subject, texto = build_estoque_baixo_message(itens)
+    return build_email_message(
+        subject,
+        texto,
+        link=_link_absoluto(LINK_ESTOQUE_ADMIN),
+        cta_label="Ver estoque",
+    )
 
 
 def notificar_estoque_baixo(
@@ -214,23 +279,27 @@ def notificar_estoque_baixo(
     quantidade = len(itens)
     rotulo = "item" if quantidade == 1 else "itens"
     usuarios = _usuarios_por_cargo(db, (1, 3))
-    _notificar(
-        db,
-        [(usuario.id_usuario, LINK_ESTOQUE_ADMIN) for usuario in usuarios],
-        "estoque_baixo",
-        f"{quantidade} {rotulo} com estoque abaixo do mínimo",
-        _montar_mensagem_estoque_baixo(itens),
-    )
+    destinatarios: list[DestinatarioNotificacao] = []
+    com_email = False
+    for usuario in usuarios:
+        email = (usuario.email or "").strip()
+        com_email = com_email or bool(email)
+        destinatarios.append(
+            DestinatarioNotificacao(
+                usuario.id_usuario,
+                LINK_ESTOQUE_ADMIN,
+                email=email,
+                enviar_email=bool(email),
+            )
+        )
 
-    emails = [(usuario, (usuario.email or "").strip()) for usuario in usuarios]
-    destinatarios = [email for _usuario, email in emails if email]
-    if not destinatarios:
+    if not com_email:
         logger.warning("Nenhum destinatário com e-mail cadastrado para alerta de estoque baixo")
-        return
 
-    for email in destinatarios:
-        copia = list(itens)
-        if background_tasks is not None:
-            background_tasks.add_task(_enviar_email_estoque_baixo, email, copia)
-        else:
-            _enviar_email_estoque_baixo(email, copia)
+    evento = EventoNotificacao(
+        tipo="estoque_baixo",
+        titulo=f"{quantidade} {rotulo} com estoque abaixo do mínimo",
+        mensagem=_montar_mensagem_estoque_baixo(itens),
+        email=_email_estoque_baixo(itens) if com_email else None,
+    )
+    disparar_evento(db, evento, destinatarios, background_tasks)

@@ -38,6 +38,24 @@ def test_posts_to_brevo_api(monkeypatch):
     assert captured["api-key"] == "brevo-key"
     assert captured["timeout"] == brevo.BREVO_TIMEOUT_SECONDS
     assert captured["json"]["to"] == [{"email": "dest@abaco.org.br"}]
+    assert captured["json"]["textContent"] == "Corpo"
+    assert "Corpo" in captured["json"]["htmlContent"]
+
+
+def test_brevo_envia_html_quando_fornecido(monkeypatch):
+    captured = {}
+
+    def fake_post(url, *, json, headers, timeout):
+        captured["json"] = json
+        return httpx.Response(201, request=_request(url))
+
+    monkeypatch.setattr(brevo, "get_settings", lambda: _settings())
+    monkeypatch.setattr(brevo.httpx, "post", fake_post)
+
+    brevo.send("dest@abaco.org.br", "Assunto", "Corpo", "<p>Corpo em HTML</p>")
+
+    assert captured["json"]["textContent"] == "Corpo"
+    assert captured["json"]["htmlContent"] == "<p>Corpo em HTML</p>"
 
 
 def test_http_error_raises_email_delivery_error(monkeypatch):

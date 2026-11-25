@@ -1,21 +1,15 @@
-import logging
 from datetime import date
 
 from fastapi import BackgroundTasks
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.email import EmailDeliveryError, send_pedido_aprovado_email
 from app.email.messages import ItemEstoqueBaixo
 from app.models.estoque import Estoque
 from app.models.item_pedido import ItemPedido
 from app.models.pedido import Pedido
-from app.models.usuario import Usuario
 from app.schemas.pedido_schema import PedidoCompraSchema, PedidoCreateSchema, PedidoUpdateSchema
 from app.services import notificacao_eventos_service as notificacoes_eventos
-
-
-logger = logging.getLogger(__name__)
 
 
 class PedidoNotFoundError(Exception):
@@ -124,67 +118,6 @@ def get_pedido_by_id(db: Session, pedido_id: int, solicitante_id: int | None = N
     return pedido
 
 
-def _enviar_email_aprovacao(
-    email: str,
-    pedido_id: int,
-    data_aprovacao: date,
-    itens: list[tuple[str, int]],
-) -> None:
-    try:
-        send_pedido_aprovado_email(email, pedido_id, data_aprovacao, itens)
-    except EmailDeliveryError:
-        logger.error(
-            "Falha ao enviar e-mail de aprovação do pedido #%s para %s",
-            pedido_id,
-            email,
-        )
-    except Exception:
-        logger.exception(
-            "Erro inesperado ao enviar e-mail de aprovação do pedido #%s para %s",
-            pedido_id,
-            email,
-        )
-
-
-def _notificar_solicitante_aprovacao(
-    db: Session,
-    pedido: Pedido,
-    background_tasks: BackgroundTasks | None = None,
-) -> None:
-    """Agenda o e-mail de aprovação após o commit, sem reverter a aprovação em caso de falha."""
-    usuario = pedido.usuario
-    if usuario is None:
-        usuario = db.query(Usuario).filter(Usuario.id_usuario == pedido.id_usuario).first()
-
-    email = (usuario.email or "").strip() if usuario else ""
-    if not email:
-        logger.warning(
-            "Pedido #%s aprovado sem envio de e-mail: solicitante não possui e-mail cadastrado",
-            pedido.id_pedido,
-        )
-        return
-
-    itens = [
-        (item.nome_item or f"Item #{item.id_item_estoque}", item.quantidade)
-        for item in pedido.itens
-        if item.quantidade is not None
-    ]
-
-    # Os dados são copiados antes do agendamento: a tarefa roda depois do response,
-    # quando a sessão do banco já pode ter sido fechada.
-    if background_tasks is not None:
-        background_tasks.add_task(
-            _enviar_email_aprovacao,
-            email,
-            pedido.id_pedido,
-            date.today(),
-            itens,
-        )
-        return
-
-    _enviar_email_aprovacao(email, pedido.id_pedido, date.today(), itens)
-
-
 def _aprovar_pedido(
     db: Session,
     pedido: Pedido,
@@ -213,10 +146,9 @@ def _aprovar_pedido(
         raise PedidoHasDependenciesError from exc
 
     db.refresh(pedido)
-    notificacoes_eventos.notificar_pedido_aprovado(db, pedido)
+    # Inbox e e-mail passam pelo dispatcher, após o commit, sem reverter a aprovação.
+    notificacoes_eventos.notificar_pedido_aprovado(db, pedido, background_tasks)
     notificacoes_eventos.notificar_estoque_baixo(db, itens_baixos, background_tasks)
-    # O e-mail só é enviado depois do commit e nunca deve desfazer a aprovação.
-    _notificar_solicitante_aprovacao(db, pedido, background_tasks)
     return pedido
 
 

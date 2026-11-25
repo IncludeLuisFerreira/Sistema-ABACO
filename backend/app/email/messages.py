@@ -1,5 +1,46 @@
 from datetime import date
+from html import escape
 from typing import NamedTuple
+
+
+class EmailMessage(NamedTuple):
+    """Conteúdo completo de um e-mail: texto para fallback e HTML para CTA."""
+
+    subject: str
+    text: str
+    html: str
+
+
+def build_email_message(
+    subject: str,
+    text: str,
+    link: str | None = None,
+    cta_label: str = "Ver no SGA ABACO",
+) -> EmailMessage:
+    """Monta HTML a partir do texto, escapando todos os dados interpolados."""
+    linhas = "<br>".join(escape(linha) for linha in text.splitlines())
+    cta = ""
+    if link:
+        cta = (
+            '<p style="margin: 24px 0 0; text-align: center;">'
+            f'<a href="{escape(link, quote=True)}" '
+            'style="background-color: #0b5c4d; border-radius: 6px; color: #ffffff; '
+            'display: inline-block; padding: 12px 20px; text-decoration: none;">'
+            f"{escape(cta_label)}</a></p>"
+        )
+    html = (
+        '<!doctype html><html lang="pt-BR"><body '
+        'style="background-color: #f6f4ef; color: #1f2933; '
+        'font-family: Arial, sans-serif; margin: 0; padding: 24px;">'
+        '<div style="margin: 0 auto; max-width: 600px;">'
+        f"<h1 style=\"font-size: 20px;\">{escape(subject)}</h1>"
+        f'<div style="line-height: 1.5;">{linhas}</div>'
+        f"{cta}"
+        "<p style=\"color: #6b7280; font-size: 12px; margin-top: 32px;\">"
+        "Mensagem automática do SGA ABACO. Não responda este e-mail.</p>"
+        "</div></body></html>"
+    )
+    return EmailMessage(subject=subject, text=text, html=html)
 
 
 class ItemEstoqueBaixo(NamedTuple):

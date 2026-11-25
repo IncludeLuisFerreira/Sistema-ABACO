@@ -24,3 +24,14 @@ def test_body_without_token_does_not_crash(caplog):
     with caplog.at_level(logging.INFO):
         console.send("user@abaco.org.br", "Assunto", "Sem link aqui")
     assert "Sem link aqui" not in caplog.text
+
+
+def test_console_loga_apenas_texto_nunca_html(caplog):
+    html = "<p>Conteúdo exclusivo do HTML</p>"
+    body = "Texto para console: token=abcdef123456789"
+    with caplog.at_level(logging.INFO):
+        console.send("user@abaco.org.br", "Assunto", body, html)
+    assert "Texto para console" in caplog.text
+    assert "abcdef123456789" not in caplog.text
+    assert "Conteúdo exclusivo do HTML" not in caplog.text
+    assert "<p>" not in caplog.text
